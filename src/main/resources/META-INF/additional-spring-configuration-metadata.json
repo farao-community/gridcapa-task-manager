@@ -1,0 +1,13 @@
+{
+  "properties": [
+    {
+      "name": "task-server.minio.notification.queue-prefix",
+      "type": "java.lang.String",
+      "description": "Description for task-server.minio.notification.queue-prefix."
+    },
+    {
+      "name": "task-server.minio.connect.url",
+      "type": "java.lang.String",
+      "description": "Description for task-server.minio.connect.url."
+    }
+  ] }

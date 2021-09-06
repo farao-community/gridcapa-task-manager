@@ -1,0 +1,16 @@
+spring:
+  rabbitmq:
+    host: ${GRIDCAPA_RABBITMQ_HOST:localhost}
+    port: ${GRIDCAPA_RABBITMQ_PORT:5672}
+    username: ${GRIDCAPA_RABBITMQ_USERNAME:gridcapa}
+    password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
+
+task-server:
+  minio:
+    connect:
+      url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
+      access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
+      secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
+    notification:
+      exchange: ${MINIO_EVENT_NOTIFICATION_EXCHANGE:gridcapa.minio.events}
+      queue-prefix: gridcapa-task-manager
