@@ -1,5 +1,8 @@
 /*
  * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package com.farao_community.farao.gridcapa.task_manager;
 
@@ -26,18 +29,18 @@ public class MinioConnector {
 
     @Bean
     public MinioClient generateMinioClient() {
-        TaskManagerConfigurationProperties.ConnectionProperties connectionProperties = taskManagerConfigurationProperties.getConnect();
+        TaskManagerConfigurationProperties.MinIoProperties.ConnectionProperties connectionProperties = taskManagerConfigurationProperties.getMinio().getConnect();
         return MinioClient.builder().endpoint(connectionProperties.getUrl()).credentials(connectionProperties.getAccessKey(), connectionProperties.getSecretKey()).build();
     }
 
     @Bean
     public FanoutExchange minioEventNotificationExchange() {
-        return ExchangeBuilder.fanoutExchange(taskManagerConfigurationProperties.getNotification().getExchange()).build();
+        return ExchangeBuilder.fanoutExchange(taskManagerConfigurationProperties.getMinio().getNotification().getExchange()).build();
     }
 
     @Bean
     public Queue minioEventNotificationQueue() {
-        return QueueBuilder.durable(taskManagerConfigurationProperties.getNotification().getQueuePrefix() + "." + UUID.randomUUID()).build();
+        return QueueBuilder.durable(taskManagerConfigurationProperties.getMinio().getNotification().getQueuePrefix() + "." + UUID.randomUUID()).build();
     }
 
     @Bean

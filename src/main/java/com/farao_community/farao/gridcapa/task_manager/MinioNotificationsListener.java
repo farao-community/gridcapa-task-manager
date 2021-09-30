@@ -1,5 +1,8 @@
 /*
  * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package com.farao_community.farao.gridcapa.task_manager;
 
@@ -23,6 +26,12 @@ import java.io.IOException;
 public class MinioNotificationsListener implements MessageListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(MinioNotificationsListener.class);
     private static final ObjectMapper EVENT_NOTIFICATION_MAPPER = initializeObjectMapper();
+
+    private final TaskManager taskManager;
+
+    public MinioNotificationsListener(TaskManager taskManager) {
+        this.taskManager = taskManager;
+    }
 
     private static ObjectMapper initializeObjectMapper() {
         return new ObjectMapper()
@@ -71,7 +80,7 @@ public class MinioNotificationsListener implements MessageListener {
     }
 
     private void handleObjectCreationEvent(Event event) {
-        LOGGER.info("Handling object creation");
+        taskManager.updateTasks(event);
     }
 
     private void handleObjectRemovalEvent(Event event) {

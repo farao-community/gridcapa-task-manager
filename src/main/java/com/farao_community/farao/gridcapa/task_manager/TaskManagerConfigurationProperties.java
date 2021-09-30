@@ -1,72 +1,120 @@
 /*
  * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package com.farao_community.farao.gridcapa.task_manager;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
+import java.util.List;
+
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
 @ConstructorBinding
-@ConfigurationProperties("task-server.minio")
+@ConfigurationProperties("task-server")
 public class TaskManagerConfigurationProperties {
-    private final ConnectionProperties connect;
-    private final NotificationProperties notification;
 
-    public TaskManagerConfigurationProperties(ConnectionProperties connect, NotificationProperties notification) {
-        this.connect = connect;
-        this.notification = notification;
+    private final MinIoProperties minio;
+    private final ProcessProperties process;
+
+    public TaskManagerConfigurationProperties(MinIoProperties minio, ProcessProperties process) {
+        this.minio = minio;
+        this.process = process;
     }
 
-    public ConnectionProperties getConnect() {
-        return connect;
+    public MinIoProperties getMinio() {
+        return minio;
     }
 
-    public NotificationProperties getNotification() {
-        return notification;
+    public ProcessProperties getProcess() {
+        return process;
     }
 
-    public static class ConnectionProperties {
-        private final String url;
-        private final String accessKey;
-        private final String secretKey;
+    public static final class ProcessProperties {
+        private final String tag;
+        private final String timezone;
+        private final List<String> inputs;
 
-        private ConnectionProperties(String url, String accessKey, String secretKey) {
-            this.url = url;
-            this.accessKey = accessKey;
-            this.secretKey = secretKey;
+        private ProcessProperties(String tag, String timezone, List<String> inputs) {
+            this.tag = tag;
+            this.timezone = timezone;
+            this.inputs = inputs;
         }
 
-        public String getUrl() {
-            return url;
+        public String getTag() {
+            return tag;
         }
 
-        public String getAccessKey() {
-            return accessKey;
+        public String getTimezone() {
+            return timezone;
         }
 
-        public String getSecretKey() {
-            return secretKey;
+        public List<String> getInputs() {
+            return inputs;
         }
     }
 
-    public static class NotificationProperties {
-        private final String exchange;
-        private final String queuePrefix;
+    public static final class MinIoProperties {
+        private final ConnectionProperties connect;
+        private final NotificationProperties notification;
 
-        private NotificationProperties(String exchange, String queuePrefix) {
-            this.exchange = exchange;
-            this.queuePrefix = queuePrefix;
+        private MinIoProperties(ConnectionProperties connect, NotificationProperties notification) {
+            this.connect = connect;
+            this.notification = notification;
         }
 
-        public String getExchange() {
-            return exchange;
+        public ConnectionProperties getConnect() {
+            return connect;
         }
 
-        public String getQueuePrefix() {
-            return queuePrefix;
+        public NotificationProperties getNotification() {
+            return notification;
+        }
+
+        public static final class ConnectionProperties {
+            private final String url;
+            private final String accessKey;
+            private final String secretKey;
+
+            private ConnectionProperties(String url, String accessKey, String secretKey) {
+                this.url = url;
+                this.accessKey = accessKey;
+                this.secretKey = secretKey;
+            }
+
+            public String getUrl() {
+                return url;
+            }
+
+            public String getAccessKey() {
+                return accessKey;
+            }
+
+            public String getSecretKey() {
+                return secretKey;
+            }
+        }
+
+        public static final class NotificationProperties {
+            private final String exchange;
+            private final String queuePrefix;
+
+            private NotificationProperties(String exchange, String queuePrefix) {
+                this.exchange = exchange;
+                this.queuePrefix = queuePrefix;
+            }
+
+            public String getExchange() {
+                return exchange;
+            }
+
+            public String getQueuePrefix() {
+                return queuePrefix;
+            }
         }
     }
 }

@@ -27,3 +27,4 @@ task-server:
     timezone: CET
     inputs:
       - CGM
+      - CRAC
