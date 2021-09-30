@@ -16,14 +16,14 @@ jobs:
                   java-version: 11
 
             - name: Build with Maven
-              run: mvn --batch-mode -Pcoverage install
+              run: mvn --batch-mode -Pdefault,coverage install
 
             - name: Run SonarCloud analysis
               run: >
                   mvn --batch-mode -DskipTests sonar:sonar
                   -Dsonar.host.url=https://sonarcloud.io
                   -Dsonar.organization=farao-community
-                  -Dsonar.projectKey=com.farao-community.farao:gridcapa-task-manager
+                  -Dsonar.projectKey=farao-community_gridcapa-task-manager
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
