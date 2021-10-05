@@ -14,9 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static com.farao_community.farao.gridcapa.task_manager.TaskManager.*;
+import static com.farao_community.farao.gridcapa.task_manager.entities.TaskStatus.CREATED;
+import static com.farao_community.farao.gridcapa.task_manager.entities.TaskStatus.READY;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -26,13 +29,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskManagerTest {
 
     @MockBean
-    MinioAdapter minioAdapter;
+    private TaskNotifier taskNotifier;
+
+    @MockBean
+    private MinioAdapter minioAdapter;
 
     @Autowired
-    TaskRepository taskRepository;
+    private TaskRepository taskRepository;
 
     @Autowired
-    TaskManager taskManager;
+    private TaskManager taskManager;
 
     @AfterEach
     void cleanDatabase() {
@@ -53,19 +59,19 @@ class TaskManagerTest {
 
     @Test
     void testUpdate() {
-        String taskTimestamp = "2021-09-30T23:00+02:00";
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
         String cgmUrl = "cgmUrl";
         Event event = createEvent("CSE_D2CC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
-        assertTrue(taskRepository.existsById(taskTimestamp));
-        assertEquals(cgmUrl, taskRepository.findById(taskTimestamp).get().getFileTypeToUrlMap().get("CGM"));
+        assertTrue(taskRepository.existsByTimestamp(taskTimestamp));
+        assertEquals(cgmUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").getFileUrl());
     }
 
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
-        String taskTimestamp = "2021-09-30T23:00+02:00";
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
         String cgmUrl = "cgmUrl";
         Event eventCgm = createEvent("CSE_D2CC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
@@ -76,31 +82,29 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCrac);
 
         assertEquals(1, taskRepository.findAll().size());
-        assertTrue(taskRepository.existsById(taskTimestamp));
-        assertEquals(cgmUrl, taskRepository.findById(taskTimestamp).get().getFileTypeToUrlMap().get("CGM"));
-        assertEquals(cracUrl, taskRepository.findById(taskTimestamp).get().getFileTypeToUrlMap().get("CRAC"));
+        assertTrue(taskRepository.existsByTimestamp(taskTimestamp));
+        assertEquals(cgmUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").getFileUrl());
+        assertEquals(cracUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CRAC").getFileUrl());
     }
 
     @Test
     void testUpdateWithNotHandledProcess() {
-        String taskTimestamp = "2021-09-30T23:00+02:00";
         String cgmUrl = "cgmUrl";
         Event event = createEvent("CSE_IDCC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
-        assertFalse(taskRepository.existsById(taskTimestamp));
+        assertEquals(0, taskRepository.findAll().size());
     }
 
     @Test
     void testUpdateWithNotHandledFileType() {
-        String taskTimestamp = "2021-09-30T23:00+02:00";
         String cgmUrl = "cgmUrl";
         Event event = createEvent("CSE_D2CC", "GLSK", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
-        assertFalse(taskRepository.existsById(taskTimestamp));
+        assertEquals(0, taskRepository.findAll().size());
     }
 
     @Test
@@ -111,5 +115,20 @@ class TaskManagerTest {
         taskManager.updateTasks(event);
 
         assertEquals(24, taskRepository.findAll().size());
+    }
+
+    @Test
+    void checkStatusUpdateToReady() {
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        String cgmUrl = "cgmUrl";
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+
+        String cracUrl = "cracUrl";
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+
+        taskManager.updateTasks(eventCgm);
+        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+        taskManager.updateTasks(eventCrac);
+        assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
     }
 }
