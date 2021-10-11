@@ -16,14 +16,15 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TaskNotifier {
+    private static final String TASK_UPDATED_BINDING = "task-updated";
 
-    private StreamBridge streamBridge;
+    private final StreamBridge streamBridge;
 
     public TaskNotifier(StreamBridge streamBridge) {
         this.streamBridge = streamBridge;
     }
 
     public void notifyUpdate(Task task) {
-        streamBridge.send("task-updated", TaskDto.fromEntity(task));
+        streamBridge.send(TASK_UPDATED_BINDING, TaskDto.fromEntity(task));
     }
 }

@@ -12,11 +12,5 @@ package com.farao_community.farao.gridcapa.task_manager.entities;
 public enum TaskStatus {
     NOT_CREATED,
     CREATED,
-    READY,
-    RUNNING,
-    SUCCESS,
-    ERROR,
-    VALIDATED,
-    LOST,
-    DEPRECATED
+    READY
 }
