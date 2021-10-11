@@ -6,10 +6,19 @@
  */
 package com.farao_community.farao.gridcapa.task_manager;
 
+import com.farao_community.farao.gridcapa.task_manager.entities.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
-public interface TaskRepository extends JpaRepository<Task, String> {
+public interface TaskRepository extends JpaRepository<Task, UUID> {
+
+    Optional<Task> findByTimestamp(LocalDateTime localDateTime);
+
+    boolean existsByTimestamp(LocalDateTime localDateTime);
 }
