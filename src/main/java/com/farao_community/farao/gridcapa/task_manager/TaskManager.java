@@ -40,23 +40,8 @@ public class TaskManager {
         this.minioAdapter = minioAdapter;
     }
 
-    private static class UtcTimeInterval {
-        private LocalDateTime startTime;
-        private LocalDateTime endTime;
-
-        private static UtcTimeInterval parse(String validityInterval, String fromZoneId) {
-            String[] interval = validityInterval.split("/");
-            UtcTimeInterval utcTimeInterval = new UtcTimeInterval();
-            utcTimeInterval.startTime = LocalDateTime.parse(interval[0])
-                .atZone(ZoneId.of(fromZoneId))
-                .withZoneSameInstant(ZoneId.of("UTC"))
-                .toLocalDateTime();
-            utcTimeInterval.endTime = LocalDateTime.parse(interval[1])
-                .atZone(ZoneId.of(fromZoneId))
-                .withZoneSameInstant(ZoneId.of("UTC"))
-                .toLocalDateTime();
-            return utcTimeInterval;
-        }
+    private static LocalDateTime toUtc(String timestamp, String fromZoneId) {
+        return LocalDateTime.parse(timestamp).atZone(ZoneId.of(fromZoneId)).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
     public void updateTasks(Event event) {
@@ -66,9 +51,10 @@ public class TaskManager {
             String fileType = event.userMetadata().get(FILE_TYPE);
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
             if (validityInterval != null) {
-                UtcTimeInterval utcTimeInterval = UtcTimeInterval.parse(validityInterval, processProperties.getTimezone());
-                LocalDateTime currentTime = utcTimeInterval.startTime;
-                while (currentTime.isBefore(utcTimeInterval.endTime)) {
+                String[] interval = validityInterval.split("/");
+                LocalDateTime currentTime = toUtc(interval[0], processProperties.getTimezone());
+                LocalDateTime endTime = toUtc(interval[1], processProperties.getTimezone());
+                while (currentTime.isBefore(endTime)) {
                     final LocalDateTime finalTime = currentTime;
                     Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
