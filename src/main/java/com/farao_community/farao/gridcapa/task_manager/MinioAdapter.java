@@ -12,6 +12,8 @@ import io.minio.http.Method;
 import io.minio.messages.Event;
 import org.springframework.stereotype.Component;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,10 +31,11 @@ public class MinioAdapter {
 
     public String generatePreSignedUrl(Event event) {
         try {
+            String objectName = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(event.bucketName())
-                            .object(event.objectName())
+                            .object(objectName)
                             .expiry(DEFAULT_DOWNLOAD_LINK_EXPIRY_IN_DAYS, TimeUnit.DAYS).method(Method.GET).build());
         } catch (Exception e) {
             throw new RuntimeException(e);
