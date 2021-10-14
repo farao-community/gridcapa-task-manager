@@ -101,19 +101,19 @@ public class TaskManagerConfigurationProperties {
 
         public static final class NotificationProperties {
             private final String exchange;
-            private final String queuePrefix;
+            private final String queue;
 
-            private NotificationProperties(String exchange, String queuePrefix) {
+            private NotificationProperties(String exchange, String queue) {
                 this.exchange = exchange;
-                this.queuePrefix = queuePrefix;
+                this.queue = queue;
             }
 
             public String getExchange() {
                 return exchange;
             }
 
-            public String getQueuePrefix() {
-                return queuePrefix;
+            public String getQueue() {
+                return queue;
             }
         }
     }

@@ -14,8 +14,6 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
@@ -40,7 +38,7 @@ public class MinioConnector {
 
     @Bean
     public Queue minioEventNotificationQueue() {
-        return QueueBuilder.durable(taskManagerConfigurationProperties.getMinio().getNotification().getQueuePrefix() + "." + UUID.randomUUID()).build();
+        return QueueBuilder.durable(taskManagerConfigurationProperties.getMinio().getNotification().getQueue()).build();
     }
 
     @Bean

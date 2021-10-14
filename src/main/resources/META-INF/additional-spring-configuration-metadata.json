@@ -1,9 +1,9 @@
 {
   "properties": [
     {
-      "name": "task-server.minio.notification.queue-prefix",
+      "name": "task-server.minio.notification.queue",
       "type": "java.lang.String",
-      "description": "Description for task-server.minio.notification.queue-prefix."
+      "description": "Description for task-server.minio.notification.queue."
     },
     {
       "name": "task-server.minio.connect.url",
