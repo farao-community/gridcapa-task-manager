@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskManagerTest {
 
     @MockBean
-    private TaskNotifier taskNotifier;
+    private TaskNotifier taskNotifier; // Useful to avoid AMQP connection that would fail
 
     @MockBean
     private MinioAdapter minioAdapter;
@@ -45,7 +45,7 @@ class TaskManagerTest {
         taskRepository.deleteAll();
     }
 
-    private Event createEvent(String processTag, String fileType, String validityInterval, String fileUrl) {
+    private Event createEvent(String processTag, String fileType, String fileKey, String validityInterval, String fileUrl) {
         Event event = Mockito.mock(Event.class);
         Map<String, String> metadata = Map.of(
                 FILE_PROCESS_TAG, processTag,
@@ -54,6 +54,7 @@ class TaskManagerTest {
         );
         Mockito.when(event.userMetadata()).thenReturn(metadata);
         Mockito.when(minioAdapter.generatePreSignedUrl(event)).thenReturn(fileUrl);
+        Mockito.when(event.objectName()).thenReturn(fileKey);
         return event;
     }
 
@@ -61,22 +62,23 @@ class TaskManagerTest {
     void testUpdate() {
         LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
         assertTrue(taskRepository.existsByTimestamp(taskTimestamp));
         assertEquals(cgmUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").getFileUrl());
+        assertEquals("cgm-test", taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").getFilename());
     }
 
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
         LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
@@ -85,12 +87,14 @@ class TaskManagerTest {
         assertTrue(taskRepository.existsByTimestamp(taskTimestamp));
         assertEquals(cgmUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").getFileUrl());
         assertEquals(cracUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CRAC").getFileUrl());
+        assertEquals("cgm-test", taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").getFilename());
+        assertEquals("crac-test", taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CRAC").getFilename());
     }
 
     @Test
     void testUpdateWithNotHandledProcess() {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_IDCC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_IDCC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -100,7 +104,7 @@ class TaskManagerTest {
     @Test
     void testUpdateWithNotHandledFileType() {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", "GLSK", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_D2CC", "GLSK", "CSE/D2CC/GLSKs/glsk-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -110,7 +114,7 @@ class TaskManagerTest {
     @Test
     void testUpdateWithDailyFile() {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", "CGM", "2021-09-30T00:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T00:00/2021-10-01T00:00", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -121,10 +125,10 @@ class TaskManagerTest {
     void checkStatusUpdateToReady() {
         LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());

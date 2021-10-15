@@ -63,7 +63,9 @@ public class TaskManager {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
                         return new Task(finalTime, processProperties.getInputs());
                     });
-                    addFileToTask(task, fileType, minioAdapter.generatePreSignedUrl(event));
+                    String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+
+                    addFileToTask(task, fileType, objectKey, minioAdapter.generatePreSignedUrl(event));
                     taskRepository.save(task);
                     taskNotifier.notifyUpdate(task);
                     currentTime = currentTime.plusHours(1);
@@ -107,12 +109,15 @@ public class TaskManager {
         return LocalDateTime.now(ZoneId.of(processProperties.getTimezone()));
     }
 
-    private void addFileToTask(Task task, String fileType, String fileUrl) {
+    private void addFileToTask(Task task, String fileType, String objectKey, String fileUrl) {
         LOGGER.info("New file added to task {} with file type {} at URL {}", task.getTimestamp(), fileType, fileUrl);
         ProcessFile processFile = task.getProcessFile(fileType);
         processFile.setFileUrl(fileUrl);
         processFile.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         processFile.setLastModificationDate(getProcessNow());
+        processFile.setFileObjectKey(objectKey);
+        String[] url = objectKey.split("/");
+        processFile.setFilename(url[url.length - 1]);
         if (task.getProcessFiles().stream().map(ProcessFile::getProcessFileStatus).allMatch(processFileStatus -> processFileStatus.equals(ProcessFileStatus.VALIDATED))) {
             LOGGER.info("Task {} is ready to run", task.getTimestamp());
             task.setStatus(TaskStatus.READY);
