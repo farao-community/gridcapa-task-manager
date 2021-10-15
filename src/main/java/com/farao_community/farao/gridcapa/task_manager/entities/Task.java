@@ -34,6 +34,7 @@ public class Task {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @OrderColumn
     private List<ProcessFile> processFiles = new ArrayList<>();
 
     public Task() {
