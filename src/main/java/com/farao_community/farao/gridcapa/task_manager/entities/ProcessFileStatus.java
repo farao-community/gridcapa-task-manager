@@ -11,5 +11,6 @@ package com.farao_community.farao.gridcapa.task_manager.entities;
  */
 public enum ProcessFileStatus {
     VALIDATED,
-    NOT_PRESENT
+    NOT_PRESENT,
+    DELETED
 }
