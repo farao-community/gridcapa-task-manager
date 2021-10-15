@@ -101,7 +101,6 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/CGM2");
 
-
         Task task2 = taskRepository.findByTimestamp(LocalDateTime.of(2020, 1, 1, 1, 30)).get();
         assertEquals(ProcessFileStatus.VALIDATED, task2.getProcessFile("CGM").getProcessFileStatus());
 
