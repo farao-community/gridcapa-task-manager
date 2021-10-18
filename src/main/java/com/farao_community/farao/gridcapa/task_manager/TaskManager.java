@@ -92,6 +92,7 @@ public class TaskManager {
             if (task.getProcessFiles().stream().allMatch(this::isProcessFileReadyForTaskDeletion)) {
                 taskRepository.delete(task);
             }
+            taskNotifier.notifyUpdate(task);
         });
     }
 

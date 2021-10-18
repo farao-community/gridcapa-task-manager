@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -28,6 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @SpringBootTest
 class TaskProcessFileDeletionTest {
+
+    @MockBean
+    private TaskNotifier taskNotifier; // Useful to avoid AMQP connection that would fail
 
     @Autowired
     private TaskRepository taskRepository;
