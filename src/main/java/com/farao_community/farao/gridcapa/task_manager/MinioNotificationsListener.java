@@ -84,6 +84,6 @@ public class MinioNotificationsListener implements MessageListener {
     }
 
     private void handleObjectRemovalEvent(Event event) {
-        LOGGER.info("Handling object removal");
+        taskManager.removeProcessFile(event);
     }
 }

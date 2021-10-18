@@ -8,12 +8,16 @@ package com.farao_community.farao.gridcapa.task_manager;
 
 import com.farao_community.farao.gridcapa.task_manager.entities.*;
 import io.minio.messages.Event;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -60,7 +64,9 @@ public class TaskManager {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
                         return new Task(finalTime, processProperties.getInputs());
                     });
-                    addFileToTask(task, fileType, minioAdapter.generatePreSignedUrl(event));
+                    String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+
+                    addFileToTask(task, fileType, objectKey, minioAdapter.generatePreSignedUrl(event));
                     taskRepository.save(task);
                     taskNotifier.notifyUpdate(task);
                     currentTime = currentTime.plusHours(1);
@@ -69,12 +75,51 @@ public class TaskManager {
         }
     }
 
-    private static void addFileToTask(Task task, String fileType, String fileUrl) {
+    public void removeProcessFile(Event event) {
+        String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+        List<Task> impactedTasks = taskRepository.findAllByProcessFilesFileObjectKey(objectKey);
+        impactedTasks.forEach(task -> {
+            task.getProcessFiles().forEach(processFile -> {
+                if (objectKey.equals(processFile.getFileObjectKey())) {
+                    processFile.setProcessFileStatus(ProcessFileStatus.DELETED);
+                    processFile.setFileObjectKey(null);
+                    processFile.setFileUrl(null);
+                    processFile.setFilename(null);
+                    processFile.setLastModificationDate(getProcessNow());
+                }
+            });
+            taskRepository.save(task);
+            if (task.getProcessFiles().stream().allMatch(this::isProcessFileReadyForTaskDeletion)) {
+                taskRepository.delete(task);
+            }
+            taskNotifier.notifyUpdate(task);
+        });
+    }
+
+    private boolean isProcessFileReadyForTaskDeletion(ProcessFile processFile) {
+        switch (processFile.getProcessFileStatus()) {
+            case DELETED:
+            case NOT_PRESENT:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private LocalDateTime getProcessNow() {
+        TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
+        return LocalDateTime.now(ZoneId.of(processProperties.getTimezone()));
+    }
+
+    private void addFileToTask(Task task, String fileType, String objectKey, String fileUrl) {
         LOGGER.info("New file added to task {} with file type {} at URL {}", task.getTimestamp(), fileType, fileUrl);
         ProcessFile processFile = task.getProcessFile(fileType);
         processFile.setFileUrl(fileUrl);
         processFile.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        if (task.getProcessFiles().stream().map(ProcessFile::getProcessFileStatus).noneMatch(processFileStatus -> processFileStatus.equals(ProcessFileStatus.NOT_PRESENT))) {
+        processFile.setLastModificationDate(getProcessNow());
+        processFile.setFileObjectKey(objectKey);
+        processFile.setFilename(FilenameUtils.getName(objectKey));
+        if (task.getProcessFiles().stream().map(ProcessFile::getProcessFileStatus).allMatch(processFileStatus -> processFileStatus.equals(ProcessFileStatus.VALIDATED))) {
             LOGGER.info("Task {} is ready to run", task.getTimestamp());
             task.setStatus(TaskStatus.READY);
         }

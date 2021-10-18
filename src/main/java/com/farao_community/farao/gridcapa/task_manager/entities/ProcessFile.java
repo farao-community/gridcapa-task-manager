@@ -35,6 +35,9 @@ public class ProcessFile {
     @Column(name = "file_url", columnDefinition = "TEXT")
     private String fileUrl;
 
+    @Column(name = "file_object_key", columnDefinition = "TEXT")
+    private String fileObjectKey;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id")
     private Task task;
@@ -96,6 +99,14 @@ public class ProcessFile {
 
     public void setFileUrl(String fileUrl) {
         this.fileUrl = fileUrl;
+    }
+
+    public String getFileObjectKey() {
+        return fileObjectKey;
+    }
+
+    public void setFileObjectKey(String fileObjectKey) {
+        this.fileObjectKey = fileObjectKey;
     }
 
     public Task getTask() {
