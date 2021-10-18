@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager;
 
 import com.farao_community.farao.gridcapa.task_manager.entities.*;
 import io.minio.messages.Event;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -116,8 +117,7 @@ public class TaskManager {
         processFile.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         processFile.setLastModificationDate(getProcessNow());
         processFile.setFileObjectKey(objectKey);
-        String[] url = objectKey.split("/");
-        processFile.setFilename(url[url.length - 1]);
+        processFile.setFilename(FilenameUtils.getName(objectKey));
         if (task.getProcessFiles().stream().map(ProcessFile::getProcessFileStatus).allMatch(processFileStatus -> processFileStatus.equals(ProcessFileStatus.VALIDATED))) {
             LOGGER.info("Task {} is ready to run", task.getTimestamp());
             task.setStatus(TaskStatus.READY);
