@@ -59,7 +59,7 @@ public class TaskManager {
                 LocalDateTime currentTime = toUtc(interval[0], processProperties.getTimezone());
                 LocalDateTime endTime = toUtc(interval[1], processProperties.getTimezone());
                 while (currentTime.isBefore(endTime)) {
-                    final LocalDateTime finalTime = currentTime;
+                    final LocalDateTime finalTime = currentTime.withMinute(30);
                     Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
                         return new Task(finalTime, processProperties.getInputs());
