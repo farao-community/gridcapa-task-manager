@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager;
 
 import com.farao_community.farao.gridcapa.task_manager.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.entities.TaskDto;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
@@ -16,15 +17,17 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TaskNotifier {
-    private static final String TASK_UPDATED_BINDING = "task-updated";
-
     private final StreamBridge streamBridge;
 
-    public TaskNotifier(StreamBridge streamBridge) {
+    private final BindingServiceProperties bindingServiceProperties;
+
+    public TaskNotifier(StreamBridge streamBridge, BindingServiceProperties bindingServiceProperties) {
         this.streamBridge = streamBridge;
+        this.bindingServiceProperties = bindingServiceProperties;
     }
 
     public void notifyUpdate(Task task) {
-        streamBridge.send(TASK_UPDATED_BINDING, TaskDto.fromEntity(task));
+        String bindingName = bindingServiceProperties.getBindings().keySet().stream().findFirst().get();
+        streamBridge.send(bindingName, TaskDto.fromEntity(task));
     }
 }
