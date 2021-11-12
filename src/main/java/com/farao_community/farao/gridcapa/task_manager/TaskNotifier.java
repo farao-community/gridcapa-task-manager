@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TaskNotifier {
+    private static final String TASK_UPDATED_BINDING = "task-updated";
+
     private final StreamBridge streamBridge;
 
     private final BindingServiceProperties bindingServiceProperties;
@@ -27,7 +29,10 @@ public class TaskNotifier {
     }
 
     public void notifyUpdate(Task task) {
-        String bindingName = bindingServiceProperties.getBindings().keySet().stream().findFirst().get();
+        String bindingName = TASK_UPDATED_BINDING;
+        if(bindingServiceProperties.getBindings().keySet().stream().findFirst().isPresent()) {
+            bindingName = bindingServiceProperties.getBindings().keySet().stream().findFirst().get();
+        }
         streamBridge.send(bindingName, TaskDto.fromEntity(task));
     }
 }
