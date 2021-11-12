@@ -132,4 +132,15 @@ public class TaskManager {
     public TaskDto getEmptyTask(LocalDateTime timestamp) {
         return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
     }
+
+    public void changeTask(LocalDateTime timestamp) {
+        if (taskRepository.findByTimestamp(timestamp).isPresent()) {
+            LOGGER.info("Change task with timestamp {}", timestamp);
+            Task currentTask = taskRepository.findByTimestamp(timestamp).get();
+            currentTask.setStatus(TaskStatus.RUNNING);
+            taskRepository.saveAndFlush(currentTask);
+        } else {
+            LOGGER.warn("No task found with timestamp {}", timestamp);
+        }
+    }
 }
