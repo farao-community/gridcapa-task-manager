@@ -29,10 +29,7 @@ public class TaskNotifier {
     }
 
     public void notifyUpdate(Task task) {
-        String bindingName = TASK_UPDATED_BINDING;
-        if (bindingServiceProperties.getBindings().keySet().stream().findFirst().isPresent()) {
-            bindingName = bindingServiceProperties.getBindings().keySet().stream().findFirst().get();
-        }
+        String bindingName = bindingServiceProperties.getBindings().keySet().stream().findFirst().orElse(TASK_UPDATED_BINDING);
         streamBridge.send(bindingName, TaskDto.fromEntity(task));
     }
 }
