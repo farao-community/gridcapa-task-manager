@@ -28,13 +28,6 @@ spring:
                 port: ${GRIDCAPA_RABBITMQ_PORT:5672}
                 username: ${GRIDCAPA_RABBITMQ_USERNAME:gridcapa}
                 password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
-      rabbit:
-        bindings:
-          task-updated:
-            producer:
-              exchange-name: task-updated
-              exchange-durable: true
-              exchange-type: fanout
 
 task-server:
   minio:
