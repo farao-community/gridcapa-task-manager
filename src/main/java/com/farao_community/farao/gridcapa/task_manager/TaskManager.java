@@ -17,7 +17,9 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -49,6 +51,7 @@ public class TaskManager {
     }
 
     public void updateTasks(Event event) {
+        List<Task> tasks = new ArrayList<>();
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
         if (processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
                 && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE))) {
@@ -65,20 +68,21 @@ public class TaskManager {
                         return new Task(finalTime, processProperties.getInputs());
                     });
                     String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-
                     addFileToTask(task, fileType, objectKey, minioAdapter.generatePreSignedUrl(event));
-                    taskRepository.save(task);
-                    taskNotifier.notifyUpdate(task);
+                    tasks.add(task);
                     currentTime = currentTime.plusHours(1);
                 }
+                taskRepository.saveAll(tasks);
+                taskNotifier.notifyUpdate(tasks);
             }
         }
     }
 
     public void removeProcessFile(Event event) {
+        List<Task> tasksToBeDeleted = new ArrayList<>();
         String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
         List<Task> impactedTasks = taskRepository.findAllByProcessFilesFileObjectKey(objectKey);
-        impactedTasks.forEach(task -> {
+        impactedTasks.parallelStream().forEach(task -> {
             task.getProcessFiles().forEach(processFile -> {
                 if (objectKey.equals(processFile.getFileObjectKey())) {
                     processFile.setProcessFileStatus(ProcessFileStatus.DELETED);
@@ -88,12 +92,15 @@ public class TaskManager {
                     processFile.setLastModificationDate(getProcessNow());
                 }
             });
-            taskRepository.save(task);
             if (task.getProcessFiles().stream().allMatch(this::isProcessFileReadyForTaskDeletion)) {
-                taskRepository.delete(task);
+                tasksToBeDeleted.add(task);
             }
-            taskNotifier.notifyUpdate(task);
+
         });
+        List<Task> tasksToBeKept = impactedTasks.stream().filter(task -> !tasksToBeDeleted.contains(task)).collect(Collectors.toList());
+        taskRepository.saveAll(tasksToBeKept);
+        taskRepository.deleteAll(tasksToBeDeleted);
+        taskNotifier.notifyUpdate(impactedTasks);
     }
 
     private boolean isProcessFileReadyForTaskDeletion(ProcessFile processFile) {

@@ -11,6 +11,8 @@ import com.farao_community.farao.gridcapa.task_manager.entities.TaskDto;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
@@ -24,7 +26,8 @@ public class TaskNotifier {
         this.streamBridge = streamBridge;
     }
 
-    public void notifyUpdate(Task task) {
-        streamBridge.send(TASK_UPDATED_BINDING, TaskDto.fromEntity(task));
+    public void notifyUpdate(List<Task> tasks) {
+        tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, TaskDto.fromEntity(task)));
     }
+
 }
