@@ -43,7 +43,7 @@ public class TaskManagerController {
     @PostMapping(value = "/tasks/launch/{timestamp}")
     public ResponseEntity<TaskDto> launchTaskFromTimestamp(@PathVariable String timestamp) {
         LOGGER.info("Launching task {}", timestamp);
-        taskManager.changeTask(LocalDateTime.parse(timestamp));
+        taskManager.runTask(LocalDateTime.parse(timestamp));
         return ResponseEntity.ok().body(taskManager.getTaskDto(LocalDateTime.parse(timestamp)));
     }
 }

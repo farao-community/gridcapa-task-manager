@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -133,13 +134,19 @@ public class TaskManager {
         return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
     }
 
-    public void changeTask(LocalDateTime timestamp) {
-        if (taskRepository.findByTimestamp(timestamp).isPresent()) {
+    public void runTask(LocalDateTime timestamp) {
+        Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
+        if (optionalTask.isPresent()) {
             LOGGER.info("Change task with timestamp {}", timestamp);
-            Task currentTask = taskRepository.findByTimestamp(timestamp).get();
-            currentTask.setStatus(TaskStatus.RUNNING);
-            taskRepository.saveAndFlush(currentTask);
-            taskNotifier.notifyUpdate(currentTask);
+            Task currentTask = optionalTask.get();
+            TaskStatus currentTaskStatus = currentTask.getStatus();
+            if (currentTaskStatus.equals(TaskStatus.READY)) {
+                currentTask.setStatus(TaskStatus.RUNNING);
+                taskRepository.saveAndFlush(currentTask);
+                taskNotifier.notifyUpdate(currentTask);
+            } else {
+                LOGGER.warn("Failed to launch task with timestamp {} because it is not ready yet", timestamp);
+            }
         } else {
             LOGGER.warn("No task found with timestamp {}", timestamp);
         }
