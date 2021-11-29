@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
@@ -31,33 +34,33 @@ class TaskTest {
     void setId() {
         UUID newId = UUID.randomUUID();
         task.setId(newId);
-        assert task.getId().equals(newId);
+        assertEquals(newId, task.getId());
     }
 
     @Test
     void setTimestamp() {
         LocalDateTime newDateTime = LocalDateTime.of(1, 1, 1, 1, 1, 1);
         task.setTimestamp(newDateTime);
-        assert task.getTimestamp().equals(newDateTime);
+        assertEquals(newDateTime, task.getTimestamp());
     }
 
     @Test
     void setStatus() {
         assert task.getStatus().equals(TaskStatus.CREATED);
         task.setStatus(TaskStatus.READY);
-        assert task.getStatus().equals(TaskStatus.READY);
+        assertEquals(TaskStatus.READY, task.getStatus());
     }
 
     @Test
     void getProcessFiles() {
-        assert task.getProcessFiles().isEmpty();
+        assertTrue(task.getProcessFiles().isEmpty());
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
         List<ProcessFile> processFiles = new ArrayList<>();
         processFiles.add(processFileMock);
         task.setProcessFiles(processFiles);
-        assert task.getProcessFiles().get(0).equals(processFileMock);
-        assert task.getProcessFile(fileType).equals(processFileMock);
+        assertEquals(processFileMock, task.getProcessFiles().get(0));
+        assertEquals(processFileMock, task.getProcessFile(fileType));
     }
 }
