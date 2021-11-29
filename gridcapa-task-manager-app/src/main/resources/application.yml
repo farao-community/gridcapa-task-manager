@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:${HOME}/gridcapa/task-manager
+    driverClassName: org.h2.Driver
+    username: admin
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  rabbitmq:
+    host: ${GRIDCAPA_RABBITMQ_HOST:localhost}
+    port: ${GRIDCAPA_RABBITMQ_PORT:5672}
+    username: ${GRIDCAPA_RABBITMQ_USERNAME:gridcapa}
+    password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
+  cloud:
+    stream:
+      bindings:
+        task-updated:
+          binder: my-rabbit
+          destination: task-updated
+      binders:
+        my-rabbit:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: ${GRIDCAPA_RABBITMQ_HOST:localhost}
+                port: ${GRIDCAPA_RABBITMQ_PORT:5672}
+                username: ${GRIDCAPA_RABBITMQ_USERNAME:gridcapa}
+                password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
+      rabbit:
+        bindings:
+          task-updated:
+            producer:
+              exchange-name: task-updated
+              exchange-durable: true
+              exchange-type: fanout
+
+task-server:
+  minio:
+    connect:
+      url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
+      access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
+      secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
+    notification:
+      exchange: ${MINIO_EVENT_NOTIFICATION_EXCHANGE:gridcapa.minio.events}
+      queue: gridcapa-task-manager
+  process:
+    tag: CSE_D2CC
+    timezone: CET
+    inputs:
+      - CGM
