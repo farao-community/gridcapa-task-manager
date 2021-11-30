@@ -4,8 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.api;
+package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -62,5 +64,15 @@ class TaskTest {
         task.setProcessFiles(processFiles);
         assertEquals(processFileMock, task.getProcessFiles().get(0));
         assertEquals(processFileMock, task.getProcessFile(fileType));
+    }
+
+    @Test
+    void testConstructorFromEntity() {
+        LocalDateTime timestamp = LocalDateTime.parse("2021-10-11T10:18");
+        Task task = new Task(timestamp, List.of("CGM", "CRAC"));
+        TaskDto taskDto = Task.createDtofromEntity(task);
+        assertEquals(timestamp, taskDto.getTimestamp());
+        assertEquals(TaskStatus.CREATED, taskDto.getStatus());
+        assertEquals(2, taskDto.getProcessFiles().size());
     }
 }

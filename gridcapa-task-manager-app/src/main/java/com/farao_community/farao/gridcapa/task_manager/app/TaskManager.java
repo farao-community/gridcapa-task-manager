@@ -7,6 +7,8 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.*;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -127,7 +129,7 @@ public class TaskManager {
     }
 
     public TaskDto getTaskDto(LocalDateTime timestamp) {
-        return taskRepository.findByTimestamp(timestamp).map(TaskDto::fromEntity).orElse(getEmptyTask(timestamp));
+        return taskRepository.findByTimestamp(timestamp).map(Task::createDtofromEntity).orElse(getEmptyTask(timestamp));
     }
 
     public TaskDto getEmptyTask(LocalDateTime timestamp) {

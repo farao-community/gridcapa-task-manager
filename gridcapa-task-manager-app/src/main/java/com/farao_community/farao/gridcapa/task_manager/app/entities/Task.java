@@ -4,13 +4,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.api;
+package com.farao_community.farao.gridcapa.task_manager.app.entities;
+
+import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -84,5 +88,12 @@ public class Task {
         return processFiles.stream().filter(file -> file.getFileType().equals(fileType))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException(String.format("Queried fileType does not exist %s", fileType)));
+    }
+
+    public static TaskDto createDtofromEntity(Task task) {
+        return new TaskDto(
+            task.getTimestamp(),
+            task.getStatus(),
+            task.getProcessFiles().stream().map(ProcessFile::createDtofromEntity).collect(Collectors.toList()));
     }
 }

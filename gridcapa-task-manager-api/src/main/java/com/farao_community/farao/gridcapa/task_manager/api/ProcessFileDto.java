@@ -34,15 +34,6 @@ public class ProcessFileDto {
         this.fileUrl = fileUrl;
     }
 
-    public static ProcessFileDto fromEntity(ProcessFile processFile) {
-        return new ProcessFileDto(
-                processFile.getFileType(),
-                processFile.getProcessFileStatus(),
-                processFile.getFilename(),
-                processFile.getLastModificationDate(),
-                processFile.getFileUrl());
-    }
-
     public static ProcessFileDto emptyProcessFile(String fileType) {
         return new ProcessFileDto(
                 fileType,

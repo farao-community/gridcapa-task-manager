@@ -19,16 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TaskDtoTest {
 
     @Test
-    void testConstructorFromEntity() {
-        LocalDateTime timestamp = LocalDateTime.parse("2021-10-11T10:18");
-        Task task = new Task(timestamp, List.of("CGM", "CRAC"));
-        TaskDto taskDto = TaskDto.fromEntity(task);
-        assertEquals(timestamp, taskDto.getTimestamp());
-        assertEquals(TaskStatus.CREATED, taskDto.getStatus());
-        assertEquals(2, taskDto.getProcessFiles().size());
-    }
-
-    @Test
     void testConstructorEmptyProcessFile() {
         LocalDateTime timestamp = LocalDateTime.parse("2021-10-11T10:18");
         TaskDto taskDto = TaskDto.emptyTask(timestamp, List.of("CGM", "CRAC"));

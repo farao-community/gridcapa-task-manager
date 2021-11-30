@@ -6,16 +6,15 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
-import com.farao_community.farao.gridcapa.task_manager.api.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
@@ -29,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
 @SpringBootTest
-@EntityScan(basePackages = "com.farao_community.farao.gridcapa.task_manager.api")
 class TaskProcessFileDeletionTest {
 
     @MockBean

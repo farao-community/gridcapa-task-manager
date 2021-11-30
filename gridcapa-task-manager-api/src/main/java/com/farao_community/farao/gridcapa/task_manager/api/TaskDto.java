@@ -30,13 +30,6 @@ public class TaskDto {
         this.processFiles = processFiles;
     }
 
-    public static TaskDto fromEntity(Task task) {
-        return new TaskDto(
-                task.getTimestamp(),
-                task.getStatus(),
-                task.getProcessFiles().stream().map(ProcessFileDto::fromEntity).collect(Collectors.toList()));
-    }
-
     public static TaskDto emptyTask(LocalDateTime timestamp, List<String> fileTypes) {
         return new TaskDto(
                 timestamp,

@@ -6,8 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
-import com.farao_community.farao.gridcapa.task_manager.api.Task;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
@@ -26,6 +25,6 @@ public class TaskNotifier {
     }
 
     public void notifyUpdate(Task task) {
-        streamBridge.send(TASK_UPDATED_BINDING, TaskDto.fromEntity(task));
+        streamBridge.send(TASK_UPDATED_BINDING, Task.createDtofromEntity(task));
     }
 }

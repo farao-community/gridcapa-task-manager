@@ -4,7 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.api;
+package com.farao_community.farao.gridcapa.task_manager.app.entities;
+
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -115,5 +118,14 @@ public class ProcessFile {
 
     public void setTask(Task task) {
         this.task = task;
+    }
+
+    public static ProcessFileDto createDtofromEntity(ProcessFile processFile) {
+        return new ProcessFileDto(
+            processFile.getFileType(),
+            processFile.getProcessFileStatus(),
+            processFile.getFilename(),
+            processFile.getLastModificationDate(),
+            processFile.getFileUrl());
     }
 }

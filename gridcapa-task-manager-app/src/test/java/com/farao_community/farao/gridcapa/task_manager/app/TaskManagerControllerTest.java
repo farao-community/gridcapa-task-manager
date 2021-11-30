@@ -6,7 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
-import com.farao_community.farao.gridcapa.task_manager.api.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

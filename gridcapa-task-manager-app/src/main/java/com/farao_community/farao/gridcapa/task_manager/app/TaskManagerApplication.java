@@ -8,7 +8,6 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
@@ -17,7 +16,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @SuppressWarnings("hideutilityclassconstructor")
 @SpringBootApplication
 @EnableConfigurationProperties(TaskManagerConfigurationProperties.class)
-@EntityScan(basePackages = "com.farao_community.farao.gridcapa.task_manager.api")
 public class TaskManagerApplication {
     public static void main(String[] args) {
         SpringApplication.run(TaskManagerApplication.class, args);
