@@ -16,7 +16,7 @@
     </parent>
 
     <artifactId>gridcapa-task-manager</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.0.1</version>
 
     <name>GridCapa task manager</name>
     <description>Task manager for GridCapa application</description>
