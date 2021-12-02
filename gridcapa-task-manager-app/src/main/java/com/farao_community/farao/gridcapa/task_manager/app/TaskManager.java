@@ -7,9 +7,11 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.*;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
+import io.minio.messages.NotificationRecords;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,23 +38,57 @@ public class TaskManager {
     static final String FILE_TYPE = "X-Amz-Meta-Gridcapa_file_type";
     static final String FILE_VALIDITY_INTERVAL = "X-Amz-Meta-Gridcapa_file_validity_interval";
 
-    private final TaskNotifier taskNotifier;
+    private final TaskUpdateNotifier taskUpdateNotifier;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final MinioAdapter minioAdapter;
 
-    public TaskManager(TaskNotifier taskNotifier,
+    public TaskManager(TaskUpdateNotifier taskUpdateNotifier,
                        TaskManagerConfigurationProperties taskManagerConfigurationProperties,
                        TaskRepository taskRepository,
                        MinioAdapter minioAdapter) {
-        this.taskNotifier = taskNotifier;
+        this.taskUpdateNotifier = taskUpdateNotifier;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
         this.minioAdapter = minioAdapter;
     }
 
-    private static LocalDateTime toUtc(String timestamp, String fromZoneId) {
-        return LocalDateTime.parse(timestamp).atZone(ZoneId.of(fromZoneId)).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
+    @Bean
+    public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
+        return taskStatusUpdate -> {
+            Optional<Task> optionalTask = taskRepository.findById(taskStatusUpdate.getId());
+            if (optionalTask.isPresent()) {
+                Task task = optionalTask.get();
+                task.setStatus(taskStatusUpdate.getTaskStatus());
+                taskRepository.save(task);
+                taskUpdateNotifier.notify(task);
+            } else {
+                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+            }
+        };
+    }
+
+    @Bean
+    public Consumer<NotificationRecords> handleMinioEvent() {
+        return notificationRecords -> notificationRecords.events().forEach(event -> {
+            switch (event.eventType()) {
+                case OBJECT_CREATED_ANY:
+                case OBJECT_CREATED_PUT:
+                case OBJECT_CREATED_POST:
+                case OBJECT_CREATED_COPY:
+                case OBJECT_CREATED_COMPLETE_MULTIPART_UPLOAD:
+                    updateTasks(event);
+                    break;
+                case OBJECT_REMOVED_ANY:
+                case OBJECT_REMOVED_DELETE:
+                case OBJECT_REMOVED_DELETED_MARKER_CREATED:
+                    removeProcessFile(event);
+                    break;
+                default:
+                    LOGGER.info("S3 event type {} not handled by task manager", event.eventType());
+                    break;
+            }
+        });
     }
 
     public void updateTasks(Event event) {
@@ -78,7 +114,7 @@ public class TaskManager {
                     currentTime = currentTime.plusHours(1);
                 }
                 taskRepository.saveAll(tasks);
-                taskNotifier.notifyUpdate(tasks);
+                taskUpdateNotifier.notify(tasks);
             }
         }
     }
@@ -105,7 +141,11 @@ public class TaskManager {
         List<Task> tasksToBeKept = impactedTasks.stream().filter(task -> !tasksToBeDeleted.contains(task)).collect(Collectors.toList());
         taskRepository.saveAll(tasksToBeKept);
         taskRepository.deleteAll(tasksToBeDeleted);
-        taskNotifier.notifyUpdate(impactedTasks);
+        taskUpdateNotifier.notify(impactedTasks);
+    }
+
+    private static LocalDateTime toUtc(String timestamp, String fromZoneId) {
+        return LocalDateTime.parse(timestamp).atZone(ZoneId.of(fromZoneId)).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
     private boolean isProcessFileReadyForTaskDeletion(ProcessFile processFile) {
@@ -143,20 +183,5 @@ public class TaskManager {
 
     public TaskDto getEmptyTask(LocalDateTime timestamp) {
         return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
-    }
-
-    @Bean
-    public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
-        return taskStatusUpdate -> {
-            Optional<Task> optionalTask = taskRepository.findById(taskStatusUpdate.getId());
-            if (optionalTask.isPresent()) {
-                Task task = optionalTask.get();
-                task.setStatus(taskStatusUpdate.getTaskStatus());
-                taskRepository.save(task);
-                taskNotifier.notifyUpdate(List.of(task));
-            } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
-            }
-        };
     }
 }

@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.app;
+package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
@@ -60,19 +60,13 @@ public class TaskManagerConfigurationProperties {
 
     public static final class MinIoProperties {
         private final ConnectionProperties connect;
-        private final NotificationProperties notification;
 
-        private MinIoProperties(ConnectionProperties connect, NotificationProperties notification) {
+        private MinIoProperties(ConnectionProperties connect) {
             this.connect = connect;
-            this.notification = notification;
         }
 
         public ConnectionProperties getConnect() {
             return connect;
-        }
-
-        public NotificationProperties getNotification() {
-            return notification;
         }
 
         public static final class ConnectionProperties {
@@ -96,24 +90,6 @@ public class TaskManagerConfigurationProperties {
 
             public String getSecretKey() {
                 return secretKey;
-            }
-        }
-
-        public static final class NotificationProperties {
-            private final String exchange;
-            private final String queue;
-
-            private NotificationProperties(String exchange, String queue) {
-                this.exchange = exchange;
-                this.queue = queue;
-            }
-
-            public String getExchange() {
-                return exchange;
-            }
-
-            public String getQueue() {
-                return queue;
             }
         }
     }
