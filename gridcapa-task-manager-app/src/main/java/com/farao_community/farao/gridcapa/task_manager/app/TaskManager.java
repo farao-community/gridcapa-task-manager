@@ -13,6 +13,7 @@ import io.minio.messages.Event;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.net.URLDecoder;
@@ -22,6 +23,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -143,21 +145,18 @@ public class TaskManager {
         return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
     }
 
-    public void runTask(LocalDateTime timestamp) {
-        Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
-        if (optionalTask.isPresent()) {
-            LOGGER.info("Change task with timestamp {}", timestamp);
-            Task currentTask = optionalTask.get();
-            TaskStatus currentTaskStatus = currentTask.getStatus();
-            if (currentTaskStatus.equals(TaskStatus.READY)) {
-                currentTask.setStatus(TaskStatus.RUNNING);
-                taskRepository.saveAndFlush(currentTask);
-                taskNotifier.notifyUpdate(List.of(currentTask));
+    @Bean
+    public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
+        return taskStatusUpdate -> {
+            Optional<Task> optionalTask = taskRepository.findById(taskStatusUpdate.getId());
+            if (optionalTask.isPresent()) {
+                Task task = optionalTask.get();
+                task.setStatus(taskStatusUpdate.getTaskStatus());
+                taskRepository.save(task);
+                taskNotifier.notifyUpdate(List.of(task));
             } else {
-                LOGGER.warn("Failed to launch task with timestamp {} because it is not ready yet", timestamp);
+                LOGGER.warn(String.format("Task %s does not exist. Impossible to update status", taskStatusUpdate.getId().toString()));
             }
-        } else {
-            LOGGER.warn("No task found with timestamp {}", timestamp);
-        }
+        };
     }
 }

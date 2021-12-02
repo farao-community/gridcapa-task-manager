@@ -18,6 +18,9 @@ spring:
         task-updated:
           binder: rabbit
           destination: task-updated
+        handleTaskStatusUpdate-in-0:
+          binder: rabbit
+          destination: task-status-updated
 
 task-server:
   minio:

@@ -11,20 +11,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 public class TaskDto {
+    private final UUID id;
     private final LocalDateTime timestamp;
     private final TaskStatus status;
     private final List<ProcessFileDto> processFiles;
 
     @JsonCreator
-    public TaskDto(@JsonProperty LocalDateTime timestamp,
-                   @JsonProperty TaskStatus status,
-                   @JsonProperty List<ProcessFileDto> processFiles) {
+    public TaskDto(@JsonProperty("id") UUID id,
+                   @JsonProperty("timestamp") LocalDateTime timestamp,
+                   @JsonProperty("status") TaskStatus status,
+                   @JsonProperty("processFiles") List<ProcessFileDto> processFiles) {
+        this.id = id;
         this.timestamp = timestamp;
         this.status = status;
         this.processFiles = processFiles;
@@ -32,9 +36,14 @@ public class TaskDto {
 
     public static TaskDto emptyTask(LocalDateTime timestamp, List<String> fileTypes) {
         return new TaskDto(
+                UUID.randomUUID(),
                 timestamp,
                 TaskStatus.NOT_CREATED,
                 fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()));
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public LocalDateTime getTimestamp() {

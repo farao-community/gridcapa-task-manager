@@ -22,11 +22,11 @@ public class ProcessFileDto {
     private final String fileUrl;
 
     @JsonCreator
-    public ProcessFileDto(@JsonProperty String fileType,
-                          @JsonProperty ProcessFileStatus processFileStatus,
-                          @JsonProperty String filename,
-                          @JsonProperty LocalDateTime lastModificationDate,
-                          @JsonProperty String fileUrl) {
+    public ProcessFileDto(@JsonProperty("fileType") String fileType,
+                          @JsonProperty("processFileStatus") ProcessFileStatus processFileStatus,
+                          @JsonProperty("fileName") String filename,
+                          @JsonProperty("lastModificationDate") LocalDateTime lastModificationDate,
+                          @JsonProperty("fileUrl") String fileUrl) {
         this.fileType = fileType;
         this.processFileStatus = processFileStatus;
         this.filename = filename;

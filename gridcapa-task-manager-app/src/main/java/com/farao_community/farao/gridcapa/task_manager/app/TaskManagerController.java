@@ -7,13 +7,10 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.time.LocalDateTime;
@@ -24,7 +21,6 @@ import java.time.LocalDateTime;
 @Controller
 @RequestMapping
 public class TaskManagerController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskManagerController.class);
 
     private final TaskManager taskManager;
 
@@ -34,13 +30,6 @@ public class TaskManagerController {
 
     @GetMapping(value = "/tasks/{timestamp}")
     public ResponseEntity<TaskDto> getTaskFromTimestamp(@PathVariable String timestamp) {
-        return ResponseEntity.ok().body(taskManager.getTaskDto(LocalDateTime.parse(timestamp)));
-    }
-
-    @PostMapping(value = "/tasks/launch/{timestamp}")
-    public ResponseEntity<TaskDto> launchTaskFromTimestamp(@PathVariable String timestamp) {
-        LOGGER.info("Launching task {}", timestamp);
-        taskManager.runTask(LocalDateTime.parse(timestamp));
         return ResponseEntity.ok().body(taskManager.getTaskDto(LocalDateTime.parse(timestamp)));
     }
 }
