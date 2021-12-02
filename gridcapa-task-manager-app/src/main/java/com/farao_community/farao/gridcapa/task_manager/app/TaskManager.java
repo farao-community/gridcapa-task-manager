@@ -155,7 +155,7 @@ public class TaskManager {
                 taskRepository.save(task);
                 taskNotifier.notifyUpdate(List.of(task));
             } else {
-                LOGGER.warn(String.format("Task %s does not exist. Impossible to update status", taskStatusUpdate.getId().toString()));
+                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
             }
         };
     }
