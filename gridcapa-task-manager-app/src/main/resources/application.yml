@@ -17,9 +17,6 @@ spring:
       default:
         binder: rabbit
         group: task-manager
-        consumer:
-          auto-bind-dlq: true
-          max-attempts: 1
       bindings:
         handleMinioEvent-in-0:
           destination: gridcapa.minio.events
@@ -28,6 +25,10 @@ spring:
         task-updated:
           destination: task-updated
       rabbit:
+        default:
+          consumer:
+            auto-bind-dlq: true
+            max-attempts: 1
         bindings:
           handleMinioEvent-in-0:
             consumer:
