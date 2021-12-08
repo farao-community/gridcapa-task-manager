@@ -14,15 +14,18 @@ spring:
     password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
   cloud:
     stream:
+      default:
+        binder: rabbit
+        group: task-manager
+        consumer:
+          auto-bind-dlq: true
+          max-attempts: 1
       bindings:
         handleMinioEvent-in-0:
-          binder: rabbit
           destination: gridcapa.minio.events
         handleTaskStatusUpdate-in-0:
-          binder: rabbit
           destination: task-status-updated
         task-updated:
-          binder: rabbit
           destination: task-updated
       rabbit:
         bindings:
