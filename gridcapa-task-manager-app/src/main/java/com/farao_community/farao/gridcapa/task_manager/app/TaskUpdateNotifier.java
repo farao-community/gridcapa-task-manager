@@ -17,16 +17,20 @@ import java.util.List;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Service
-public class TaskNotifier {
+public class TaskUpdateNotifier {
     private static final String TASK_UPDATED_BINDING = "task-updated";
 
     private final StreamBridge streamBridge;
 
-    public TaskNotifier(StreamBridge streamBridge) {
+    public TaskUpdateNotifier(StreamBridge streamBridge) {
         this.streamBridge = streamBridge;
     }
 
-    public void notifyUpdate(List<Task> tasks) {
+    public void notify(Task task) {
+        streamBridge.send(TASK_UPDATED_BINDING, Task.createDtofromEntity(task));
+    }
+
+    public void notify(List<Task> tasks) {
         tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, Task.createDtofromEntity(task)));
     }
 }

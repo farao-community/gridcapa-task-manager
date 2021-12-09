@@ -14,10 +14,27 @@ spring:
     password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
   cloud:
     stream:
+      default:
+        binder: rabbit
+        group: task-manager
       bindings:
+        handleMinioEvent-in-0:
+          destination: gridcapa.minio.events
+        handleTaskStatusUpdate-in-0:
+          destination: task-status-updated
         task-updated:
-          binder: rabbit
           destination: task-updated
+      rabbit:
+        default:
+          consumer:
+            auto-bind-dlq: true
+            max-attempts: 1
+        bindings:
+          handleMinioEvent-in-0:
+            consumer:
+              exchange-type: fanout
+    function:
+      definition: handleMinioEvent;handleTaskStatusUpdate
 
 task-server:
   minio:
@@ -25,9 +42,6 @@ task-server:
       url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
       access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
       secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
-    notification:
-      exchange: ${MINIO_EVENT_NOTIFICATION_EXCHANGE:gridcapa.minio.events}
-      queue: gridcapa-task-manager
   process:
     tag: CSE_D2CC
     timezone: CET
