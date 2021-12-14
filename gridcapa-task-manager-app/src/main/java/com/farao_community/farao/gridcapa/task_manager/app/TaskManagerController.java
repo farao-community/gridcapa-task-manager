@@ -11,10 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +20,7 @@ import java.time.LocalDateTime;
  */
 @Controller
 @RequestMapping
+@CrossOrigin(origins = "*")
 public class TaskManagerController {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManagerController.class);
 

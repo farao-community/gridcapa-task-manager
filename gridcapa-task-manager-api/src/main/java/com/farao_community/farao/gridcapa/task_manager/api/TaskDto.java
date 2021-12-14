@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,21 +21,25 @@ public class TaskDto {
     private final LocalDateTime timestamp;
     private final TaskStatus status;
     private final List<ProcessFileDto> processFiles;
+    private final List<ProcessEventDto> processEvents;
 
     @JsonCreator
     public TaskDto(@JsonProperty LocalDateTime timestamp,
                    @JsonProperty TaskStatus status,
-                   @JsonProperty List<ProcessFileDto> processFiles) {
+                   @JsonProperty List<ProcessFileDto> processFiles,
+                   @JsonProperty List<ProcessEventDto> processEvents) {
         this.timestamp = timestamp;
         this.status = status;
         this.processFiles = processFiles;
+        this.processEvents = processEvents;
     }
 
     public static TaskDto emptyTask(LocalDateTime timestamp, List<String> fileTypes) {
         return new TaskDto(
                 timestamp,
                 TaskStatus.NOT_CREATED,
-                fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()));
+                fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                new ArrayList<>());
     }
 
     public LocalDateTime getTimestamp() {
@@ -47,5 +52,9 @@ public class TaskDto {
 
     public List<ProcessFileDto> getProcessFiles() {
         return processFiles;
+    }
+
+    public List<ProcessEventDto> getProcessEvents() {
+        return processEvents;
     }
 }

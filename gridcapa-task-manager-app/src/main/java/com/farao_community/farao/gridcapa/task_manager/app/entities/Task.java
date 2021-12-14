@@ -36,6 +36,15 @@ public class Task {
             mappedBy = "task",
             fetch = FetchType.EAGER,
             cascade = CascadeType.ALL,
+            orphanRemoval = false
+    )
+    @OrderColumn
+    private List<ProcessEvent> processEvents = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "task",
+            fetch = FetchType.EAGER,
+            cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     @OrderColumn
@@ -76,6 +85,14 @@ public class Task {
         this.status = status;
     }
 
+    public List<ProcessEvent> getProcessEvents() {
+        return processEvents;
+    }
+
+    public void setProcessEvents(List<ProcessEvent> processFileEvents) {
+        this.processEvents = processFileEvents;
+    }
+
     public List<ProcessFile> getProcessFiles() {
         return processFiles;
     }
@@ -90,10 +107,11 @@ public class Task {
                 .orElseThrow(() -> new RuntimeException(String.format("Queried fileType does not exist %s", fileType)));
     }
 
-    public static TaskDto createDtofromEntity(Task task) {
+    public static TaskDto createDtoFromEntity(Task task) {
         return new TaskDto(
-            task.getTimestamp(),
-            task.getStatus(),
-            task.getProcessFiles().stream().map(ProcessFile::createDtofromEntity).collect(Collectors.toList()));
+                task.getTimestamp(),
+                task.getStatus(),
+                task.getProcessFiles().stream().map(ProcessFile::createDtofromEntity).collect(Collectors.toList()),
+                task.getProcessEvents().stream().map(ProcessEvent::createDtoFromEntity).collect(Collectors.toList()));
     }
 }

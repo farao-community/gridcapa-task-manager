@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.*;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
@@ -29,10 +30,11 @@ import java.util.stream.Collectors;
  */
 @Service
 public class TaskManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger("business-logger");
     static final String FILE_PROCESS_TAG = "X-Amz-Meta-Gridcapa_file_target_process";
     static final String FILE_TYPE = "X-Amz-Meta-Gridcapa_file_type";
     static final String FILE_VALIDITY_INTERVAL = "X-Amz-Meta-Gridcapa_file_validity_interval";
+    private static final String FILE_EVENT_DEFAULT_LEVEL = "INFO";
 
     private final TaskNotifier taskNotifier;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
@@ -88,6 +90,7 @@ public class TaskManager {
         impactedTasks.parallelStream().forEach(task -> {
             task.getProcessFiles().forEach(processFile -> {
                 if (objectKey.equals(processFile.getFileObjectKey())) {
+                    addFileEventToTask(task, FileEventType.DELETED, processFile.getFileType(), processFile.getFilename());
                     processFile.setProcessFileStatus(ProcessFileStatus.DELETED);
                     processFile.setFileObjectKey(null);
                     processFile.setFileUrl(null);
@@ -124,19 +127,39 @@ public class TaskManager {
     private void addFileToTask(Task task, String fileType, String objectKey, String fileUrl) {
         LOGGER.info("New file added to task {} with file type {} at URL {}", task.getTimestamp(), fileType, fileUrl);
         ProcessFile processFile = task.getProcessFile(fileType);
+        String fileName = FilenameUtils.getName(objectKey);
+        if (processFile.getProcessFileStatus().equals(ProcessFileStatus.NOT_PRESENT)) {
+            addFileEventToTask(task, FileEventType.AVAILABLE, fileType, fileName);
+        } else {
+            addFileEventToTask(task, FileEventType.UPDATED, fileType, fileName);
+        }
         processFile.setFileUrl(fileUrl);
         processFile.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         processFile.setLastModificationDate(getProcessNow());
         processFile.setFileObjectKey(objectKey);
-        processFile.setFilename(FilenameUtils.getName(objectKey));
+        processFile.setFilename(fileName);
         if (task.getProcessFiles().stream().map(ProcessFile::getProcessFileStatus).allMatch(processFileStatus -> processFileStatus.equals(ProcessFileStatus.VALIDATED))) {
             LOGGER.info("Task {} is ready to run", task.getTimestamp());
             task.setStatus(TaskStatus.READY);
         }
     }
 
+    private void addFileEventToTask(Task task, FileEventType fileEventType, String fileType, String fileName) {
+        String message = getFileEventMessage(fileEventType, fileType, fileName);
+        ProcessEvent event = new ProcessEvent(task, getProcessNow(), FILE_EVENT_DEFAULT_LEVEL, message);
+        task.getProcessEvents().add(event);
+    }
+
+    private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName) {
+        if (!fileEventType.equals(FileEventType.UPDATED)) {
+            return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
+        } else {
+            return String.format("A new version of %s  is available : '%s'", fileType, fileName);
+        }
+    }
+
     public TaskDto getTaskDto(LocalDateTime timestamp) {
-        return taskRepository.findByTimestamp(timestamp).map(Task::createDtofromEntity).orElse(getEmptyTask(timestamp));
+        return taskRepository.findByTimestamp(timestamp).map(Task::createDtoFromEntity).orElse(getEmptyTask(timestamp));
     }
 
     public TaskDto getEmptyTask(LocalDateTime timestamp) {
@@ -159,5 +182,11 @@ public class TaskManager {
         } else {
             LOGGER.warn("No task found with timestamp {}", timestamp);
         }
+    }
+
+    private enum FileEventType {
+        AVAILABLE,
+        UPDATED,
+        DELETED
     }
 }
