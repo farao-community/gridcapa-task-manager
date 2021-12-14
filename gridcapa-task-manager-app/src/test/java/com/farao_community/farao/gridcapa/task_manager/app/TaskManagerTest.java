@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -134,5 +135,65 @@ class TaskManagerTest {
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
         taskManager.updateTasks(eventCrac);
         assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+    }
+
+    @Test
+    void testCreationEventsForTwoFilesWithDifferentTypesAndSameTs() {
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        String cgmUrl = "cgmUrl";
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+
+        String cracUrl = "cracUrl";
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+
+        taskManager.updateTasks(eventCgm);
+        taskManager.updateTasks(eventCrac);
+
+        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        assertEquals(2, task.getProcessEvents().size());
+        assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
+        assertEquals("INFO", task.getProcessEvents().get(1).getLevel());
+        assertEquals("The CGM : 'cgm-test' is available", task.getProcessEvents().get(0).getMessage());
+        assertEquals("The CRAC : 'crac-test' is available", task.getProcessEvents().get(1).getMessage());
+    }
+
+    @Test
+    void testUpdateEventsForTwoFilesWithSameTypeAndSameTs() {
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        String cgmUrl = "cgmUrl";
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+
+        String cgmUrlNew = "cgmUrlNew";
+        Event eventCgmNew = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrlNew);
+
+        taskManager.updateTasks(eventCgm);
+        taskManager.updateTasks(eventCgmNew);
+
+        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        assertEquals(2, task.getProcessEvents().size());
+        assertTrue(task.getProcessEvents().get(0).getTimestamp().isBefore(task.getProcessEvents().get(1).getTimestamp()));
+        assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
+        assertEquals("INFO", task.getProcessEvents().get(1).getLevel());
+        assertEquals("The CGM : 'cgm-test' is available", task.getProcessEvents().get(0).getMessage());
+        assertEquals("A new version of CGM  is available : 'cgm-new-test'", task.getProcessEvents().get(1).getMessage());
+    }
+
+    @Test
+    void testDeletionEventsOfTaskWithTwoDifferentFileTypes() {
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        String cgmUrl = "cgmUrl";
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+
+        String cracUrl = "cracUrl";
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+
+        taskManager.updateTasks(eventCgm);
+        taskManager.updateTasks(eventCrac);
+        taskManager.removeProcessFile(eventCracDeletion);
+
+        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        assertEquals(3, task.getProcessEvents().size());
+        assertEquals("The CRAC : 'crac-test' is deleted", task.getProcessEvents().get(2).getMessage());
     }
 }
