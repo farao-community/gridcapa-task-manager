@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class TaskManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger("business-logger");
+    private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
     static final String FILE_PROCESS_TAG = "X-Amz-Meta-Gridcapa_file_target_process";
     static final String FILE_TYPE = "X-Amz-Meta-Gridcapa_file_type";
     static final String FILE_VALIDITY_INTERVAL = "X-Amz-Meta-Gridcapa_file_validity_interval";

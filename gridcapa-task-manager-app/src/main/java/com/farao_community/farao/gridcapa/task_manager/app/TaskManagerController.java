@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
  */
 @Controller
 @RequestMapping
-@CrossOrigin(origins = "*")
 public class TaskManagerController {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManagerController.class);
 
