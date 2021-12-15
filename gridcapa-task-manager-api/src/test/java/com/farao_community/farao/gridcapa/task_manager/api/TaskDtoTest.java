@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -25,5 +26,6 @@ class TaskDtoTest {
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.NOT_CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getProcessFiles().size());
+        assertEquals(0, taskDto.getProcessEvents().size());
     }
 }
