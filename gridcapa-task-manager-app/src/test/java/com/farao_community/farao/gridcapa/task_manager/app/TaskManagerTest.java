@@ -20,12 +20,12 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.READY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -213,5 +213,27 @@ class TaskManagerTest {
         assertEquals(3, updatedTask.getProcessEvents().size());
 
         assertEquals("The CRAC : 'crac-test' is deleted", updatedTask.getProcessEvents().get(2).getMessage());
+    }
+
+    @Test
+    void testDeletionEventsWithTaskDeletion() {
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-10-01T21:00");
+        Task task = new Task(taskTimestamp, List.of("CRAC"));
+
+        ProcessFile processFileCrac = task.getProcessFile("CRAC");
+        processFileCrac.setFileUrl("cracUrl");
+        processFileCrac.setProcessFileStatus(ProcessFileStatus.VALIDATED);
+        processFileCrac.setLastModificationDate(LocalDateTime.now());
+        processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
+        processFileCrac.setFilename("crac-test");
+        ProcessEvent eventCrac = new ProcessEvent(task, LocalDateTime.now(), "INFO", "Crac available");
+        task.getProcessEvents().add(eventCrac);
+
+        taskRepository.save(task);
+
+        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", "cracUrl");
+        taskManager.removeProcessFile(eventCracDeletion);
+
+        assertTrue(taskRepository.findByTimestamp(taskTimestamp).isEmpty());
     }
 }

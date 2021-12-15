@@ -71,9 +71,9 @@ class TaskTest {
         assertTrue(task.getProcessEvents().isEmpty());
         ProcessEvent processEventMock = Mockito.mock(ProcessEvent.class);
         Mockito.when(processEventMock.getLevel()).thenReturn("WARN");
-        List<ProcessEvent> ProcessEvents = new ArrayList<>();
-        ProcessEvents.add(processEventMock);
-        task.setProcessEvents(ProcessEvents);
+        List<ProcessEvent> processEvents = new ArrayList<>();
+        processEvents.add(processEventMock);
+        task.setProcessEvents(processEvents);
         assertEquals(processEventMock, task.getProcessEvents().get(0));
         assertEquals("WARN", task.getProcessEvents().get(0).getLevel());
     }
