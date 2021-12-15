@@ -19,7 +19,7 @@ class ProcessEventDtoTest {
 
     @Test
     void testConstructorEmptyProcessFile() {
-        ProcessEventDto processEventDto = new ProcessEventDto(LocalDateTime.now(), "INFO","CGM created");
+        ProcessEventDto processEventDto = new ProcessEventDto(LocalDateTime.now(), "INFO", "CGM created");
         assertNotNull(processEventDto.getTimestamp());
         assertEquals("INFO", processEventDto.getLevel());
         assertEquals("CGM created", processEventDto.getMessage());
