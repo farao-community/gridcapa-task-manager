@@ -6,6 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
@@ -180,20 +184,34 @@ class TaskManagerTest {
 
     @Test
     void testDeletionEventsOfTaskWithTwoDifferentFileTypes() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
-        String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-10-01T21:00");
+        Task task = new Task(taskTimestamp, Arrays.asList("CGM", "CRAC"));
+        ProcessFile processFileCgm = task.getProcessFile("CGM");
+        processFileCgm.setFileUrl("cgmUrl");
+        processFileCgm.setProcessFileStatus(ProcessFileStatus.VALIDATED);
+        processFileCgm.setLastModificationDate(LocalDateTime.now());
+        processFileCgm.setFileObjectKey("CSE/D2CC/CGMs/cgm-test");
+        processFileCgm.setFilename("cgm-test");
+        ProcessEvent eventCgm = new ProcessEvent(task, LocalDateTime.now(), "INFO", "CGM available");
+        task.getProcessEvents().add(eventCgm);
 
-        String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
-        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        ProcessFile processFileCrac = task.getProcessFile("CRAC");
+        processFileCrac.setFileUrl("cracUrl");
+        processFileCrac.setProcessFileStatus(ProcessFileStatus.VALIDATED);
+        processFileCrac.setLastModificationDate(LocalDateTime.now());
+        processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
+        processFileCrac.setFilename("crac-test");
+        ProcessEvent eventCrac = new ProcessEvent(task, LocalDateTime.now(), "INFO", "Crac available");
+        task.getProcessEvents().add(eventCrac);
 
-        taskManager.updateTasks(eventCgm);
-        taskManager.updateTasks(eventCrac);
+        taskRepository.save(task);
+
+        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
-        assertEquals(3, task.getProcessEvents().size());
-        assertEquals("The CRAC : 'crac-test' is deleted", task.getProcessEvents().get(2).getMessage());
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).get();
+        assertEquals(3, updatedTask.getProcessEvents().size());
+
+        assertEquals("The CRAC : 'crac-test' is deleted", updatedTask.getProcessEvents().get(2).getMessage());
     }
 }
