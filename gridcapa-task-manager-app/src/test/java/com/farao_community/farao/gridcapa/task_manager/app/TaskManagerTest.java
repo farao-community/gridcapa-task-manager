@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskManagerTest {
 
     @MockBean
-    private TaskNotifier taskNotifier; // Useful to avoid AMQP connection that would fail
+    private TaskUpdateNotifier taskUpdateNotifier; // Useful to avoid AMQP connection that would fail
 
     @MockBean
     private MinioAdapter minioAdapter;

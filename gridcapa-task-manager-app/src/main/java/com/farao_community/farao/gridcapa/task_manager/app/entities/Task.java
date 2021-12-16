@@ -109,6 +109,7 @@ public class Task {
 
     public static TaskDto createDtoFromEntity(Task task) {
         return new TaskDto(
+            task.getId(),
             task.getTimestamp(),
             task.getStatus(),
             task.getProcessFiles().stream().map(ProcessFile::createDtofromEntity).collect(Collectors.toList()),
