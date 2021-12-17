@@ -196,7 +196,7 @@ public class TaskManager {
         if (!fileEventType.equals(FileEventType.UPDATED)) {
             return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
         } else {
-            return String.format("A new version of %s  is available : '%s'", fileType, fileName);
+            return String.format("A new version of %s is available : '%s'", fileType, fileName);
         }
     }
 
