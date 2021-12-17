@@ -179,7 +179,7 @@ class TaskManagerTest {
         assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
         assertEquals("INFO", task.getProcessEvents().get(1).getLevel());
         assertEquals("The CGM : 'cgm-test' is available", task.getProcessEvents().get(0).getMessage());
-        assertEquals("A new version of CGM  is available : 'cgm-new-test'", task.getProcessEvents().get(1).getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-new-test'", task.getProcessEvents().get(1).getMessage());
     }
 
     @Test
