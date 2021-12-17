@@ -25,5 +25,6 @@ class TaskDtoTest {
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.NOT_CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getProcessFiles().size());
+        assertEquals(0, taskDto.getProcessEvents().size());
     }
 }

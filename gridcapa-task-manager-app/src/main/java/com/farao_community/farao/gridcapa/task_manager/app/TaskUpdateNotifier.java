@@ -27,10 +27,10 @@ public class TaskUpdateNotifier {
     }
 
     public void notify(Task task) {
-        streamBridge.send(TASK_UPDATED_BINDING, Task.createDtofromEntity(task));
+        streamBridge.send(TASK_UPDATED_BINDING, Task.createDtoFromEntity(task));
     }
 
     public void notify(List<Task> tasks) {
-        tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, Task.createDtofromEntity(task)));
+        tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, Task.createDtoFromEntity(task)));
     }
 }

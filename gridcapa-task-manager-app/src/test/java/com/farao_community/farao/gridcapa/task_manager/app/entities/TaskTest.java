@@ -67,10 +67,22 @@ class TaskTest {
     }
 
     @Test
+    void getProcessEventsTest() {
+        assertTrue(task.getProcessEvents().isEmpty());
+        ProcessEvent processEventMock = Mockito.mock(ProcessEvent.class);
+        Mockito.when(processEventMock.getLevel()).thenReturn("WARN");
+        List<ProcessEvent> processEvents = new ArrayList<>();
+        processEvents.add(processEventMock);
+        task.setProcessEvents(processEvents);
+        assertEquals(processEventMock, task.getProcessEvents().get(0));
+        assertEquals("WARN", task.getProcessEvents().get(0).getLevel());
+    }
+
+    @Test
     void testConstructorFromEntity() {
         LocalDateTime timestamp = LocalDateTime.parse("2021-10-11T10:18");
         Task task = new Task(timestamp, List.of("CGM", "CRAC"));
-        TaskDto taskDto = Task.createDtofromEntity(task);
+        TaskDto taskDto = Task.createDtoFromEntity(task);
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getProcessFiles().size());
