@@ -10,7 +10,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -33,7 +33,7 @@ public class ProcessFile {
     private String filename;
 
     @Column(name = "last_modification_date")
-    private LocalDateTime lastModificationDate;
+    private OffsetDateTime lastModificationDate;
 
     @Column(name = "file_url", columnDefinition = "TEXT")
     private String fileUrl;
@@ -88,11 +88,11 @@ public class ProcessFile {
         this.filename = filename;
     }
 
-    public LocalDateTime getLastModificationDate() {
+    public OffsetDateTime getLastModificationDate() {
         return lastModificationDate;
     }
 
-    public void setLastModificationDate(LocalDateTime lastModificationDate) {
+    public void setLastModificationDate(OffsetDateTime lastModificationDate) {
         this.lastModificationDate = lastModificationDate;
     }
 

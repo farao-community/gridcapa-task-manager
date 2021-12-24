@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -54,13 +53,13 @@ class TaskProcessFileDeletionTest {
         cgmFile1.setFileObjectKey("/CGM");
         cgmFile1.setFileUrl("http://CGM");
         cgmFile1.setFilename("CGM");
-        cgmFile1.setLastModificationDate(LocalDateTime.now());
+        cgmFile1.setLastModificationDate(OffsetDateTime.now());
         cgmFile1.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         ProcessFile refprogFile1 = task1.getProcessFile("REFPROG");
         refprogFile1.setFileObjectKey("/REFPROG");
         refprogFile1.setFileUrl("http://REFPROG");
         refprogFile1.setFilename("REFPROG");
-        refprogFile1.setLastModificationDate(LocalDateTime.now());
+        refprogFile1.setLastModificationDate(OffsetDateTime.now());
         refprogFile1.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         taskRepository.save(task1);
 
@@ -69,13 +68,13 @@ class TaskProcessFileDeletionTest {
         cgmFile2.setFileObjectKey("/CGM2");
         cgmFile2.setFileUrl("http://CGM2");
         cgmFile2.setFilename("CGM2");
-        cgmFile2.setLastModificationDate(LocalDateTime.now());
+        cgmFile2.setLastModificationDate(OffsetDateTime.now());
         cgmFile2.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         ProcessFile refprogFile2 = task2.getProcessFile("REFPROG");
         refprogFile2.setFileObjectKey("/REFPROG");
         refprogFile2.setFileUrl("http://REFPROG");
         refprogFile2.setFilename("REFPROG");
-        refprogFile2.setLastModificationDate(LocalDateTime.now());
+        refprogFile2.setLastModificationDate(OffsetDateTime.now());
         refprogFile2.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         taskRepository.save(task2);
 
@@ -84,7 +83,7 @@ class TaskProcessFileDeletionTest {
         cgmFile3.setFileObjectKey("/CGM3");
         cgmFile3.setFileUrl("http://CGM3");
         cgmFile3.setFilename("CGM3");
-        cgmFile3.setLastModificationDate(LocalDateTime.now());
+        cgmFile3.setLastModificationDate(OffsetDateTime.now());
         cgmFile3.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         taskRepository.save(task3);
 
@@ -93,7 +92,7 @@ class TaskProcessFileDeletionTest {
         refprogFile4.setFileObjectKey("/REFPROG");
         refprogFile4.setFileUrl("http://REFPROG");
         refprogFile4.setFilename("REFPROG");
-        refprogFile4.setLastModificationDate(LocalDateTime.now());
+        refprogFile4.setLastModificationDate(OffsetDateTime.now());
         refprogFile4.setProcessFileStatus(ProcessFileStatus.VALIDATED);
         taskRepository.save(task4);
     }

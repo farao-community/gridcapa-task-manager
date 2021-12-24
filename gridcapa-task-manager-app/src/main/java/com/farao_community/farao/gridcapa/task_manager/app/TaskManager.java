@@ -21,10 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -163,9 +161,9 @@ public class TaskManager {
         }
     }
 
-    private LocalDateTime getProcessNow() {
+    private OffsetDateTime getProcessNow() {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        return LocalDateTime.now(ZoneId.of(processProperties.getTimezone()));
+        return OffsetDateTime.now(ZoneId.of(processProperties.getTimezone()));
     }
 
     private void addFileToTask(Task task, String fileType, String objectKey, String fileUrl) {

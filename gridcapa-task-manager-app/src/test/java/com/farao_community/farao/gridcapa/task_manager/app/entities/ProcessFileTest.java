@@ -11,7 +11,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,14 +26,14 @@ class ProcessFileTest {
         ProcessFile processFile = new ProcessFile(task, "CGM");
         processFile.setFileUrl("cgm-url");
         processFile.setFilename("cgm-name");
-        processFile.setLastModificationDate(LocalDateTime.parse("2021-10-11T10:18"));
+        processFile.setLastModificationDate(OffsetDateTime.parse("2021-10-11T10:18Z"));
         processFile.setProcessFileStatus(ProcessFileStatus.VALIDATED);
 
         ProcessFileDto processFileDto = ProcessFile.createDtofromEntity(processFile);
         assertEquals("CGM", processFileDto.getFileType());
         assertEquals("cgm-url", processFileDto.getFileUrl());
         assertEquals("cgm-name", processFileDto.getFilename());
-        assertEquals(LocalDateTime.parse("2021-10-11T10:18"), processFileDto.getLastModificationDate());
+        assertEquals(OffsetDateTime.parse("2021-10-11T10:18Z"), processFileDto.getLastModificationDate());
         assertEquals(ProcessFileStatus.VALIDATED, processFileDto.getProcessFileStatus());
     }
 }

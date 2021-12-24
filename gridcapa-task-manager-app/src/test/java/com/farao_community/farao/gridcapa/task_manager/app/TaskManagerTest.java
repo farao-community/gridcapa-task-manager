@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -190,19 +189,19 @@ class TaskManagerTest {
         ProcessFile processFileCgm = task.getProcessFile("CGM");
         processFileCgm.setFileUrl("cgmUrl");
         processFileCgm.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        processFileCgm.setLastModificationDate(LocalDateTime.now());
+        processFileCgm.setLastModificationDate(OffsetDateTime.now());
         processFileCgm.setFileObjectKey("CSE/D2CC/CGMs/cgm-test");
         processFileCgm.setFilename("cgm-test");
-        ProcessEvent eventCgm = new ProcessEvent(task, LocalDateTime.now(), "INFO", "CGM available");
+        ProcessEvent eventCgm = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "CGM available");
         task.getProcessEvents().add(eventCgm);
 
         ProcessFile processFileCrac = task.getProcessFile("CRAC");
         processFileCrac.setFileUrl("cracUrl");
         processFileCrac.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        processFileCrac.setLastModificationDate(LocalDateTime.now());
+        processFileCrac.setLastModificationDate(OffsetDateTime.now());
         processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
         processFileCrac.setFilename("crac-test");
-        ProcessEvent eventCrac = new ProcessEvent(task, LocalDateTime.now(), "INFO", "Crac available");
+        ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
         task.getProcessEvents().add(eventCrac);
 
         taskRepository.save(task);
@@ -224,10 +223,10 @@ class TaskManagerTest {
         ProcessFile processFileCrac = task.getProcessFile("CRAC");
         processFileCrac.setFileUrl("cracUrl");
         processFileCrac.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        processFileCrac.setLastModificationDate(LocalDateTime.now());
+        processFileCrac.setLastModificationDate(OffsetDateTime.now());
         processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
         processFileCrac.setFilename("crac-test");
-        ProcessEvent eventCrac = new ProcessEvent(task, LocalDateTime.now(), "INFO", "Crac available");
+        ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
         task.getProcessEvents().add(eventCrac);
 
         taskRepository.save(task);
