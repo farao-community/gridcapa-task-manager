@@ -10,7 +10,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +27,7 @@ public class Task {
     private UUID id;
 
     @Column(name = "timestamp")
-    private LocalDateTime timestamp;
+    private OffsetDateTime timestamp;
 
     @Column(name = "status")
     private TaskStatus status;
@@ -54,7 +54,7 @@ public class Task {
 
     }
 
-    public Task(LocalDateTime timestamp, List<String> fileTypes) {
+    public Task(OffsetDateTime timestamp, List<String> fileTypes) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         status = TaskStatus.CREATED;
@@ -69,11 +69,11 @@ public class Task {
         this.id = id;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(OffsetDateTime timestamp) {
         this.timestamp = timestamp;
     }
 

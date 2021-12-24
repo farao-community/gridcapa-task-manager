@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ class TaskManagerTest {
 
     @Test
     void testUpdate() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
         Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
@@ -78,7 +79,7 @@ class TaskManagerTest {
 
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
         Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
@@ -128,7 +129,7 @@ class TaskManagerTest {
 
     @Test
     void checkStatusUpdateToReady() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
         Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
@@ -143,7 +144,7 @@ class TaskManagerTest {
 
     @Test
     void testCreationEventsForTwoFilesWithDifferentTypesAndSameTs() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
         Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
@@ -163,7 +164,7 @@ class TaskManagerTest {
 
     @Test
     void testUpdateEventsForTwoFilesWithSameTypeAndSameTs() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
         Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
 
@@ -184,7 +185,7 @@ class TaskManagerTest {
 
     @Test
     void testDeletionEventsOfTaskWithTwoDifferentFileTypes() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-10-01T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp, Arrays.asList("CGM", "CRAC"));
         ProcessFile processFileCgm = task.getProcessFile("CGM");
         processFileCgm.setFileUrl("cgmUrl");
@@ -217,7 +218,7 @@ class TaskManagerTest {
 
     @Test
     void testDeletionEventsWithTaskDeletion() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-10-01T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp, List.of("CRAC"));
 
         ProcessFile processFileCrac = task.getProcessFile("CRAC");

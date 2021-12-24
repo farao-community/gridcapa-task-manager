@@ -22,7 +22,9 @@ import org.springframework.stereotype.Service;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -105,7 +107,7 @@ public class TaskManager {
                 LocalDateTime currentTime = toUtc(interval[0], processProperties.getTimezone());
                 LocalDateTime endTime = toUtc(interval[1], processProperties.getTimezone());
                 while (currentTime.isBefore(endTime)) {
-                    final LocalDateTime finalTime = currentTime;
+                    final OffsetDateTime finalTime = currentTime.atOffset(ZoneOffset.UTC);
                     Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
                         return new Task(finalTime, processProperties.getInputs());
@@ -200,11 +202,11 @@ public class TaskManager {
         }
     }
 
-    public TaskDto getTaskDto(LocalDateTime timestamp) {
+    public TaskDto getTaskDto(OffsetDateTime timestamp) {
         return taskRepository.findByTimestamp(timestamp).map(Task::createDtoFromEntity).orElse(getEmptyTask(timestamp));
     }
 
-    public TaskDto getEmptyTask(LocalDateTime timestamp) {
+    public TaskDto getEmptyTask(OffsetDateTime timestamp) {
         return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
     }
 
