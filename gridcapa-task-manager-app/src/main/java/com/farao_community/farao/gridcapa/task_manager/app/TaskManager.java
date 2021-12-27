@@ -102,10 +102,10 @@ public class TaskManager {
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
             if (validityInterval != null) {
                 String[] interval = validityInterval.split("/");
-                LocalDateTime currentTime = toUtc(interval[0], processProperties.getTimezone());
-                LocalDateTime endTime = toUtc(interval[1], processProperties.getTimezone());
+                OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
+                OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
                 while (currentTime.isBefore(endTime)) {
-                    final OffsetDateTime finalTime = currentTime.atOffset(ZoneOffset.UTC);
+                    final OffsetDateTime finalTime = currentTime;
                     Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
                         return new Task(finalTime, processProperties.getInputs());
@@ -145,10 +145,6 @@ public class TaskManager {
         taskRepository.saveAll(tasksToBeKept);
         taskRepository.deleteAll(tasksToBeDeleted);
         taskUpdateNotifier.notify(impactedTasks);
-    }
-
-    private static LocalDateTime toUtc(String timestamp, String fromZoneId) {
-        return LocalDateTime.parse(timestamp).atZone(ZoneId.of(fromZoneId)).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
     }
 
     private boolean isProcessFileReadyForTaskDeletion(ProcessFile processFile) {
