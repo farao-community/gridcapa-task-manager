@@ -22,19 +22,10 @@ spring:
           destination: gridcapa.minio.events
         handleTaskStatusUpdate-in-0:
           destination: task-status-updated
+        handleTaskLogEventUpdate-in-0:
+          destination: task-manager-logs-exchange
         task-updated:
           destination: task-updated
-      rabbit:
-        default:
-          consumer:
-            auto-bind-dlq: true
-            max-attempts: 1
-        bindings:
-          handleMinioEvent-in-0:
-            consumer:
-              exchange-type: fanout
-    function:
-      definition: handleMinioEvent;handleTaskStatusUpdate
 
 task-server:
   minio:

@@ -11,6 +11,9 @@ import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskMan
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
 import org.apache.commons.io.FilenameUtils;
@@ -26,6 +29,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -66,6 +70,28 @@ public class TaskManager {
                 taskUpdateNotifier.notify(task);
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+            }
+        };
+    }
+
+    @Bean
+    public Consumer<String> handleTaskLogEventUpdate() {
+        return loggerEventString -> {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
+                Optional<Task> optionalTask = taskRepository.findById(UUID.fromString(loggerEvent.getId()));
+                if (optionalTask.isPresent()) {
+                    Task task = optionalTask.get();
+                    ProcessEvent processEvent = new ProcessEvent(task, LocalDateTime.parse(loggerEvent.getTimestamp().substring(0, 19)), loggerEvent.getLevel(), loggerEvent.getMessage());
+                    task.getProcessEvents().add(processEvent);
+                    taskRepository.save(task);
+                    taskUpdateNotifier.notify(task);
+                } else {
+                    LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
+                }
+            } catch (JsonProcessingException e) {
+                LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
             }
         };
     }
