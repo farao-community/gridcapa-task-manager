@@ -6,12 +6,13 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -21,16 +22,18 @@ public class TaskUpdateNotifier {
     private static final String TASK_UPDATED_BINDING = "task-updated";
 
     private final StreamBridge streamBridge;
+    private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
 
-    public TaskUpdateNotifier(StreamBridge streamBridge) {
+    public TaskUpdateNotifier(StreamBridge streamBridge, TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
         this.streamBridge = streamBridge;
+        this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
     }
 
     public void notify(Task task) {
-        streamBridge.send(TASK_UPDATED_BINDING, Task.createDtoFromEntity(task));
+        streamBridge.send(TASK_UPDATED_BINDING, Task.createDtoFromEntity(task, taskManagerConfigurationProperties.getProcess().getInputs()));
     }
 
-    public void notify(List<Task> tasks) {
-        tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, Task.createDtoFromEntity(task)));
+    public void notify(Set<Task> tasks) {
+        tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, Task.createDtoFromEntity(task, taskManagerConfigurationProperties.getProcess().getInputs())));
     }
 }

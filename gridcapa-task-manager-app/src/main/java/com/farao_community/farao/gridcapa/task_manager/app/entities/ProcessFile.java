@@ -11,6 +11,8 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -26,9 +28,6 @@ public class ProcessFile {
     @Column(name = "file_type")
     private String fileType;
 
-    @Column(name = "status")
-    private ProcessFileStatus processFileStatus;
-
     @Column(name = "filename")
     private String filename;
 
@@ -41,19 +40,20 @@ public class ProcessFile {
     @Column(name = "file_object_key", columnDefinition = "TEXT")
     private String fileObjectKey;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    private Task task;
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+    @JoinTable(
+        name = "process_file_task",
+        joinColumns = @JoinColumn(name = "fk_process_file"),
+        inverseJoinColumns = @JoinColumn(name = "fk_task"))
+    private Set<Task> tasks = new HashSet<>();
 
     public ProcessFile() {
 
     }
 
-    public ProcessFile(Task task, String fileType) {
+    public ProcessFile(String fileType) {
         this.id = UUID.randomUUID();
         this.fileType = fileType;
-        this.processFileStatus = ProcessFileStatus.NOT_PRESENT;
-        this.task = task;
     }
 
     public UUID getId() {
@@ -70,14 +70,6 @@ public class ProcessFile {
 
     public void setFileType(String fileType) {
         this.fileType = fileType;
-    }
-
-    public ProcessFileStatus getProcessFileStatus() {
-        return processFileStatus;
-    }
-
-    public void setProcessFileStatus(ProcessFileStatus processFileStatus) {
-        this.processFileStatus = processFileStatus;
     }
 
     public String getFilename() {
@@ -112,18 +104,28 @@ public class ProcessFile {
         this.fileObjectKey = fileObjectKey;
     }
 
-    public Task getTask() {
-        return task;
+    public Set<Task> getTasks() {
+        return tasks;
     }
 
-    public void setTask(Task task) {
-        this.task = task;
+    public void setTasks(Set<Task> tasks) {
+        this.tasks = tasks;
+    }
+
+    public void addTask(Task task) {
+        task.getProcessFiles().add(this);
+        tasks.add(task);
+    }
+
+    public void removeTask(Task task) {
+        task.getProcessFiles().remove(this);
+        tasks.remove(task);
     }
 
     public static ProcessFileDto createDtofromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
             processFile.getFileType(),
-            processFile.getProcessFileStatus(),
+            ProcessFileStatus.VALIDATED,
             processFile.getFilename(),
             processFile.getLastModificationDate(),
             processFile.getFileUrl());

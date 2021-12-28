@@ -6,14 +6,13 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -41,24 +40,18 @@ public class Task {
     @OrderColumn
     private List<ProcessEvent> processEvents = new ArrayList<>();
 
-    @OneToMany(
-        mappedBy = "task",
-        fetch = FetchType.EAGER,
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    @ManyToMany(mappedBy = "tasks", fetch = FetchType.EAGER)
     @OrderColumn
-    private List<ProcessFile> processFiles = new ArrayList<>();
+    private Set<ProcessFile> processFiles = new HashSet<>();
 
     public Task() {
 
     }
 
-    public Task(OffsetDateTime timestamp, List<String> fileTypes) {
+    public Task(OffsetDateTime timestamp) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         status = TaskStatus.CREATED;
-        fileTypes.forEach(fileType -> processFiles.add(new ProcessFile(this, fileType)));
     }
 
     public UUID getId() {
@@ -93,26 +86,30 @@ public class Task {
         this.processEvents = processFileEvents;
     }
 
-    public List<ProcessFile> getProcessFiles() {
+    public Set<ProcessFile> getProcessFiles() {
         return processFiles;
     }
 
-    public void setProcessFiles(List<ProcessFile> processFiles) {
+    public void setProcessFiles(Set<ProcessFile> processFiles) {
         this.processFiles = processFiles;
     }
 
-    public ProcessFile getProcessFile(String fileType) {
-        return processFiles.stream().filter(file -> file.getFileType().equals(fileType))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException(String.format("Queried fileType does not exist %s", fileType)));
+    public Optional<ProcessFile> getProcessFile(String fileType) {
+        return processFiles.stream()
+            .filter(file -> file.getFileType().equals(fileType))
+            .findFirst();
     }
 
-    public static TaskDto createDtoFromEntity(Task task) {
+    public static TaskDto createDtoFromEntity(Task task, List<String> inputs) {
         return new TaskDto(
             task.getId(),
             task.getTimestamp(),
             task.getStatus(),
-            task.getProcessFiles().stream().map(ProcessFile::createDtofromEntity).collect(Collectors.toList()),
+            inputs.stream()
+                .map(input -> task.getProcessFile(input)
+                    .map(ProcessFile::createDtofromEntity)
+                    .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+                .collect(Collectors.toList()),
             task.getProcessEvents().stream().map(ProcessEvent::createDtoFromEntity).collect(Collectors.toList()));
     }
 }

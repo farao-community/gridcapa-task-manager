@@ -23,11 +23,10 @@ class ProcessFileTest {
     @Test
     void testConstructorFromEntity() {
         Task task = Mockito.mock(Task.class);
-        ProcessFile processFile = new ProcessFile(task, "CGM");
+        ProcessFile processFile = new ProcessFile("CGM");
         processFile.setFileUrl("cgm-url");
         processFile.setFilename("cgm-name");
         processFile.setLastModificationDate(OffsetDateTime.parse("2021-10-11T10:18Z"));
-        processFile.setProcessFileStatus(ProcessFileStatus.VALIDATED);
 
         ProcessFileDto processFileDto = ProcessFile.createDtofromEntity(processFile);
         assertEquals("CGM", processFileDto.getFileType());
