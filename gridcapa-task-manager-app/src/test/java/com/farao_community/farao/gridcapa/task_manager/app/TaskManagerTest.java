@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -65,9 +65,9 @@ class TaskManagerTest {
 
     @Test
     void testUpdate() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -78,12 +78,12 @@ class TaskManagerTest {
 
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
@@ -99,7 +99,7 @@ class TaskManagerTest {
     @Test
     void testUpdateWithNotHandledProcess() {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_IDCC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_IDCC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00Z/2021-10-01T00:00Z", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -109,7 +109,7 @@ class TaskManagerTest {
     @Test
     void testUpdateWithNotHandledFileType() {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", "GLSK", "CSE/D2CC/GLSKs/glsk-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_D2CC", "GLSK", "CSE/D2CC/GLSKs/glsk-test", "2021-09-30T23:00Z/2021-10-01T00:00Z", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -119,7 +119,7 @@ class TaskManagerTest {
     @Test
     void testUpdateWithDailyFile() {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T00:00/2021-10-01T00:00", cgmUrl);
+        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T22:00Z/2021-10-01T22:00Z", cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -128,12 +128,12 @@ class TaskManagerTest {
 
     @Test
     void checkStatusUpdateToReady() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
@@ -143,12 +143,12 @@ class TaskManagerTest {
 
     @Test
     void testCreationEventsForTwoFilesWithDifferentTypesAndSameTs() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", cracUrl);
+        Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
@@ -163,12 +163,12 @@ class TaskManagerTest {
 
     @Test
     void testUpdateEventsForTwoFilesWithSameTypeAndSameTs() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-09-30T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrl);
+        Event eventCgm = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cgmUrlNew = "cgmUrlNew";
-        Event eventCgmNew = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T23:00/2021-10-01T00:00", cgmUrlNew);
+        Event eventCgmNew = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrlNew);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCgmNew);
@@ -184,29 +184,29 @@ class TaskManagerTest {
 
     @Test
     void testDeletionEventsOfTaskWithTwoDifferentFileTypes() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-10-01T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp, Arrays.asList("CGM", "CRAC"));
         ProcessFile processFileCgm = task.getProcessFile("CGM");
         processFileCgm.setFileUrl("cgmUrl");
         processFileCgm.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        processFileCgm.setLastModificationDate(LocalDateTime.now());
+        processFileCgm.setLastModificationDate(OffsetDateTime.now());
         processFileCgm.setFileObjectKey("CSE/D2CC/CGMs/cgm-test");
         processFileCgm.setFilename("cgm-test");
-        ProcessEvent eventCgm = new ProcessEvent(task, LocalDateTime.now(), "INFO", "CGM available");
+        ProcessEvent eventCgm = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "CGM available");
         task.getProcessEvents().add(eventCgm);
 
         ProcessFile processFileCrac = task.getProcessFile("CRAC");
         processFileCrac.setFileUrl("cracUrl");
         processFileCrac.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        processFileCrac.setLastModificationDate(LocalDateTime.now());
+        processFileCrac.setLastModificationDate(OffsetDateTime.now());
         processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
         processFileCrac.setFilename("crac-test");
-        ProcessEvent eventCrac = new ProcessEvent(task, LocalDateTime.now(), "INFO", "Crac available");
+        ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
         task.getProcessEvents().add(eventCrac);
 
         taskRepository.save(task);
 
-        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", "cracUrl");
+        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).get();
@@ -217,21 +217,21 @@ class TaskManagerTest {
 
     @Test
     void testDeletionEventsWithTaskDeletion() {
-        LocalDateTime taskTimestamp = LocalDateTime.parse("2021-10-01T21:00");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp, List.of("CRAC"));
 
         ProcessFile processFileCrac = task.getProcessFile("CRAC");
         processFileCrac.setFileUrl("cracUrl");
         processFileCrac.setProcessFileStatus(ProcessFileStatus.VALIDATED);
-        processFileCrac.setLastModificationDate(LocalDateTime.now());
+        processFileCrac.setLastModificationDate(OffsetDateTime.now());
         processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
         processFileCrac.setFilename("crac-test");
-        ProcessEvent eventCrac = new ProcessEvent(task, LocalDateTime.now(), "INFO", "Crac available");
+        ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
         task.getProcessEvents().add(eventCrac);
 
         taskRepository.save(task);
 
-        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T23:00/2021-10-01T00:00", "cracUrl");
+        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isEmpty());

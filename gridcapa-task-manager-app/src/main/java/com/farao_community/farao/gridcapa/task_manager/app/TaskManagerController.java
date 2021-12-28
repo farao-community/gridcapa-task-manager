@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -30,6 +30,6 @@ public class TaskManagerController {
 
     @GetMapping(value = "/tasks/{timestamp}")
     public ResponseEntity<TaskDto> getTaskFromTimestamp(@PathVariable String timestamp) {
-        return ResponseEntity.ok().body(taskManager.getTaskDto(LocalDateTime.parse(timestamp)));
+        return ResponseEntity.ok().body(taskManager.getTaskDto(OffsetDateTime.parse(timestamp)));
     }
 }

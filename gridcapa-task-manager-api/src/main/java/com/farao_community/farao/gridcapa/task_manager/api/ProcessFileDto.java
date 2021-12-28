@@ -9,7 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -18,14 +18,14 @@ public class ProcessFileDto {
     private final String fileType;
     private final ProcessFileStatus processFileStatus;
     private final String filename;
-    private final LocalDateTime lastModificationDate;
+    private final OffsetDateTime lastModificationDate;
     private final String fileUrl;
 
     @JsonCreator
     public ProcessFileDto(@JsonProperty("fileType") String fileType,
                           @JsonProperty("processFileStatus") ProcessFileStatus processFileStatus,
                           @JsonProperty("fileName") String filename,
-                          @JsonProperty("lastModificationDate") LocalDateTime lastModificationDate,
+                          @JsonProperty("lastModificationDate") OffsetDateTime lastModificationDate,
                           @JsonProperty("fileUrl") String fileUrl) {
         this.fileType = fileType;
         this.processFileStatus = processFileStatus;
@@ -55,7 +55,7 @@ public class ProcessFileDto {
         return filename;
     }
 
-    public LocalDateTime getLastModificationDate() {
+    public OffsetDateTime getLastModificationDate() {
         return lastModificationDate;
     }
 

@@ -10,7 +10,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -23,7 +23,7 @@ class ProcessEventTest {
     @Test
     void testConstructorFromEntity() {
         Task task = Mockito.mock(Task.class);
-        ProcessEvent processEvent = new ProcessEvent(task, LocalDateTime.now(), "INFO", "CGM arrived");
+        ProcessEvent processEvent = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "CGM arrived");
         ProcessEventDto processEventDto = ProcessEvent.createDtoFromEntity(processEvent);
         assertEquals("INFO", processEventDto.getLevel());
         assertNotNull(processEvent.getTimestamp());

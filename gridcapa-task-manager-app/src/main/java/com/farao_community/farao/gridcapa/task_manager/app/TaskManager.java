@@ -21,8 +21,8 @@ import org.springframework.stereotype.Service;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -102,10 +102,10 @@ public class TaskManager {
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
             if (validityInterval != null) {
                 String[] interval = validityInterval.split("/");
-                LocalDateTime currentTime = toUtc(interval[0], processProperties.getTimezone());
-                LocalDateTime endTime = toUtc(interval[1], processProperties.getTimezone());
+                OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
+                OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
                 while (currentTime.isBefore(endTime)) {
-                    final LocalDateTime finalTime = currentTime;
+                    final OffsetDateTime finalTime = currentTime;
                     Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> {
                         LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
                         return new Task(finalTime, processProperties.getInputs());
@@ -147,10 +147,6 @@ public class TaskManager {
         taskUpdateNotifier.notify(impactedTasks);
     }
 
-    private static LocalDateTime toUtc(String timestamp, String fromZoneId) {
-        return LocalDateTime.parse(timestamp).atZone(ZoneId.of(fromZoneId)).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
-    }
-
     private boolean isProcessFileReadyForTaskDeletion(ProcessFile processFile) {
         switch (processFile.getProcessFileStatus()) {
             case DELETED:
@@ -161,9 +157,9 @@ public class TaskManager {
         }
     }
 
-    private LocalDateTime getProcessNow() {
+    private OffsetDateTime getProcessNow() {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        return LocalDateTime.now(ZoneId.of(processProperties.getTimezone()));
+        return OffsetDateTime.now(ZoneId.of(processProperties.getTimezone()));
     }
 
     private void addFileToTask(Task task, String fileType, String objectKey, String fileUrl) {
@@ -200,11 +196,11 @@ public class TaskManager {
         }
     }
 
-    public TaskDto getTaskDto(LocalDateTime timestamp) {
+    public TaskDto getTaskDto(OffsetDateTime timestamp) {
         return taskRepository.findByTimestamp(timestamp).map(Task::createDtoFromEntity).orElse(getEmptyTask(timestamp));
     }
 
-    public TaskDto getEmptyTask(LocalDateTime timestamp) {
+    public TaskDto getEmptyTask(OffsetDateTime timestamp) {
         return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
     }
 

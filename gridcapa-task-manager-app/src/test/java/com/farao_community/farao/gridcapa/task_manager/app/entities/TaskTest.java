@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,7 +29,7 @@ class TaskTest {
 
     @BeforeEach
     public void setUp() {
-        task = new Task(LocalDateTime.now(), new ArrayList<>());
+        task = new Task(OffsetDateTime.now(), new ArrayList<>());
     }
 
     @Test
@@ -41,7 +41,7 @@ class TaskTest {
 
     @Test
     void setTimestamp() {
-        LocalDateTime newDateTime = LocalDateTime.of(1, 1, 1, 1, 1, 1);
+        OffsetDateTime newDateTime = OffsetDateTime.parse("2021-01-01T00:00Z");
         task.setTimestamp(newDateTime);
         assertEquals(newDateTime, task.getTimestamp());
     }
@@ -80,7 +80,7 @@ class TaskTest {
 
     @Test
     void testConstructorFromEntity() {
-        LocalDateTime timestamp = LocalDateTime.parse("2021-10-11T10:18");
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
         Task task = new Task(timestamp, List.of("CGM", "CRAC"));
         TaskDto taskDto = Task.createDtoFromEntity(task);
         assertEquals(timestamp, taskDto.getTimestamp());
