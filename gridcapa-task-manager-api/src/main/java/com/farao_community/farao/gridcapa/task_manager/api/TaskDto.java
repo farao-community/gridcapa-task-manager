@@ -9,7 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,14 +20,14 @@ import java.util.stream.Collectors;
  */
 public class TaskDto {
     private final UUID id;
-    private final LocalDateTime timestamp;
+    private final OffsetDateTime timestamp;
     private final TaskStatus status;
     private final List<ProcessFileDto> processFiles;
     private final List<ProcessEventDto> processEvents;
 
     @JsonCreator
     public TaskDto(@JsonProperty("id") UUID id,
-                   @JsonProperty("timestamp") LocalDateTime timestamp,
+                   @JsonProperty("timestamp") OffsetDateTime timestamp,
                    @JsonProperty("status") TaskStatus status,
                    @JsonProperty("processFiles") List<ProcessFileDto> processFiles,
                    @JsonProperty("processEvents") List<ProcessEventDto> processEvents) {
@@ -38,7 +38,7 @@ public class TaskDto {
         this.processEvents = processEvents;
     }
 
-    public static TaskDto emptyTask(LocalDateTime timestamp, List<String> fileTypes) {
+    public static TaskDto emptyTask(OffsetDateTime timestamp, List<String> fileTypes) {
         return new TaskDto(
                 UUID.randomUUID(),
                 timestamp,
@@ -51,7 +51,7 @@ public class TaskDto {
         return id;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 

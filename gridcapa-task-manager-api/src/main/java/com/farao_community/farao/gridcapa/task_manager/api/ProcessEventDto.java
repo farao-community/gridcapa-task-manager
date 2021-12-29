@@ -9,7 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
@@ -17,17 +17,17 @@ import java.time.LocalDateTime;
 public class ProcessEventDto {
 
     private String level;
-    private LocalDateTime timestamp;
+    private OffsetDateTime timestamp;
     private String message;
 
     @JsonCreator
-    public ProcessEventDto(@JsonProperty LocalDateTime timestamp, @JsonProperty String level, @JsonProperty String message) {
+    public ProcessEventDto(@JsonProperty OffsetDateTime timestamp, @JsonProperty String level, @JsonProperty String message) {
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 

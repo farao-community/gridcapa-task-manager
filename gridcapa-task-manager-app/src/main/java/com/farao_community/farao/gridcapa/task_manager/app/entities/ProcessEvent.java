@@ -9,7 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -26,7 +26,7 @@ public class ProcessEvent {
     private String level;
 
     @Column(name = "timestamp")
-    private LocalDateTime timestamp;
+    private OffsetDateTime timestamp;
 
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
@@ -38,7 +38,7 @@ public class ProcessEvent {
     public ProcessEvent() {
     }
 
-    public ProcessEvent(Task task, LocalDateTime timestamp, String level, String message) {
+    public ProcessEvent(Task task, OffsetDateTime timestamp, String level, String message) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         this.level = level;
@@ -46,7 +46,7 @@ public class ProcessEvent {
         this.task = task;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 

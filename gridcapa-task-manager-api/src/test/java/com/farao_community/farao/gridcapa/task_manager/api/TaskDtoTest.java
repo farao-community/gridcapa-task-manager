@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +20,7 @@ class TaskDtoTest {
 
     @Test
     void testConstructorEmptyProcessFile() {
-        LocalDateTime timestamp = LocalDateTime.parse("2021-10-11T10:18");
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
         TaskDto taskDto = TaskDto.emptyTask(timestamp, List.of("CGM", "CRAC"));
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.NOT_CREATED, taskDto.getStatus());
