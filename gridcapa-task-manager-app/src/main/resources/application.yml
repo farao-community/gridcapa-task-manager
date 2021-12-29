@@ -15,7 +15,6 @@ spring:
   cloud:
     stream:
       default:
-        binder: rabbit
         group: task-manager
       bindings:
         handleMinioEvent-in-0:
@@ -26,6 +25,17 @@ spring:
           destination: task-manager-logs-exchange
         task-updated:
           destination: task-updated
+      rabbit:
+        default:
+          consumer:
+            auto-bind-dlq: true
+            max-attempts: 1
+        bindings:
+          handleMinioEvent-in-0:
+            consumer:
+              exchange-type: fanout
+    function:
+      definition: handleMinioEvent;handleTaskStatusUpdate;handleTaskLogEventUpdate
 
 task-server:
   minio:

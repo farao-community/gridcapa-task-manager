@@ -83,7 +83,9 @@ public class TaskManager {
                 Optional<Task> optionalTask = taskRepository.findById(UUID.fromString(loggerEvent.getId()));
                 if (optionalTask.isPresent()) {
                     Task task = optionalTask.get();
-                    ProcessEvent processEvent = new ProcessEvent(task, LocalDateTime.parse(loggerEvent.getTimestamp().substring(0, 19)), loggerEvent.getLevel(), loggerEvent.getMessage());
+                    LOGGER.info(loggerEvent.getTimestamp());
+                    OffsetDateTime offsetDateTime = getOffsetDateTimeAtSameInstant(LocalDateTime.parse(loggerEvent.getTimestamp().substring(0, 19)));
+                    ProcessEvent processEvent = new ProcessEvent(task, offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                     task.getProcessEvents().add(processEvent);
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task);
@@ -234,5 +236,9 @@ public class TaskManager {
         AVAILABLE,
         UPDATED,
         DELETED
+    }
+
+    private OffsetDateTime getOffsetDateTimeAtSameInstant(LocalDateTime localDateTime) {
+        return localDateTime.atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).withZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
     }
 }
