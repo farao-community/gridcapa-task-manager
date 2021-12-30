@@ -99,6 +99,7 @@ public class TaskManager {
     @Bean
     public Consumer<NotificationRecords> handleMinioEvent() {
         return notificationRecords -> notificationRecords.events().forEach(event -> {
+            LOGGER.info("s3 event received");
             switch (event.eventType()) {
                 case OBJECT_CREATED_ANY:
                 case OBJECT_CREATED_PUT:
@@ -175,8 +176,9 @@ public class TaskManager {
         Optional<ProcessFile> optionalProcessFile = processFileRepository.findBySimpleNaturalId(objectKey);
         if (optionalProcessFile.isPresent()) {
             ProcessFile processFile = optionalProcessFile.get();
-            Set<Task> tasks = new HashSet<>(processFile.getTasks());
-            Set<Task> tasksToBeDeleted = new HashSet<>();
+            LOGGER.info("Finding tasks");
+            Set<Task> tasks = taskRepository.findTasksByStartingAndEndingTimestampEager(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
+            LOGGER.info("Starting remove loop");
             for (Task task : tasks) {
                 addFileEventToTask(task, FileEventType.DELETED, processFile);
                 task.removeProcessFile(processFile);
@@ -184,8 +186,13 @@ public class TaskManager {
                     task.getProcessEvents().clear();
                 }
             }
+            LOGGER.info("Start saving tasks");
+            taskRepository.saveAll(tasks);
+            LOGGER.info("Starting delete");
             processFileRepository.delete(processFile);
-            taskRepository.deleteAll(tasksToBeDeleted);
+            LOGGER.info("Start notifying");
+            taskUpdateNotifier.notify(tasks);
+            LOGGER.info("End notifying");
         }
     }
 
