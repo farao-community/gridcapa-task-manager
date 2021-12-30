@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,8 +49,8 @@ class TaskManagerTest {
 
     @AfterEach
     void cleanDatabase() {
-        processFileRepository.deleteAll();
         taskRepository.deleteAll();
+        processFileRepository.deleteAll();
     }
 
     private Event createEvent(String processTag, String fileType, String fileKey, String validityInterval, String fileUrl) {
@@ -73,9 +74,9 @@ class TaskManagerTest {
 
         taskManager.updateTasks(event);
 
-        assertTrue(taskRepository.existsByTimestamp(taskTimestamp));
-        assertEquals(cgmUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
-        assertEquals("cgm-test", taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
+        assertTrue(taskRepository.findBySimpleNaturalId(taskTimestamp).isPresent());
+        assertEquals(cgmUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
+        assertEquals("cgm-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
     }
 
     @Test
@@ -91,11 +92,11 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCrac);
 
         assertEquals(1, taskRepository.findAll().size());
-        assertTrue(taskRepository.existsByTimestamp(taskTimestamp));
-        assertEquals(cgmUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
-        assertEquals(cracUrl, taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CRAC").get().getFileUrl());
-        assertEquals("cgm-test", taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
-        assertEquals("crac-test", taskRepository.findByTimestamp(taskTimestamp).get().getProcessFile("CRAC").get().getFilename());
+        assertTrue(taskRepository.findBySimpleNaturalId(taskTimestamp).isPresent());
+        assertEquals(cgmUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
+        assertEquals(cracUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CRAC").get().getFileUrl());
+        assertEquals("cgm-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
+        assertEquals("crac-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CRAC").get().getFilename());
     }
 
     @Test
@@ -138,9 +139,9 @@ class TaskManagerTest {
         Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
-        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+        assertEquals(CREATED, taskRepository.findBySimpleNaturalId(taskTimestamp).get().getStatus());
         taskManager.updateTasks(eventCrac);
-        assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+        assertEquals(READY, taskRepository.findBySimpleNaturalId(taskTimestamp).get().getStatus());
     }
 
     @Test
@@ -155,7 +156,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        Task task = taskRepository.findBySimpleNaturalId(taskTimestamp).get();
         assertEquals(2, task.getProcessEvents().size());
         assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
         assertEquals("INFO", task.getProcessEvents().get(1).getLevel());
@@ -175,7 +176,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCgmNew);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        Task task = taskRepository.findBySimpleNaturalId(taskTimestamp).get();
         assertEquals(2, task.getProcessEvents().size());
         assertTrue(task.getProcessEvents().get(0).getTimestamp().isBefore(task.getProcessEvents().get(1).getTimestamp()));
         assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
@@ -186,60 +187,63 @@ class TaskManagerTest {
 
     @Test
     void testDeletionEventsOfTaskWithTwoDifferentFileTypes() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z").withOffsetSameInstant(ZoneOffset.UTC);
         Task task = new Task(taskTimestamp);
 
-        ProcessFile processFileCgm = new ProcessFile("CGM");
-        processFileCgm.setFileUrl("cgmUrl");
-        processFileCgm.setLastModificationDate(OffsetDateTime.now());
-        processFileCgm.setFileObjectKey("CSE/D2CC/CGMs/cgm-test");
-        processFileCgm.setFilename("cgm-test");
+        ProcessFile processFileCgm = new ProcessFile(
+            "CSE/D2CC/CGMs/cgm-test",
+            "CGM",
+            OffsetDateTime.parse("2021-10-01T21:00Z"),
+            OffsetDateTime.parse("2021-10-01T22:00Z"),
+            "cgmUrl",
+            OffsetDateTime.now());
         ProcessEvent eventCgm = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "CGM available");
         task.getProcessEvents().add(eventCgm);
-        processFileCgm.addTask(task);
-        processFileRepository.save(processFileCgm);
+        task.addProcessFile(processFileCgm);
 
-        ProcessFile processFileCrac = new ProcessFile("CRAC");
-        processFileCrac.setFileUrl("cracUrl");
-        processFileCrac.setLastModificationDate(OffsetDateTime.now());
-        processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
-        processFileCrac.setFilename("crac-test");
+        ProcessFile processFileCrac = new ProcessFile(
+            "CSE/D2CC/CRACs/crac-test",
+            "CRAC",
+            OffsetDateTime.parse("2021-10-01T21:00Z"),
+            OffsetDateTime.parse("2021-10-01T22:00Z"),
+            "cracUrl",
+            OffsetDateTime.now());
         ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
         task.getProcessEvents().add(eventCrac);
-        processFileCrac.addTask(task);
-        processFileRepository.save(processFileCrac);
-
-        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
-        taskManager.removeProcessFile(eventCracDeletion);
-
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).get();
-        assertEquals(3, updatedTask.getProcessEvents().size());
-
-        assertEquals("The CRAC : 'crac-test' is deleted", updatedTask.getProcessEvents().get(2).getMessage());
-        assertEquals(1, updatedTask.getProcessFiles().size());
-    }
-
-    @Test
-    void testDeletionEventsWithTaskDeletion() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        ProcessFile processFileCrac = new ProcessFile("CRAC");
-        processFileCrac.setFileUrl("cracUrl");
-        processFileCrac.setLastModificationDate(OffsetDateTime.now());
-        processFileCrac.setFileObjectKey("CSE/D2CC/CRACs/crac-test");
-        processFileCrac.setFilename("crac-test");
-        processFileCrac.addTask(task);
-        processFileRepository.save(processFileCrac);
-
-        ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
-        task.getProcessEvents().add(eventCrac);
+        task.addProcessFile(processFileCrac);
 
         taskRepository.save(task);
 
         Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
-        assertTrue(taskRepository.findByTimestamp(taskTimestamp).isEmpty());
+        Task updatedTask = taskRepository.findBySimpleNaturalId(taskTimestamp).get();
+        assertEquals(3, updatedTask.getProcessEvents().size());
+
+        assertEquals("The CRAC : 'crac-test' is deleted", updatedTask.getProcessEvents().get(2).getMessage());
+        assertEquals(1, updatedTask.getProcessFilesNumber());
+    }
+
+    @Test
+    void testDeletionEventsWithTaskDeletion() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        Task task = new Task(taskTimestamp);
+        ProcessEvent eventCrac = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "Crac available");
+        task.getProcessEvents().add(eventCrac);
+        ProcessFile processFileCrac = new ProcessFile(
+            "CSE/D2CC/CRACs/crac-test",
+            "CRAC",
+            OffsetDateTime.parse("2021-10-01T21:00Z"),
+            OffsetDateTime.parse("2021-10-01T22:00Z"),
+            "cracUrl",
+            OffsetDateTime.now());
+        task.addProcessFile(processFileCrac);
+        taskRepository.save(task);
+
+        Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
+        taskManager.removeProcessFile(eventCracDeletion);
+
+        assertTrue(taskRepository.findTaskByTimestampEager(taskTimestamp).isEmpty());
     }
 
     @Test

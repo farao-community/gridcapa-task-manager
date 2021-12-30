@@ -37,7 +37,7 @@ class TaskTest {
 
     @BeforeEach
     public void setUp() {
-        task = new Task(OffsetDateTime.now());
+        task = new Task(OffsetDateTime.parse("2021-01-01T00:00Z"));
     }
 
     @Test
@@ -50,7 +50,6 @@ class TaskTest {
     @Test
     void setTimestamp() {
         OffsetDateTime newDateTime = OffsetDateTime.parse("2021-01-01T00:00Z");
-        task.setTimestamp(newDateTime);
         assertEquals(newDateTime, task.getTimestamp());
     }
 
@@ -67,7 +66,7 @@ class TaskTest {
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Set<ProcessFile> processFiles = new HashSet<>();
+        SortedSet<ProcessFile> processFiles = new TreeSet<>();
         processFiles.add(processFileMock);
         task.setProcessFiles(processFiles);
         assertEquals(processFileMock, task.getProcessFiles().iterator().next());

@@ -19,8 +19,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,53 +47,63 @@ class TaskProcessFileDeletionTest {
 
     @BeforeEach
     void setUpTasks() {
-        List<String> fileTypes = Arrays.asList("CGM", "GLSK", "REFPROG");
-
         Task task1 = new Task(offsetDateTime0);
         Task task2 = new Task(offsetDateTime1);
         Task task3 = new Task(offsetDateTime2);
         Task task4 = new Task(offsetDateTime3);
 
-        ProcessFile cgmFile1 = new ProcessFile("CGM");
-        cgmFile1.setFileObjectKey("/CGM");
-        cgmFile1.setFileUrl("http://CGM");
-        cgmFile1.setFilename("CGM");
-        cgmFile1.setLastModificationDate(OffsetDateTime.now());
-
-        ProcessFile cgmFile2 = new ProcessFile("CGM");
-        cgmFile2.setFileObjectKey("/CGM2");
-        cgmFile2.setFileUrl("http://CGM2");
-        cgmFile2.setFilename("CGM2");
-        cgmFile2.setLastModificationDate(OffsetDateTime.now());
-
-        ProcessFile cgmFile3 = new ProcessFile("CGM");
-        cgmFile3.setFileObjectKey("/CGM3");
-        cgmFile3.setFileUrl("http://CGM3");
-        cgmFile3.setFilename("CGM3");
-        cgmFile3.setLastModificationDate(OffsetDateTime.now());
-
-        ProcessFile refprogFile = new ProcessFile("REFPROG");
-        refprogFile.setFileObjectKey("/REFPROG");
-        refprogFile.setFileUrl("http://REFPROG");
-        refprogFile.setFilename("REFPROG");
-        refprogFile.setLastModificationDate(OffsetDateTime.now());
-
-        cgmFile1.addTask(task1);
+        ProcessFile cgmFile1 = new ProcessFile(
+            "/CGM",
+            "CGM",
+            offsetDateTime0,
+            offsetDateTime0.plusHours(1),
+            "http://CGM",
+            OffsetDateTime.now());
         processFileRepository.save(cgmFile1);
-        cgmFile2.addTask(task2);
+
+        ProcessFile cgmFile2 = new ProcessFile(
+            "/CGM2",
+            "CGM",
+            offsetDateTime1,
+            offsetDateTime1.plusHours(1),
+            "http://CGM2",
+            OffsetDateTime.now());
         processFileRepository.save(cgmFile2);
-        cgmFile3.addTask(task3);
+
+        ProcessFile cgmFile3 = new ProcessFile(
+            "/CGM3",
+            "CGM",
+            offsetDateTime2,
+            offsetDateTime2.plusHours(1),
+            "http://CGM3",
+            OffsetDateTime.now());
         processFileRepository.save(cgmFile3);
-        refprogFile.addTask(task1);
-        refprogFile.addTask(task2);
-        refprogFile.addTask(task4);
+
+        ProcessFile refprogFile = new ProcessFile(
+            "/REFPROG",
+            "REFPROG",
+            offsetDateTime0,
+            offsetDateTime0.plusHours(4),
+            "http://REFPROG",
+            OffsetDateTime.now());
         processFileRepository.save(refprogFile);
+
+        task1.addProcessFile(cgmFile1);
+        task1.addProcessFile(refprogFile);
+        taskRepository.save(task1);
+        task2.addProcessFile(cgmFile2);
+        task2.addProcessFile(refprogFile);
+        taskRepository.save(task2);
+        task3.addProcessFile(cgmFile3);
+        taskRepository.save(task3);
+        task4.addProcessFile(refprogFile);
+        taskRepository.save(task4);
     }
 
     @AfterEach
     void cleanTasks() {
-        processFileRepository.deleteAll();
         taskRepository.deleteAll();
+        processFileRepository.deleteAll();
     }
 
     @Test
@@ -105,9 +113,9 @@ class TaskProcessFileDeletionTest {
 
         taskManager.removeProcessFile(event);
 
-        Task task1 = taskRepository.findByTimestamp(offsetDateTime0).get();
+        Task task1 = taskRepository.findTaskByTimestampEager(offsetDateTime0).get();
         assertTrue(task1.getProcessFile("CGM").isPresent());
-        Task task2 = taskRepository.findByTimestamp(offsetDateTime1).get();
+        Task task2 = taskRepository.findTaskByTimestampEager(offsetDateTime1).get();
         assertTrue(task2.getProcessFile("CGM").isPresent());
     }
 
@@ -116,12 +124,12 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/CGM2");
 
-        Task task2 = taskRepository.findByTimestamp(offsetDateTime1).get();
+        Task task2 = taskRepository.findTaskByTimestampEager(offsetDateTime1).get();
         assertTrue(task2.getProcessFile("CGM").isPresent());
 
         taskManager.removeProcessFile(event);
 
-        task2 = taskRepository.findByTimestamp(offsetDateTime1).get();
+        task2 = taskRepository.findTaskByTimestampEager(offsetDateTime1).get();
         assertTrue(task2.getProcessFile("CGM").isEmpty());
     }
 
@@ -129,11 +137,11 @@ class TaskProcessFileDeletionTest {
     void checkThatUsedFileTriggerFileDeletionRemovingTask() {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/CGM3");
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime2).isPresent());
+        assertTrue(taskRepository.findBySimpleNaturalId(offsetDateTime2).isPresent());
 
         taskManager.removeProcessFile(event);
 
-        assertFalse(taskRepository.findByTimestamp(offsetDateTime2).isPresent());
+        assertFalse(taskRepository.findTaskByTimestampEager(offsetDateTime2).isPresent());
     }
 
     @Test
@@ -141,15 +149,16 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/REFPROG");
 
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).get().getProcessFile("REFPROG").isPresent());
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).get().getProcessFile("REFPROG").isPresent());
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime3).get().getProcessFile("REFPROG").isPresent());
+        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime0).get().getProcessFile("REFPROG").isPresent());
+        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime1).get().getProcessFile("REFPROG").isPresent());
+        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime3).get().getProcessFile("REFPROG").isPresent());
 
         taskManager.removeProcessFile(event);
 
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).get().getProcessFile("REFPROG").isEmpty());
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).get().getProcessFile("REFPROG").isEmpty());
-        assertFalse(taskRepository.findByTimestamp(offsetDateTime3).isPresent());
+        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime0).get().getProcessFile("REFPROG").isEmpty());
+        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime1).get().getProcessFile("REFPROG").isEmpty());
+
+        assertFalse(taskRepository.findTaskByTimestampEager(offsetDateTime3).isPresent());
     }
 
 }

@@ -16,13 +16,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -62,14 +60,14 @@ public class TaskManager {
     @Bean
     public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
         return taskStatusUpdate -> {
-            Optional<Task> optionalTask = taskRepository.findById(taskStatusUpdate.getId());
+            Optional<Task> optionalTask = taskRepository.findBySimpleNaturalId(taskStatusUpdate.getTimestamp());
             if (optionalTask.isPresent()) {
                 Task task = optionalTask.get();
                 task.setStatus(taskStatusUpdate.getTaskStatus());
                 taskRepository.save(task);
                 taskUpdateNotifier.notify(task);
             } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getTimestamp());
             }
         };
     }
@@ -121,7 +119,6 @@ public class TaskManager {
         });
     }
 
-    @Transactional
     public void updateTasks(Event event) {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
         if (processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
@@ -129,42 +126,62 @@ public class TaskManager {
             String fileType = event.userMetadata().get(FILE_TYPE);
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
             if (validityInterval != null) {
+                String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
                 String[] interval = validityInterval.split("/");
                 OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
                 OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
-                String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-                ProcessFile processFile = createProcessFile(fileType, objectKey, minioAdapter.generatePreSignedUrl(event));
+                LOGGER.info("Start finding process file");
+                Optional<ProcessFile> optProcessFile = processFileRepository.findProcessFileByStartingAvailabilityDateAndAndFileType(currentTime, fileType);
+                ProcessFile processFile;
+                FileEventType fileEventType;
+                if (optProcessFile.isPresent()) {
+                    LOGGER.info("Start updating process file");
+                    processFile = optProcessFile.get();
+                    processFile.setFileUrl(minioAdapter.generatePreSignedUrl(event));
+                    processFile.setFileObjectKey(objectKey);
+                    processFile.setLastModificationDate(getProcessNow());
+                    fileEventType = FileEventType.UPDATED;
+                } else {
+                    LOGGER.info("Start creating process file");
+                    processFile = new ProcessFile(objectKey, fileType, currentTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
+                    fileEventType = FileEventType.AVAILABLE;
+                }
+                LOGGER.info("Start saving process file");
+                processFileRepository.save(processFile);
+
                 Set<Task> tasks = new HashSet<>();
+                LOGGER.info("Starting tasks modification loop");
                 while (currentTime.isBefore(endTime)) {
                     final OffsetDateTime finalTime = currentTime;
-                    Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> {
-                        LOGGER.info("New task added for {} on {}", processProperties.getTag(), finalTime);
-                        return new Task(finalTime);
-                    });
-                    addTaskToFile(task, processFile);
+                    Task task = taskRepository.findTaskByTimestampEagerLeft(finalTime).orElseGet(() -> new Task(finalTime));
+                    addFileEventToTask(task, fileEventType, processFile);
+                    task.addProcessFile(processFile);
+                    checkAndUpdateTaskReadiness(task);
                     tasks.add(task);
                     currentTime = currentTime.plusHours(1);
                 }
-                processFileRepository.save(processFile);
+                LOGGER.info("Start saving tasks");
+                taskRepository.saveAll(tasks);
+                LOGGER.info("Start notifying");
                 taskUpdateNotifier.notify(tasks);
+                LOGGER.info("End notifying");
             }
         }
     }
 
-    @Transactional
     public void removeProcessFile(Event event) {
         String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-        Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
+        LOGGER.info("Finding process file");
+        Optional<ProcessFile> optionalProcessFile = processFileRepository.findBySimpleNaturalId(objectKey);
         if (optionalProcessFile.isPresent()) {
             ProcessFile processFile = optionalProcessFile.get();
             Set<Task> tasks = new HashSet<>(processFile.getTasks());
             Set<Task> tasksToBeDeleted = new HashSet<>();
             for (Task task : tasks) {
-                processFile.removeTask(task);
                 addFileEventToTask(task, FileEventType.DELETED, processFile);
-                taskUpdateNotifier.notify(task);
+                task.removeProcessFile(processFile);
                 if (task.getProcessFiles().isEmpty()) {
-                    tasksToBeDeleted.add(task);
+                    task.getProcessEvents().clear();
                 }
             }
             processFileRepository.delete(processFile);
@@ -177,26 +194,8 @@ public class TaskManager {
         return OffsetDateTime.now(ZoneId.of(processProperties.getTimezone()));
     }
 
-    private ProcessFile createProcessFile(String fileType, String objectKey, String fileUrl) {
-        ProcessFile processFile = new ProcessFile(fileType);
-        String fileName = FilenameUtils.getName(objectKey);
-        processFile.setFileUrl(fileUrl);
-        processFile.setLastModificationDate(getProcessNow());
-        processFile.setFileObjectKey(objectKey);
-        processFile.setFilename(fileName);
-        return processFile;
-    }
-
-    private void addTaskToFile(Task task, ProcessFile processFile) {
-        LOGGER.info("New file added to task {} with file type {} at URL {}", task.getTimestamp(), processFile.getFileType(), processFile.getFileUrl());
-        task.getProcessFile(processFile.getFileType())
-            .ifPresentOrElse(
-                oldPf -> addFileEventToTask(task, FileEventType.UPDATED, processFile),
-                () -> addFileEventToTask(task, FileEventType.AVAILABLE, processFile)
-            );
-        processFile.addTask(task);
-        if (taskManagerConfigurationProperties.getProcess().getInputs().stream().map(task::getProcessFile).allMatch(Optional::isPresent)) {
-            LOGGER.info("Task {} is ready to run", task.getTimestamp());
+    private void checkAndUpdateTaskReadiness(Task task) {
+        if (taskManagerConfigurationProperties.getProcess().getInputs().size() == task.getProcessFilesNumber()) {
             task.setStatus(TaskStatus.READY);
         }
     }
@@ -216,7 +215,7 @@ public class TaskManager {
     }
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
-        return taskRepository.findByTimestamp(timestamp).map(task -> Task.createDtoFromEntity(task, taskManagerConfigurationProperties.getProcess().getInputs())).orElse(getEmptyTask(timestamp));
+        return taskRepository.findTaskByTimestampEager(timestamp).map(task -> Task.createDtoFromEntity(task, taskManagerConfigurationProperties.getProcess().getInputs())).orElse(getEmptyTask(timestamp));
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {

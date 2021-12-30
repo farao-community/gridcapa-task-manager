@@ -8,76 +8,86 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
+import org.apache.commons.io.FilenameUtils;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.NaturalIdCache;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Entity
-public class ProcessFile {
+@org.hibernate.annotations.Cache(
+    usage = CacheConcurrencyStrategy.READ_WRITE
+)
+@NaturalIdCache
+public class ProcessFile implements Comparable<ProcessFile> {
 
     @Id
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    @NaturalId(mutable = true)
+    @Column(name = "file_object_key", length = 500, nullable = false, unique = true)
+    private String fileObjectKey;
+
     @Column(name = "file_type")
     private String fileType;
 
-    @Column(name = "filename")
-    private String filename;
+    @Column(name = "starting_availability_date")
+    private OffsetDateTime startingAvailabilityDate;
 
-    @Column(name = "last_modification_date")
-    private OffsetDateTime lastModificationDate;
+    @Column(name = "ending_availability_date")
+    private OffsetDateTime endingAvailabilityDate;
 
     @Column(name = "file_url", columnDefinition = "TEXT")
     private String fileUrl;
 
-    @Column(name = "file_object_key", columnDefinition = "TEXT")
-    private String fileObjectKey;
-
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-    @JoinTable(
-        name = "process_file_task",
-        joinColumns = @JoinColumn(name = "fk_process_file"),
-        inverseJoinColumns = @JoinColumn(name = "fk_task"))
-    private Set<Task> tasks = new HashSet<>();
+    @Column(name = "last_modification_date")
+    private OffsetDateTime lastModificationDate;
 
     public ProcessFile() {
 
     }
 
-    public ProcessFile(String fileType) {
+    public ProcessFile(String fileObjectKey,
+                       String fileType,
+                       OffsetDateTime startingAvailabilityDate,
+                       OffsetDateTime endingAvailabilityDate,
+                       String fileUrl,
+                       OffsetDateTime lastModificationDate) {
         this.id = UUID.randomUUID();
+        this.fileObjectKey = fileObjectKey;
         this.fileType = fileType;
+        this.startingAvailabilityDate = startingAvailabilityDate;
+        this.endingAvailabilityDate = endingAvailabilityDate;
+        this.fileUrl = fileUrl;
+        this.lastModificationDate = lastModificationDate;
     }
 
     public UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
     public String getFileType() {
         return fileType;
     }
 
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
-    }
-
     public String getFilename() {
-        return filename;
+        return FilenameUtils.getName(fileObjectKey);
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
+    public OffsetDateTime getStartingAvailabilityDate() {
+        return startingAvailabilityDate;
+    }
+
+    public OffsetDateTime getEndingAvailabilityDate() {
+        return endingAvailabilityDate;
     }
 
     public OffsetDateTime getLastModificationDate() {
@@ -104,24 +114,6 @@ public class ProcessFile {
         this.fileObjectKey = fileObjectKey;
     }
 
-    public Set<Task> getTasks() {
-        return tasks;
-    }
-
-    public void setTasks(Set<Task> tasks) {
-        this.tasks = tasks;
-    }
-
-    public void addTask(Task task) {
-        task.getProcessFiles().add(this);
-        tasks.add(task);
-    }
-
-    public void removeTask(Task task) {
-        task.getProcessFiles().remove(this);
-        tasks.remove(task);
-    }
-
     public static ProcessFileDto createDtofromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
             processFile.getFileType(),
@@ -129,5 +121,27 @@ public class ProcessFile {
             processFile.getFilename(),
             processFile.getLastModificationDate(),
             processFile.getFileUrl());
+    }
+
+    @Override
+    public int compareTo(ProcessFile o) {
+        return fileType.compareTo(o.getFileType());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ProcessFile that = (ProcessFile) o;
+        return Objects.equals(id, that.id) && Objects.equals(fileType, that.fileType) && Objects.equals(lastModificationDate, that.lastModificationDate) && Objects.equals(fileObjectKey, that.fileObjectKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, fileType, lastModificationDate, fileObjectKey);
     }
 }

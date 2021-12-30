@@ -9,6 +9,10 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.NaturalIdCache;
+import org.hibernate.annotations.SortNatural;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
@@ -19,13 +23,18 @@ import java.util.stream.Collectors;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Entity
+@org.hibernate.annotations.Cache(
+    usage = CacheConcurrencyStrategy.READ_WRITE
+)
+@NaturalIdCache
 public class Task {
 
     @Id
     @Column(name = "id")
     private UUID id;
 
-    @Column(name = "timestamp")
+    @NaturalId
+    @Column(name = "timestamp", nullable = false, updatable = false, unique = true)
     private OffsetDateTime timestamp;
 
     @Column(name = "status")
@@ -40,9 +49,16 @@ public class Task {
     @OrderColumn
     private List<ProcessEvent> processEvents = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "tasks", fetch = FetchType.EAGER)
-    @OrderColumn
-    private Set<ProcessFile> processFiles = new HashSet<>();
+    @Column(name = "process_files_number")
+    private Integer processFilesNumber = 0;
+
+    @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
+    @JoinTable(
+        name = "task_process_file",
+        joinColumns = @JoinColumn(name = "fk_task"),
+        inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+    @SortNatural
+    private SortedSet<ProcessFile> processFiles = new TreeSet<>();
 
     public Task() {
 
@@ -66,10 +82,6 @@ public class Task {
         return timestamp;
     }
 
-    public void setTimestamp(OffsetDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
     public TaskStatus getStatus() {
         return status;
     }
@@ -86,12 +98,30 @@ public class Task {
         this.processEvents = processFileEvents;
     }
 
-    public Set<ProcessFile> getProcessFiles() {
+    public Integer getProcessFilesNumber() {
+        return processFilesNumber;
+    }
+
+    public void setProcessFilesNumber(Integer processFilesNumber) {
+        this.processFilesNumber = processFilesNumber;
+    }
+
+    public SortedSet<ProcessFile> getProcessFiles() {
         return processFiles;
     }
 
-    public void setProcessFiles(Set<ProcessFile> processFiles) {
+    public void setProcessFiles(SortedSet<ProcessFile> processFiles) {
         this.processFiles = processFiles;
+    }
+
+    public void addProcessFile(ProcessFile processFile) {
+        getProcessFiles().add(processFile);
+        processFilesNumber += 1;
+    }
+
+    public void removeProcessFile(ProcessFile processFile) {
+        getProcessFiles().remove(processFile);
+        processFilesNumber -= 1;
     }
 
     public Optional<ProcessFile> getProcessFile(String fileType) {
