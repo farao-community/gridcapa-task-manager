@@ -49,9 +49,6 @@ public class Task {
     @OrderColumn
     private List<ProcessEvent> processEvents = new ArrayList<>();
 
-    @Column(name = "process_files_number")
-    private Integer processFilesNumber = 0;
-
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(
         name = "task_process_file",
@@ -98,14 +95,6 @@ public class Task {
         this.processEvents = processFileEvents;
     }
 
-    public Integer getProcessFilesNumber() {
-        return processFilesNumber;
-    }
-
-    public void setProcessFilesNumber(Integer processFilesNumber) {
-        this.processFilesNumber = processFilesNumber;
-    }
-
     public SortedSet<ProcessFile> getProcessFiles() {
         return processFiles;
     }
@@ -116,12 +105,10 @@ public class Task {
 
     public void addProcessFile(ProcessFile processFile) {
         getProcessFiles().add(processFile);
-        processFilesNumber += 1;
     }
 
     public void removeProcessFile(ProcessFile processFile) {
         getProcessFiles().remove(processFile);
-        processFilesNumber -= 1;
     }
 
     public Optional<ProcessFile> getProcessFile(String fileType) {

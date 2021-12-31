@@ -13,18 +13,11 @@ import org.springframework.data.repository.query.Param;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 public interface TaskRepository extends NaturalRepository<Task, OffsetDateTime> {
-
-    @Query("SELECT task FROM Task task JOIN FETCH task.processFiles process_file WHERE process_file.id = :processFileId")
-    Set<Task> findTasksByProcessFileId(@Param("processFileId") UUID processFileId);
-
-    @Query("SELECT task FROM Task task WHERE task.timestamp >= :startingTimestamp AND task.timestamp <= :endingTimestamp")
-    Set<Task> findTasksByStartingAndEndingTimestamp(@Param("startingTimestamp") OffsetDateTime startingTimestamp, @Param("endingTimestamp") OffsetDateTime endingTimestamp);
 
     @Query("SELECT task FROM Task task JOIN FETCH task.processFiles WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
     Set<Task> findTasksByStartingAndEndingTimestampEager(@Param("startingTimestamp") OffsetDateTime startingTimestamp, @Param("endingTimestamp") OffsetDateTime endingTimestamp);

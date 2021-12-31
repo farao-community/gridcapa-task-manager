@@ -217,11 +217,11 @@ class TaskManagerTest {
         Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
-        Task updatedTask = taskRepository.findBySimpleNaturalId(taskTimestamp).get();
+        Task updatedTask = taskRepository.findTaskByTimestampEager(taskTimestamp).get();
         assertEquals(3, updatedTask.getProcessEvents().size());
 
         assertEquals("The CRAC : 'crac-test' is deleted", updatedTask.getProcessEvents().get(2).getMessage());
-        assertEquals(1, updatedTask.getProcessFilesNumber());
+        assertEquals(1, updatedTask.getProcessFiles().size());
     }
 
     @Test

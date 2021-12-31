@@ -202,7 +202,7 @@ public class TaskManager {
     }
 
     private void checkAndUpdateTaskReadiness(Task task) {
-        if (taskManagerConfigurationProperties.getProcess().getInputs().size() == task.getProcessFilesNumber()) {
+        if (taskManagerConfigurationProperties.getProcess().getInputs().size() == task.getProcessFiles().size()) {
             task.setStatus(TaskStatus.READY);
         }
     }
@@ -219,14 +219,6 @@ public class TaskManager {
         } else {
             return String.format("A new version of %s is available : '%s'", fileType, fileName);
         }
-    }
-
-    public TaskDto getTaskDto(OffsetDateTime timestamp) {
-        return taskRepository.findTaskByTimestampEager(timestamp).map(task -> Task.createDtoFromEntity(task, taskManagerConfigurationProperties.getProcess().getInputs())).orElse(getEmptyTask(timestamp));
-    }
-
-    public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, taskManagerConfigurationProperties.getProcess().getInputs());
     }
 
     private enum FileEventType {
