@@ -37,7 +37,7 @@ class TaskManagerControllerTest {
     void testGetTaskOk() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskRepository.findBySimpleNaturalId(taskTimestamp)).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         ResponseEntity<TaskDto> taskResponse = taskManagerController.getTaskFromTimestamp(taskTimestamp.toString());
 
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());

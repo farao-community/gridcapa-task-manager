@@ -137,7 +137,7 @@ class TaskProcessFileDeletionTest {
     void checkThatUsedFileTriggerFileDeletionRemovingTask() {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/CGM3");
-        assertTrue(taskRepository.findBySimpleNaturalId(offsetDateTime2).isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime2).isPresent());
 
         taskManager.removeProcessFile(event);
 

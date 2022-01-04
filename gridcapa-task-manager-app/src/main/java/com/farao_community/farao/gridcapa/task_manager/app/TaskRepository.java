@@ -7,17 +7,23 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
-public interface TaskRepository extends NaturalRepository<Task, OffsetDateTime> {
+@Repository
+public interface TaskRepository extends JpaRepository<Task, UUID> {
+
+    Optional<Task> findByTimestamp(OffsetDateTime timestamp);
 
     @Query("SELECT task FROM Task task JOIN FETCH task.processFiles WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
     Set<Task> findTasksByStartingAndEndingTimestampEager(@Param("startingTimestamp") OffsetDateTime startingTimestamp, @Param("endingTimestamp") OffsetDateTime endingTimestamp);

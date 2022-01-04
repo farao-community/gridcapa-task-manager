@@ -6,8 +6,6 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
@@ -112,15 +110,6 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public void setFileObjectKey(String fileObjectKey) {
         this.fileObjectKey = fileObjectKey;
-    }
-
-    public static ProcessFileDto createDtofromEntity(ProcessFile processFile) {
-        return new ProcessFileDto(
-            processFile.getFileType(),
-            ProcessFileStatus.VALIDATED,
-            processFile.getFilename(),
-            processFile.getLastModificationDate(),
-            processFile.getFileUrl());
     }
 
     @Override

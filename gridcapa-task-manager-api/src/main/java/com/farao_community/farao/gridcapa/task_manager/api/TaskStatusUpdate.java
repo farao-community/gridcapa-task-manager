@@ -9,24 +9,24 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 public class TaskStatusUpdate {
-    private final OffsetDateTime timestamp;
+    private final UUID id;
     private final TaskStatus taskStatus;
 
     @JsonCreator
-    public TaskStatusUpdate(@JsonProperty("timestamp") OffsetDateTime timestamp,
+    public TaskStatusUpdate(@JsonProperty("id") UUID id,
                             @JsonProperty("taskStatus") TaskStatus taskStatus) {
-        this.timestamp = timestamp;
+        this.id = id;
         this.taskStatus = taskStatus;
     }
 
-    public OffsetDateTime getTimestamp() {
-        return timestamp;
+    public UUID getId() {
+        return id;
     }
 
     public TaskStatus getTaskStatus() {

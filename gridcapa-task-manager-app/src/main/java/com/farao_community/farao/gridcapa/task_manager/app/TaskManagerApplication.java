@@ -10,7 +10,6 @@ import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskMan
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import javax.annotation.PostConstruct;
 import java.util.TimeZone;
@@ -21,7 +20,6 @@ import java.util.TimeZone;
 @SuppressWarnings("hideutilityclassconstructor")
 @SpringBootApplication
 @EnableConfigurationProperties(TaskManagerConfigurationProperties.class)
-@EnableJpaRepositories(repositoryBaseClass = NaturalRepositoryImpl.class)
 public class TaskManagerApplication {
     @PostConstruct
     void started() {

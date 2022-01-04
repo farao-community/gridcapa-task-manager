@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TaskTest {
 
     @Autowired
-    private TaskManagerConfigurationProperties taskManagerConfigurationProperties;
+    private TaskDtoBuilder taskDtoBuilder;
 
     private Task task;
 
@@ -89,7 +89,7 @@ class TaskTest {
     void testConstructorFromEntity() {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
         Task task = new Task(timestamp);
-        TaskDto taskDto = Task.createDtoFromEntity(task, taskManagerConfigurationProperties.getProcess().getInputs());
+        TaskDto taskDto = taskDtoBuilder.createDtoFromEntity(task);
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getProcessFiles().size());

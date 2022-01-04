@@ -60,14 +60,14 @@ public class TaskManager {
     @Bean
     public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
         return taskStatusUpdate -> {
-            Optional<Task> optionalTask = taskRepository.findBySimpleNaturalId(taskStatusUpdate.getTimestamp());
+            Optional<Task> optionalTask = taskRepository.findById(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 Task task = optionalTask.get();
                 task.setStatus(taskStatusUpdate.getTaskStatus());
                 taskRepository.save(task);
                 taskUpdateNotifier.notify(task);
             } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getTimestamp());
+                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
             }
         };
     }
@@ -128,6 +128,7 @@ public class TaskManager {
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
             if (validityInterval != null) {
                 String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+                LOGGER.info("Adding MinIO object {}", objectKey);
                 String[] interval = validityInterval.split("/");
                 OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
                 OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
@@ -136,63 +137,65 @@ public class TaskManager {
                 ProcessFile processFile;
                 FileEventType fileEventType;
                 if (optProcessFile.isPresent()) {
-                    LOGGER.info("Start updating process file");
+                    LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, currentTime);
                     processFile = optProcessFile.get();
                     processFile.setFileUrl(minioAdapter.generatePreSignedUrl(event));
                     processFile.setFileObjectKey(objectKey);
                     processFile.setLastModificationDate(getProcessNow());
                     fileEventType = FileEventType.UPDATED;
                 } else {
-                    LOGGER.info("Start creating process file");
+                    LOGGER.info("Creating a new file {} available at {}.", fileType, currentTime);
                     processFile = new ProcessFile(objectKey, fileType, currentTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
                     fileEventType = FileEventType.AVAILABLE;
                 }
-                LOGGER.info("Start saving process file");
                 processFileRepository.save(processFile);
 
                 Set<Task> tasks = new HashSet<>();
-                LOGGER.info("Starting tasks modification loop");
+                LOGGER.info("Adding process file to the related tasks");
                 while (currentTime.isBefore(endTime)) {
                     final OffsetDateTime finalTime = currentTime;
                     Task task = taskRepository.findTaskByTimestampEagerLeft(finalTime).orElseGet(() -> new Task(finalTime));
                     addFileEventToTask(task, fileEventType, processFile);
                     task.addProcessFile(processFile);
-                    checkAndUpdateTaskReadiness(task);
+                    checkAndUpdateTaskStatus(task);
                     tasks.add(task);
                     currentTime = currentTime.plusHours(1);
                 }
-                LOGGER.info("Start saving tasks");
+                LOGGER.info("Saving related tasks");
                 taskRepository.saveAll(tasks);
-                LOGGER.info("Start notifying");
+                LOGGER.info("Notifying on web-sockets");
                 taskUpdateNotifier.notify(tasks);
-                LOGGER.info("End notifying");
+                LOGGER.info("Process file {} has been added properly", processFile.getFilename());
             }
         }
     }
 
     public void removeProcessFile(Event event) {
         String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-        LOGGER.info("Finding process file");
-        Optional<ProcessFile> optionalProcessFile = processFileRepository.findBySimpleNaturalId(objectKey);
+        LOGGER.info("Removing MinIO object {}", objectKey);
+        Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
         if (optionalProcessFile.isPresent()) {
             ProcessFile processFile = optionalProcessFile.get();
-            LOGGER.info("Finding tasks");
+            LOGGER.info("Finding tasks related to {}", processFile.getFilename());
             Set<Task> tasks = taskRepository.findTasksByStartingAndEndingTimestampEager(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
-            LOGGER.info("Starting remove loop");
+            LOGGER.info("Removing process file of the related tasks");
             for (Task task : tasks) {
-                addFileEventToTask(task, FileEventType.DELETED, processFile);
                 task.removeProcessFile(processFile);
+                checkAndUpdateTaskStatus(task);
                 if (task.getProcessFiles().isEmpty()) {
                     task.getProcessEvents().clear();
+                } else {
+                    addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
             }
-            LOGGER.info("Start saving tasks");
+            LOGGER.info("Saving related tasks");
             taskRepository.saveAll(tasks);
-            LOGGER.info("Starting delete");
             processFileRepository.delete(processFile);
-            LOGGER.info("Start notifying");
+            LOGGER.info("Notifying on web-sockets");
             taskUpdateNotifier.notify(tasks);
-            LOGGER.info("End notifying");
+            LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
+        } else {
+            LOGGER.info("File not referenced in the database. Nothing to do.");
         }
     }
 
@@ -201,8 +204,12 @@ public class TaskManager {
         return OffsetDateTime.now(ZoneId.of(processProperties.getTimezone()));
     }
 
-    private void checkAndUpdateTaskReadiness(Task task) {
-        if (taskManagerConfigurationProperties.getProcess().getInputs().size() == task.getProcessFiles().size()) {
+    private void checkAndUpdateTaskStatus(Task task) {
+        if (task.getProcessFilesNumber() == 0) {
+            task.setStatus(TaskStatus.NOT_CREATED);
+        } else if (task.getProcessFilesNumber() == 1) {
+            task.setStatus(TaskStatus.CREATED);
+        } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == task.getProcessFilesNumber()) {
             task.setStatus(TaskStatus.READY);
         }
     }

@@ -6,8 +6,6 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
@@ -17,7 +15,6 @@ import org.hibernate.annotations.SortNatural;
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -48,6 +45,9 @@ public class Task {
     )
     @OrderColumn
     private List<ProcessEvent> processEvents = new ArrayList<>();
+
+    @Column(name = "process_files_number")
+    private Integer processFilesNumber = 0;
 
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(
@@ -95,6 +95,10 @@ public class Task {
         this.processEvents = processFileEvents;
     }
 
+    public Integer getProcessFilesNumber() {
+        return processFilesNumber;
+    }
+
     public SortedSet<ProcessFile> getProcessFiles() {
         return processFiles;
     }
@@ -105,28 +109,17 @@ public class Task {
 
     public void addProcessFile(ProcessFile processFile) {
         getProcessFiles().add(processFile);
+        processFilesNumber += 1;
     }
 
     public void removeProcessFile(ProcessFile processFile) {
         getProcessFiles().remove(processFile);
+        processFilesNumber -= 1;
     }
 
     public Optional<ProcessFile> getProcessFile(String fileType) {
         return processFiles.stream()
             .filter(file -> file.getFileType().equals(fileType))
             .findFirst();
-    }
-
-    public static TaskDto createDtoFromEntity(Task task, List<String> inputs) {
-        return new TaskDto(
-            task.getId(),
-            task.getTimestamp(),
-            task.getStatus(),
-            inputs.stream()
-                .map(input -> task.getProcessFile(input)
-                    .map(ProcessFile::createDtofromEntity)
-                    .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-                .collect(Collectors.toList()),
-            task.getProcessEvents().stream().map(ProcessEvent::createDtoFromEntity).collect(Collectors.toList()));
     }
 }

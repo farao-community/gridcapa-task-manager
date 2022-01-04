@@ -74,7 +74,7 @@ class TaskManagerTest {
 
         taskManager.updateTasks(event);
 
-        assertTrue(taskRepository.findBySimpleNaturalId(taskTimestamp).isPresent());
+        assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         assertEquals(cgmUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
         assertEquals("cgm-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
     }
@@ -92,7 +92,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCrac);
 
         assertEquals(1, taskRepository.findAll().size());
-        assertTrue(taskRepository.findBySimpleNaturalId(taskTimestamp).isPresent());
+        assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         assertEquals(cgmUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
         assertEquals(cracUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CRAC").get().getFileUrl());
         assertEquals("cgm-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
@@ -139,9 +139,9 @@ class TaskManagerTest {
         Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
-        assertEquals(CREATED, taskRepository.findBySimpleNaturalId(taskTimestamp).get().getStatus());
+        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
         taskManager.updateTasks(eventCrac);
-        assertEquals(READY, taskRepository.findBySimpleNaturalId(taskTimestamp).get().getStatus());
+        assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
     }
 
     @Test
@@ -156,7 +156,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
 
-        Task task = taskRepository.findBySimpleNaturalId(taskTimestamp).get();
+        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
         assertEquals(2, task.getProcessEvents().size());
         assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
         assertEquals("INFO", task.getProcessEvents().get(1).getLevel());
@@ -176,7 +176,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCgmNew);
 
-        Task task = taskRepository.findBySimpleNaturalId(taskTimestamp).get();
+        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
         assertEquals(2, task.getProcessEvents().size());
         assertTrue(task.getProcessEvents().get(0).getTimestamp().isBefore(task.getProcessEvents().get(1).getTimestamp()));
         assertEquals("INFO", task.getProcessEvents().get(0).getLevel());
