@@ -49,13 +49,13 @@ public class TaskDtoBuilder {
             task.getStatus(),
             properties.getProcess().getInputs().stream()
                 .map(input -> task.getProcessFile(input)
-                    .map(this::createDtofromEntity)
+                    .map(this::createDtoFromEntity)
                     .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .collect(Collectors.toList()),
             task.getProcessEvents().stream().map(ProcessEvent::createDtoFromEntity).collect(Collectors.toList()));
     }
 
-    public ProcessFileDto createDtofromEntity(ProcessFile processFile) {
+    public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
             processFile.getFileType(),
             ProcessFileStatus.VALIDATED,

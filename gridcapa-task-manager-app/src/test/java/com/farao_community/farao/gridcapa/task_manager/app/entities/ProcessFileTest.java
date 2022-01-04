@@ -36,7 +36,7 @@ class ProcessFileTest {
             "cgm-url",
             OffsetDateTime.parse("2021-10-11T10:18Z"));
 
-        ProcessFileDto processFileDto = taskDtoBuilder.createDtofromEntity(processFile);
+        ProcessFileDto processFileDto = taskDtoBuilder.createDtoFromEntity(processFile);
         assertEquals("CGM", processFileDto.getFileType());
         assertEquals("cgm-url", processFileDto.getFileUrl());
         assertEquals("cgm-name", processFileDto.getFilename());
