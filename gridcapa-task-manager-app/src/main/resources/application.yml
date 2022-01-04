@@ -15,13 +15,14 @@ spring:
   cloud:
     stream:
       default:
-        binder: rabbit
         group: task-manager
       bindings:
         handleMinioEvent-in-0:
           destination: gridcapa.minio.events
         handleTaskStatusUpdate-in-0:
           destination: task-status-updated
+        handleTaskLogEventUpdate-in-0:
+          destination: task-manager-logs-exchange
         task-updated:
           destination: task-updated
       rabbit:
@@ -34,7 +35,7 @@ spring:
             consumer:
               exchange-type: fanout
     function:
-      definition: handleMinioEvent;handleTaskStatusUpdate
+      definition: handleMinioEvent;handleTaskStatusUpdate;handleTaskLogEventUpdate
 
 task-server:
   minio:
