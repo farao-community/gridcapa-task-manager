@@ -16,10 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,9 +63,7 @@ class TaskTest {
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        SortedSet<ProcessFile> processFiles = new TreeSet<>();
-        processFiles.add(processFileMock);
-        task.setProcessFiles(processFiles);
+        task.addProcessFile(processFileMock);
         assertEquals(processFileMock, task.getProcessFiles().iterator().next());
         assertEquals(processFileMock, task.getProcessFile(fileType).get());
     }
@@ -76,13 +71,8 @@ class TaskTest {
     @Test
     void getProcessEventsTest() {
         assertTrue(task.getProcessEvents().isEmpty());
-        ProcessEvent processEventMock = Mockito.mock(ProcessEvent.class);
-        Mockito.when(processEventMock.getLevel()).thenReturn("WARN");
-        List<ProcessEvent> processEvents = new ArrayList<>();
-        processEvents.add(processEventMock);
-        task.setProcessEvents(processEvents);
-        assertEquals(processEventMock, task.getProcessEvents().get(0));
-        assertEquals("WARN", task.getProcessEvents().get(0).getLevel());
+        task.addProcessEvent(OffsetDateTime.now(), "WARN", null);
+        assertEquals("WARN", task.getProcessEvents().iterator().next().getLevel());
     }
 
     @Test

@@ -38,16 +38,12 @@ public class Task {
     private TaskStatus status;
 
     @OneToMany(
-        mappedBy = "task",
+        cascade = { CascadeType.MERGE, CascadeType.PERSIST },
         fetch = FetchType.EAGER,
-        cascade = CascadeType.ALL,
         orphanRemoval = true
     )
-    @OrderColumn
-    private List<ProcessEvent> processEvents = new ArrayList<>();
-
-    @Column(name = "process_files_number")
-    private Integer processFilesNumber = 0;
+    @SortNatural
+    private SortedSet<ProcessEvent> processEvents = new TreeSet<>();
 
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(
@@ -87,34 +83,33 @@ public class Task {
         this.status = status;
     }
 
-    public List<ProcessEvent> getProcessEvents() {
+    public SortedSet<ProcessEvent> getProcessEvents() {
         return processEvents;
     }
 
-    public void setProcessEvents(List<ProcessEvent> processFileEvents) {
-        this.processEvents = processFileEvents;
-    }
-
-    public Integer getProcessFilesNumber() {
-        return processFilesNumber;
+    public void addProcessEvent(OffsetDateTime timestamp, String level, String message) {
+        getProcessEvents().add(new ProcessEvent(timestamp, level, message));
     }
 
     public SortedSet<ProcessFile> getProcessFiles() {
         return processFiles;
     }
 
-    public void setProcessFiles(SortedSet<ProcessFile> processFiles) {
-        this.processFiles = processFiles;
+    public void addProcessFile(String fileObjectKey,
+                               String fileType,
+                               OffsetDateTime startingAvailabilityDate,
+                               OffsetDateTime endingAvailabilityDate,
+                               String fileUrl,
+                               OffsetDateTime lastModificationDate) {
+        addProcessFile(new ProcessFile(fileObjectKey, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
     }
 
     public void addProcessFile(ProcessFile processFile) {
         getProcessFiles().add(processFile);
-        processFilesNumber += 1;
     }
 
     public void removeProcessFile(ProcessFile processFile) {
         getProcessFiles().remove(processFile);
-        processFilesNumber -= 1;
     }
 
     public Optional<ProcessFile> getProcessFile(String fileType) {

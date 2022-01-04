@@ -8,7 +8,6 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.*;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
@@ -99,7 +98,7 @@ public class TaskManager {
     @Bean
     public Consumer<NotificationRecords> handleMinioEvent() {
         return notificationRecords -> notificationRecords.events().forEach(event -> {
-            LOGGER.info("s3 event received");
+            LOGGER.debug("s3 event received");
             switch (event.eventType()) {
                 case OBJECT_CREATED_ANY:
                 case OBJECT_CREATED_PUT:
@@ -132,7 +131,7 @@ public class TaskManager {
                 String[] interval = validityInterval.split("/");
                 OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
                 OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
-                LOGGER.info("Start finding process file");
+                LOGGER.debug("Start finding process file");
                 Optional<ProcessFile> optProcessFile = processFileRepository.findProcessFileByStartingAvailabilityDateAndAndFileType(currentTime, fileType);
                 ProcessFile processFile;
                 FileEventType fileEventType;
@@ -151,7 +150,7 @@ public class TaskManager {
                 processFileRepository.save(processFile);
 
                 Set<Task> tasks = new HashSet<>();
-                LOGGER.info("Adding process file to the related tasks");
+                LOGGER.debug("Adding process file to the related tasks");
                 while (currentTime.isBefore(endTime)) {
                     final OffsetDateTime finalTime = currentTime;
                     Task task = taskRepository.findTaskByTimestampEagerLeft(finalTime).orElseGet(() -> new Task(finalTime));
@@ -161,9 +160,9 @@ public class TaskManager {
                     tasks.add(task);
                     currentTime = currentTime.plusHours(1);
                 }
-                LOGGER.info("Saving related tasks");
+                LOGGER.debug("Saving related tasks");
                 taskRepository.saveAll(tasks);
-                LOGGER.info("Notifying on web-sockets");
+                LOGGER.debug("Notifying on web-sockets");
                 taskUpdateNotifier.notify(tasks);
                 LOGGER.info("Process file {} has been added properly", processFile.getFilename());
             }
@@ -176,9 +175,9 @@ public class TaskManager {
         Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
         if (optionalProcessFile.isPresent()) {
             ProcessFile processFile = optionalProcessFile.get();
-            LOGGER.info("Finding tasks related to {}", processFile.getFilename());
+            LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
             Set<Task> tasks = taskRepository.findTasksByStartingAndEndingTimestampEager(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
-            LOGGER.info("Removing process file of the related tasks");
+            LOGGER.debug("Removing process file of the related tasks");
             for (Task task : tasks) {
                 task.removeProcessFile(processFile);
                 checkAndUpdateTaskStatus(task);
@@ -188,10 +187,10 @@ public class TaskManager {
                     addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
             }
-            LOGGER.info("Saving related tasks");
+            LOGGER.debug("Saving related tasks");
             taskRepository.saveAll(tasks);
             processFileRepository.delete(processFile);
-            LOGGER.info("Notifying on web-sockets");
+            LOGGER.debug("Notifying on web-sockets");
             taskUpdateNotifier.notify(tasks);
             LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
         } else {
@@ -205,19 +204,19 @@ public class TaskManager {
     }
 
     private void checkAndUpdateTaskStatus(Task task) {
-        if (task.getProcessFilesNumber() == 0) {
+        int fileNumber = task.getProcessFiles().size();
+        if (fileNumber == 0) {
             task.setStatus(TaskStatus.NOT_CREATED);
-        } else if (task.getProcessFilesNumber() == 1) {
-            task.setStatus(TaskStatus.CREATED);
-        } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == task.getProcessFilesNumber()) {
+        } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == fileNumber) {
             task.setStatus(TaskStatus.READY);
+        } else {
+            task.setStatus(TaskStatus.CREATED);
         }
     }
 
     private void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
         String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename());
-        ProcessEvent event = new ProcessEvent(task, getProcessNow(), FILE_EVENT_DEFAULT_LEVEL, message);
-        task.getProcessEvents().add(event);
+        task.addProcessEvent(getProcessNow(), FILE_EVENT_DEFAULT_LEVEL, message);
     }
 
     private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName) {
