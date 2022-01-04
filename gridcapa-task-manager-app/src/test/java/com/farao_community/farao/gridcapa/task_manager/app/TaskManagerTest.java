@@ -22,8 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.READY;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -75,8 +74,9 @@ class TaskManagerTest {
         taskManager.updateTasks(event);
 
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
-        assertEquals(cgmUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
-        assertEquals("cgm-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
+        Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        assertEquals(cgmUrl, task.getProcessFile("CGM").orElseThrow().getFileUrl());
+        assertEquals("cgm-test", task.getProcessFile("CGM").orElseThrow().getFilename());
     }
 
     @Test
@@ -93,10 +93,11 @@ class TaskManagerTest {
 
         assertEquals(1, taskRepository.findAll().size());
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
-        assertEquals(cgmUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFileUrl());
-        assertEquals(cracUrl, taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CRAC").get().getFileUrl());
-        assertEquals("cgm-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CGM").get().getFilename());
-        assertEquals("crac-test", taskRepository.findTaskByTimestampEager(taskTimestamp).get().getProcessFile("CRAC").get().getFilename());
+        Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        assertEquals(cgmUrl, task.getProcessFile("CGM").orElseThrow().getFileUrl());
+        assertEquals(cracUrl, task.getProcessFile("CRAC").orElseThrow().getFileUrl());
+        assertEquals("cgm-test", task.getProcessFile("CGM").orElseThrow().getFilename());
+        assertEquals("crac-test", task.getProcessFile("CRAC").orElseThrow().getFilename());
     }
 
     @Test
@@ -139,9 +140,9 @@ class TaskManagerTest {
         Event eventCrac = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
-        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
         taskManager.updateTasks(eventCrac);
-        assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+        assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
     }
 
     @Test
@@ -156,7 +157,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
         taskManager.removeProcessFile(eventCrac);
-        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).get().getStatus());
+        assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
     }
 
     @Test
@@ -171,7 +172,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(2, task.getProcessEvents().size());
         Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
         ProcessEvent event = processEventIterator.next();
@@ -194,7 +195,7 @@ class TaskManagerTest {
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCgmNew);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).get();
+        Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(2, task.getProcessEvents().size());
         Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
         ProcessEvent event1 = processEventIterator.next();
@@ -234,7 +235,7 @@ class TaskManagerTest {
         Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
-        Task updatedTask = taskRepository.findTaskByTimestampEager(taskTimestamp).get();
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(3, updatedTask.getProcessEvents().size());
 
         Iterator<ProcessEvent> processEventIterator = updatedTask.getProcessEvents().iterator();
@@ -262,7 +263,7 @@ class TaskManagerTest {
         Event eventCracDeletion = createEvent("CSE_D2CC", "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
-        assertTrue(taskRepository.findTaskByTimestampEager(taskTimestamp).isEmpty());
+        assertEquals(NOT_CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
     }
 
     @Test
@@ -279,10 +280,11 @@ class TaskManagerTest {
             "  \"serviceName\": \"GRIDCAPA\" \n" +
             "}";
         taskManager.handleTaskLogEventUpdate().accept(logEvent);
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).get();
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(1, updatedTask.getProcessEvents().size());
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33Z"), updatedTask.getProcessEvents().get(0).getTimestamp());
-        assertEquals("INFO", updatedTask.getProcessEvents().get(0).getLevel());
-        assertEquals("Hello from backend", updatedTask.getProcessEvents().get(0).getMessage());
+        ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
+        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33Z"), event.getTimestamp());
+        assertEquals("INFO", event.getLevel());
+        assertEquals("Hello from backend", event.getMessage());
     }
 }

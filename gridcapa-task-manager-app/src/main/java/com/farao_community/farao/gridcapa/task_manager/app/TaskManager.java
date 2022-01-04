@@ -48,7 +48,8 @@ public class TaskManager {
     public TaskManager(TaskUpdateNotifier taskUpdateNotifier,
                        TaskManagerConfigurationProperties taskManagerConfigurationProperties,
                        TaskRepository taskRepository,
-                       ProcessFileRepository processFileRepository, MinioAdapter minioAdapter) {
+                       ProcessFileRepository processFileRepository,
+                       MinioAdapter minioAdapter) {
         this.taskUpdateNotifier = taskUpdateNotifier;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
@@ -82,8 +83,7 @@ public class TaskManager {
                     Task task = optionalTask.get();
                     LOGGER.info(loggerEvent.getTimestamp());
                     OffsetDateTime offsetDateTime = getOffsetDateTimeAtSameInstant(LocalDateTime.parse(loggerEvent.getTimestamp().substring(0, 19)));
-                    ProcessEvent processEvent = new ProcessEvent(task, offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
-                    task.getProcessEvents().add(processEvent);
+                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task);
                 } else {
@@ -132,7 +132,7 @@ public class TaskManager {
                 OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
                 OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
                 LOGGER.debug("Start finding process file");
-                Optional<ProcessFile> optProcessFile = processFileRepository.findProcessFileByStartingAvailabilityDateAndAndFileType(currentTime, fileType);
+                Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileType(currentTime, fileType);
                 ProcessFile processFile;
                 FileEventType fileEventType;
                 if (optProcessFile.isPresent()) {
@@ -153,7 +153,7 @@ public class TaskManager {
                 LOGGER.debug("Adding process file to the related tasks");
                 while (currentTime.isBefore(endTime)) {
                     final OffsetDateTime finalTime = currentTime;
-                    Task task = taskRepository.findTaskByTimestampEagerLeft(finalTime).orElseGet(() -> new Task(finalTime));
+                    Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> new Task(finalTime));
                     addFileEventToTask(task, fileEventType, processFile);
                     task.addProcessFile(processFile);
                     checkAndUpdateTaskStatus(task);
@@ -176,7 +176,7 @@ public class TaskManager {
         if (optionalProcessFile.isPresent()) {
             ProcessFile processFile = optionalProcessFile.get();
             LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
-            Set<Task> tasks = taskRepository.findTasksByStartingAndEndingTimestampEager(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
+            Set<Task> tasks = taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
             LOGGER.debug("Removing process file of the related tasks");
             for (Task task : tasks) {
                 task.removeProcessFile(processFile);

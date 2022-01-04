@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
@@ -33,7 +34,7 @@ public class TaskDtoBuilder {
     }
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
-        return taskRepository.findTaskByTimestampEager(timestamp)
+        return taskRepository.findByTimestamp(timestamp)
             .map(this::createDtoFromEntity)
             .orElse(getEmptyTask(timestamp));
     }
@@ -52,7 +53,7 @@ public class TaskDtoBuilder {
                     .map(this::createDtoFromEntity)
                     .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .collect(Collectors.toList()),
-            task.getProcessEvents().stream().map(ProcessEvent::createDtoFromEntity).collect(Collectors.toList()));
+            task.getProcessEvents().stream().map(this::createDtoFromEntity).collect(Collectors.toList()));
     }
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
@@ -62,5 +63,11 @@ public class TaskDtoBuilder {
             processFile.getFilename(),
             processFile.getLastModificationDate(),
             processFile.getFileUrl());
+    }
+
+    public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
+        return new ProcessEventDto(processEvent.getTimestamp(),
+            processEvent.getLevel(),
+            processEvent.getMessage());
     }
 }

@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
@@ -40,10 +41,10 @@ class TaskProcessFileDeletionTest {
     @Autowired
     private TaskManager taskManager;
 
-    private OffsetDateTime offsetDateTime0 = OffsetDateTime.of(2020, 1, 1, 0, 30, 0, 0, ZoneOffset.UTC);
-    private OffsetDateTime offsetDateTime1 = OffsetDateTime.of(2020, 1, 1, 1, 30, 0, 0, ZoneOffset.UTC);
-    private OffsetDateTime offsetDateTime2 = OffsetDateTime.of(2020, 1, 1, 2, 30, 0, 0, ZoneOffset.UTC);
-    private OffsetDateTime offsetDateTime3 = OffsetDateTime.of(2020, 1, 1, 3, 30, 0, 0, ZoneOffset.UTC);
+    private final OffsetDateTime offsetDateTime0 = OffsetDateTime.of(2020, 1, 1, 0, 30, 0, 0, ZoneOffset.UTC);
+    private final OffsetDateTime offsetDateTime1 = OffsetDateTime.of(2020, 1, 1, 1, 30, 0, 0, ZoneOffset.UTC);
+    private final OffsetDateTime offsetDateTime2 = OffsetDateTime.of(2020, 1, 1, 2, 30, 0, 0, ZoneOffset.UTC);
+    private final OffsetDateTime offsetDateTime3 = OffsetDateTime.of(2020, 1, 1, 3, 30, 0, 0, ZoneOffset.UTC);
 
     @BeforeEach
     void setUpTasks() {
@@ -113,9 +114,9 @@ class TaskProcessFileDeletionTest {
 
         taskManager.removeProcessFile(event);
 
-        Task task1 = taskRepository.findTaskByTimestampEager(offsetDateTime0).get();
+        Task task1 = taskRepository.findByTimestamp(offsetDateTime0).orElseThrow();
         assertTrue(task1.getProcessFile("CGM").isPresent());
-        Task task2 = taskRepository.findTaskByTimestampEager(offsetDateTime1).get();
+        Task task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
         assertTrue(task2.getProcessFile("CGM").isPresent());
     }
 
@@ -124,12 +125,12 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/CGM2");
 
-        Task task2 = taskRepository.findTaskByTimestampEager(offsetDateTime1).get();
+        Task task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
         assertTrue(task2.getProcessFile("CGM").isPresent());
 
         taskManager.removeProcessFile(event);
 
-        task2 = taskRepository.findTaskByTimestampEager(offsetDateTime1).get();
+        task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
         assertTrue(task2.getProcessFile("CGM").isEmpty());
     }
 
@@ -141,7 +142,7 @@ class TaskProcessFileDeletionTest {
 
         taskManager.removeProcessFile(event);
 
-        assertFalse(taskRepository.findTaskByTimestampEager(offsetDateTime2).isPresent());
+        assertEquals(TaskStatus.NOT_CREATED, taskRepository.findByTimestamp(offsetDateTime2).orElseThrow().getStatus());
     }
 
     @Test
@@ -149,16 +150,16 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/REFPROG");
 
-        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime0).get().getProcessFile("REFPROG").isPresent());
-        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime1).get().getProcessFile("REFPROG").isPresent());
-        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime3).get().getProcessFile("REFPROG").isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getProcessFile("REFPROG").isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getProcessFile("REFPROG").isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime3).orElseThrow().getProcessFile("REFPROG").isPresent());
 
         taskManager.removeProcessFile(event);
 
-        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime0).get().getProcessFile("REFPROG").isEmpty());
-        assertTrue(taskRepository.findTaskByTimestampEager(offsetDateTime1).get().getProcessFile("REFPROG").isEmpty());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getProcessFile("REFPROG").isEmpty());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getProcessFile("REFPROG").isEmpty());
 
-        assertFalse(taskRepository.findTaskByTimestampEager(offsetDateTime3).isPresent());
+        assertEquals(TaskStatus.NOT_CREATED, taskRepository.findByTimestamp(offsetDateTime3).orElseThrow().getStatus());
     }
 
 }

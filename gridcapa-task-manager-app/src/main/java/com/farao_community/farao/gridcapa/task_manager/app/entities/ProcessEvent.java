@@ -6,8 +6,6 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
-
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -74,11 +72,5 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
     @Override
     public int hashCode() {
         return Objects.hash(id, level, timestamp, message);
-    }
-
-    public static ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
-        return new ProcessEventDto(processEvent.getTimestamp(),
-                processEvent.getLevel(),
-                processEvent.getMessage());
     }
 }
