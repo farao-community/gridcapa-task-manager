@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.READY;
@@ -53,9 +54,9 @@ class TaskManagerTest {
     private Event createEvent(String processTag, String fileType, String fileKey, String validityInterval, String fileUrl) {
         Event event = Mockito.mock(Event.class);
         Map<String, String> metadata = Map.of(
-                TaskManager.FILE_PROCESS_TAG, processTag,
-                TaskManager.FILE_TYPE, fileType,
-                TaskManager.FILE_VALIDITY_INTERVAL, validityInterval
+            TaskManager.FILE_PROCESS_TAG, processTag,
+            TaskManager.FILE_TYPE, fileType,
+            TaskManager.FILE_VALIDITY_INTERVAL, validityInterval
         );
         Mockito.when(event.userMetadata()).thenReturn(metadata);
         Mockito.when(minioAdapter.generatePreSignedUrl(event)).thenReturn(fileUrl);
@@ -235,5 +236,26 @@ class TaskManagerTest {
         taskManager.removeProcessFile(eventCracDeletion);
 
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isEmpty());
+    }
+
+    @Test
+    void handleTaskLogEventUpdateTest() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        Task task = new Task(taskTimestamp, Arrays.asList("CGM", "CRAC"));
+        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
+        taskRepository.save(task);
+        String logEvent = "{\n" +
+            "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
+            "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
+            "  \"level\": \"INFO\",\n" +
+            "  \"message\": \"Hello from backend\",\n" +
+            "  \"serviceName\": \"GRIDCAPA\" \n" +
+            "}";
+        taskManager.handleTaskLogEventUpdate().accept(logEvent);
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).get();
+        assertEquals(updatedTask.getProcessEvents().size(), 1);
+        assertEquals(OffsetDateTime.parse("2021-12-30T17:31:33+01:00"), updatedTask.getProcessEvents().get(0).getTimestamp());
+        assertEquals("INFO", updatedTask.getProcessEvents().get(0).getLevel());
+        assertEquals("Hello from backend", updatedTask.getProcessEvents().get(0).getMessage());
     }
 }

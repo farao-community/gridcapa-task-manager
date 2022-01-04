@@ -20,7 +20,7 @@ public class TaskLogEventUpdate {
     private final String serviceName;
 
     @JsonCreator
-    public TaskLogEventUpdate(@JsonProperty("gridcapa-task-id") String id, @JsonProperty("@timestamp") String timestamp, @JsonProperty("level") String level, @JsonProperty("message") String message, @JsonProperty("serviceName") String serviceName) {
+    public TaskLogEventUpdate(@JsonProperty("gridcapa-task-id") String id, @JsonProperty("timestamp") String timestamp, @JsonProperty("level") String level, @JsonProperty("message") String message, @JsonProperty("serviceName") String serviceName) {
         this.id = id;
         this.timestamp = timestamp;
         this.level = level;
