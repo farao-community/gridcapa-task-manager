@@ -178,7 +178,7 @@ public class TaskManager {
             LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
             Set<Task> tasks = taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
             LOGGER.debug("Removing process file of the related tasks");
-            for (Task task : tasks) {
+            tasks.parallelStream().forEach(task -> {
                 task.removeProcessFile(processFile);
                 checkAndUpdateTaskStatus(task);
                 if (task.getProcessFiles().isEmpty()) {
@@ -186,7 +186,7 @@ public class TaskManager {
                 } else {
                     addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
-            }
+            });
             LOGGER.debug("Saving related tasks");
             taskRepository.saveAll(tasks);
             processFileRepository.delete(processFile);
