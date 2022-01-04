@@ -253,7 +253,7 @@ class TaskManagerTest {
             "}";
         taskManager.handleTaskLogEventUpdate().accept(logEvent);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).get();
-        assertEquals(updatedTask.getProcessEvents().size(), 1);
+        assertEquals(1, updatedTask.getProcessEvents().size());
         assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33Z"), updatedTask.getProcessEvents().get(0).getTimestamp());
         assertEquals("INFO", updatedTask.getProcessEvents().get(0).getLevel());
         assertEquals("Hello from backend", updatedTask.getProcessEvents().get(0).getMessage());
