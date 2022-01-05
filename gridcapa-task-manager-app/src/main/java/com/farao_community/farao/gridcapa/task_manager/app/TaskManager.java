@@ -63,7 +63,7 @@ public class TaskManager {
     @Bean
     public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
         return taskStatusUpdate -> {
-            Optional<Task> optionalTask = taskRepository.findById(taskStatusUpdate.getId());
+            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 Task task = optionalTask.get();
                 task.setStatus(taskStatusUpdate.getTaskStatus());
@@ -81,7 +81,7 @@ public class TaskManager {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
-                Optional<Task> optionalTask = taskRepository.findById(UUID.fromString(loggerEvent.getId()));
+                Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
                 if (optionalTask.isPresent()) {
                     Task task = optionalTask.get();
                     LOGGER.info(loggerEvent.getTimestamp());

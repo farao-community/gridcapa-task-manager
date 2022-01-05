@@ -23,6 +23,9 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles WHERE task.id = :id")
+    Optional<Task> findByIdWithProcessFiles(@Param("id") UUID id);
+
     @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles WHERE task.timestamp = :timestamp")
     Optional<Task> findByTimestamp(@Param("timestamp") OffsetDateTime timestamp);
 
