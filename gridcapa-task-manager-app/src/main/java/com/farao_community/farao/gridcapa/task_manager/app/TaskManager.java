@@ -22,11 +22,14 @@ import org.springframework.stereotype.Service;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -129,43 +132,33 @@ public class TaskManager {
                 String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
                 LOGGER.info("Adding MinIO object {}", objectKey);
                 String[] interval = validityInterval.split("/");
-                OffsetDateTime currentTime = OffsetDateTime.parse(interval[0]);
-                OffsetDateTime endTime = OffsetDateTime.parse(interval[1]);
-                LOGGER.debug("Start finding process file");
-                Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileType(currentTime, fileType);
-                ProcessFile processFile;
-                FileEventType fileEventType;
-                if (optProcessFile.isPresent()) {
-                    LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, currentTime);
-                    processFile = optProcessFile.get();
-                    processFile.setFileUrl(minioAdapter.generatePreSignedUrl(event));
-                    processFile.setFileObjectKey(objectKey);
-                    processFile.setLastModificationDate(getProcessNow());
-                    fileEventType = FileEventType.UPDATED;
-                } else {
-                    LOGGER.info("Creating a new file {} available at {}.", fileType, currentTime);
-                    processFile = new ProcessFile(objectKey, fileType, currentTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
-                    fileEventType = FileEventType.AVAILABLE;
-                }
-                processFileRepository.save(processFile);
-
-                Set<Task> tasks = new HashSet<>();
-                LOGGER.debug("Adding process file to the related tasks");
-                while (currentTime.isBefore(endTime)) {
-                    final OffsetDateTime finalTime = currentTime;
-                    Task task = taskRepository.findByTimestamp(finalTime).orElseGet(() -> new Task(finalTime));
-                    addFileEventToTask(task, fileEventType, processFile);
-                    task.addProcessFile(processFile);
-                    checkAndUpdateTaskStatus(task);
-                    tasks.add(task);
-                    currentTime = currentTime.plusHours(1);
-                }
-                LOGGER.debug("Saving related tasks");
-                taskRepository.saveAll(tasks);
-                LOGGER.debug("Notifying on web-sockets");
-                taskUpdateNotifier.notify(tasks);
-                LOGGER.info("Process file {} has been added properly", processFile.getFilename());
+                ProcessFileArrival processFileArrival = getProcessFileArrival(
+                    OffsetDateTime.parse(interval[0]),
+                    OffsetDateTime.parse(interval[1]),
+                    event,
+                    objectKey,
+                    fileType);
+                processFileRepository.save(processFileArrival.processFile);
+                saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
+                LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
             }
+        }
+    }
+
+    private ProcessFileArrival getProcessFileArrival(OffsetDateTime startTime, OffsetDateTime endTime, Event event, String objectKey, String fileType) {
+        LOGGER.debug("Start finding process file");
+        Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileType(startTime, fileType);
+        if (optProcessFile.isPresent()) {
+            LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, startTime);
+            ProcessFile processFile = optProcessFile.get();
+            processFile.setFileUrl(minioAdapter.generatePreSignedUrl(event));
+            processFile.setFileObjectKey(objectKey);
+            processFile.setLastModificationDate(getProcessNow());
+            return new ProcessFileArrival(processFile, FileEventType.UPDATED);
+        } else {
+            LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
+            ProcessFile processFile = new ProcessFile(objectKey, fileType, startTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
+            return new ProcessFileArrival(processFile, FileEventType.AVAILABLE);
         }
     }
 
@@ -176,22 +169,8 @@ public class TaskManager {
         if (optionalProcessFile.isPresent()) {
             ProcessFile processFile = optionalProcessFile.get();
             LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
-            Set<Task> tasks = taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
-            LOGGER.debug("Removing process file of the related tasks");
-            tasks.parallelStream().forEach(task -> {
-                task.removeProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
-                if (task.getProcessFiles().isEmpty()) {
-                    task.getProcessEvents().clear();
-                } else {
-                    addFileEventToTask(task, FileEventType.DELETED, processFile);
-                }
-            });
-            LOGGER.debug("Saving related tasks");
-            taskRepository.saveAll(tasks);
+            saveAndNotifyTasks(removeProcessFileFromTasks(processFile));
             processFileRepository.delete(processFile);
-            LOGGER.debug("Notifying on web-sockets");
-            taskUpdateNotifier.notify(tasks);
             LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
         } else {
             LOGGER.info("File not referenced in the database. Nothing to do.");
@@ -201,17 +180,6 @@ public class TaskManager {
     private OffsetDateTime getProcessNow() {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
         return OffsetDateTime.now(ZoneId.of(processProperties.getTimezone()));
-    }
-
-    private void checkAndUpdateTaskStatus(Task task) {
-        int fileNumber = task.getProcessFiles().size();
-        if (fileNumber == 0) {
-            task.setStatus(TaskStatus.NOT_CREATED);
-        } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == fileNumber) {
-            task.setStatus(TaskStatus.READY);
-        } else {
-            task.setStatus(TaskStatus.CREATED);
-        }
     }
 
     private void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
@@ -227,13 +195,73 @@ public class TaskManager {
         }
     }
 
+    private OffsetDateTime getOffsetDateTimeAtSameInstant(LocalDateTime localDateTime) {
+        return localDateTime.atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).withZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
+    }
+
+    private Set<Task> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {
+        LOGGER.debug("Adding process file to the related tasks");
+        return Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
+            .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
+            .parallel()
+            .map(timestamp -> {
+                Task task = taskRepository.findByTimestamp(timestamp).orElseGet(() -> new Task(timestamp));
+                addFileEventToTask(task, fileEventType, processFile);
+                task.addProcessFile(processFile);
+                checkAndUpdateTaskStatus(task);
+                return task;
+            })
+            .collect(Collectors.toSet());
+    }
+
+    private Set<Task> removeProcessFileFromTasks(ProcessFile processFile) {
+        LOGGER.debug("Removing process file of the related tasks");
+        return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
+            .parallelStream()
+            .map(task -> {
+                task.removeProcessFile(processFile);
+                checkAndUpdateTaskStatus(task);
+                if (task.getProcessFiles().isEmpty()) {
+                    task.getProcessEvents().clear();
+                } else {
+                    addFileEventToTask(task, FileEventType.DELETED, processFile);
+                }
+                return task;
+            })
+            .collect(Collectors.toSet());
+    }
+
+    private void checkAndUpdateTaskStatus(Task task) {
+        int fileNumber = task.getProcessFiles().size();
+        if (fileNumber == 0) {
+            task.setStatus(TaskStatus.NOT_CREATED);
+        } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == fileNumber) {
+            task.setStatus(TaskStatus.READY);
+        } else {
+            task.setStatus(TaskStatus.CREATED);
+        }
+    }
+
+    private void saveAndNotifyTasks(Set<Task> tasks) {
+        LOGGER.debug("Saving related tasks");
+        taskRepository.saveAll(tasks);
+        LOGGER.debug("Notifying on web-sockets");
+        taskUpdateNotifier.notify(tasks);
+    }
+
+    private static final class ProcessFileArrival {
+        private final ProcessFile processFile;
+        private final FileEventType fileEventType;
+
+        private ProcessFileArrival(ProcessFile processFile, FileEventType fileEventType) {
+            this.processFile = processFile;
+            this.fileEventType = fileEventType;
+        }
+    }
+
     private enum FileEventType {
         AVAILABLE,
         UPDATED,
         DELETED
-    }
-
-    private OffsetDateTime getOffsetDateTimeAtSameInstant(LocalDateTime localDateTime) {
-        return localDateTime.atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).withZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
     }
 }
