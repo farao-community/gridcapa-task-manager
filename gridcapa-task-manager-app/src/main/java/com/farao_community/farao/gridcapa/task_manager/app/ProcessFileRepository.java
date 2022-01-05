@@ -8,6 +8,8 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
@@ -20,7 +22,11 @@ import java.util.UUID;
 @Repository
 public interface ProcessFileRepository extends JpaRepository<ProcessFile, UUID> {
 
-    Optional<ProcessFile> findByFileObjectKey(String fileObjectKey);
+    @Query("SELECT process_file FROM ProcessFile process_file WHERE process_file.fileObjectKey = :fileObjectKey")
+    Optional<ProcessFile> findByFileObjectKey(@Param("fileObjectKey") String fileObjectKey);
 
-    Optional<ProcessFile> findByStartingAvailabilityDateAndFileType(OffsetDateTime startingAvailabilityDate, String fileType);
+    @Query("SELECT process_file FROM ProcessFile process_file " +
+        "WHERE process_file.startingAvailabilityDate = :startingAvailabilityDate AND process_file.fileType = :fileType")
+    Optional<ProcessFile> findByStartingAvailabilityDateAndFileType(@Param("startingAvailabilityDate") OffsetDateTime startingAvailabilityDate,
+                                                                    @Param("fileType") String fileType);
 }

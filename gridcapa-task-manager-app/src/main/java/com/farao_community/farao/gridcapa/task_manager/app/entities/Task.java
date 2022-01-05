@@ -45,10 +45,7 @@ public class Task {
     @SortNatural
     private SortedSet<ProcessEvent> processEvents = new TreeSet<>();
 
-    @ManyToMany(
-        cascade = { CascadeType.MERGE, CascadeType.PERSIST },
-        fetch = FetchType.EAGER
-    )
+    @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(
         name = "task_process_file",
         joinColumns = @JoinColumn(name = "fk_task"),
