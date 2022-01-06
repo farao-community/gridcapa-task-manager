@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.0.10</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>gridcapa-task-manager</artifactId>
@@ -46,10 +46,9 @@
 
     <properties>
         <!-- Dependency versions -->
-        <apache.commons.verion>2.6</apache.commons.verion>
-        <aws.sdk.version>1.12.75</aws.sdk.version>
-        <postgres.jdbc.version>42.2.24</postgres.jdbc.version>
-        <spring-cloud.version>Hoxton.SR12</spring-cloud.version>
+        <apache.commons.verion>2.11.0</apache.commons.verion>
+        <aws.sdk.version>1.12.132</aws.sdk.version>
+        <postgres.jdbc.version>42.3.1</postgres.jdbc.version>
     </properties>
 
     <dependencies>
@@ -74,14 +73,6 @@
                 <artifactId>postgresql</artifactId>
                 <version>${postgres.jdbc.version}</version>
                 <scope>runtime</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
