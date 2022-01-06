@@ -6,59 +6,61 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.NaturalIdCache;
+import org.hibernate.annotations.SortNatural;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Entity
+@org.hibernate.annotations.Cache(
+    usage = CacheConcurrencyStrategy.READ_WRITE
+)
+@NaturalIdCache
 public class Task {
 
     @Id
     @Column(name = "id")
     private UUID id;
 
-    @Column(name = "timestamp")
+    @NaturalId
+    @Column(name = "timestamp", nullable = false, updatable = false, unique = true)
     private OffsetDateTime timestamp;
 
     @Column(name = "status")
     private TaskStatus status;
 
     @OneToMany(
-        mappedBy = "task",
+        cascade = { CascadeType.MERGE, CascadeType.PERSIST },
         fetch = FetchType.EAGER,
-        cascade = CascadeType.ALL,
         orphanRemoval = true
     )
-    @OrderColumn
-    private List<ProcessEvent> processEvents = new ArrayList<>();
+    @SortNatural
+    private SortedSet<ProcessEvent> processEvents = new TreeSet<>();
 
-    @OneToMany(
-        mappedBy = "task",
-        fetch = FetchType.EAGER,
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    @OrderColumn
-    private List<ProcessFile> processFiles = new ArrayList<>();
+    @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
+    @JoinTable(
+        name = "task_process_file",
+        joinColumns = @JoinColumn(name = "fk_task"),
+        inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+    @SortNatural
+    private SortedSet<ProcessFile> processFiles = new TreeSet<>();
 
     public Task() {
 
     }
 
-    public Task(OffsetDateTime timestamp, List<String> fileTypes) {
+    public Task(OffsetDateTime timestamp) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         status = TaskStatus.CREATED;
-        fileTypes.forEach(fileType -> processFiles.add(new ProcessFile(this, fileType)));
     }
 
     public UUID getId() {
@@ -73,10 +75,6 @@ public class Task {
         return timestamp;
     }
 
-    public void setTimestamp(OffsetDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
     public TaskStatus getStatus() {
         return status;
     }
@@ -85,34 +83,38 @@ public class Task {
         this.status = status;
     }
 
-    public List<ProcessEvent> getProcessEvents() {
+    public SortedSet<ProcessEvent> getProcessEvents() {
         return processEvents;
     }
 
-    public void setProcessEvents(List<ProcessEvent> processFileEvents) {
-        this.processEvents = processFileEvents;
+    public void addProcessEvent(OffsetDateTime timestamp, String level, String message) {
+        getProcessEvents().add(new ProcessEvent(timestamp, level, message));
     }
 
-    public List<ProcessFile> getProcessFiles() {
+    public SortedSet<ProcessFile> getProcessFiles() {
         return processFiles;
     }
 
-    public void setProcessFiles(List<ProcessFile> processFiles) {
-        this.processFiles = processFiles;
+    public void addProcessFile(String fileObjectKey,
+                               String fileType,
+                               OffsetDateTime startingAvailabilityDate,
+                               OffsetDateTime endingAvailabilityDate,
+                               String fileUrl,
+                               OffsetDateTime lastModificationDate) {
+        addProcessFile(new ProcessFile(fileObjectKey, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
     }
 
-    public ProcessFile getProcessFile(String fileType) {
-        return processFiles.stream().filter(file -> file.getFileType().equals(fileType))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException(String.format("Queried fileType does not exist %s", fileType)));
+    public void addProcessFile(ProcessFile processFile) {
+        getProcessFiles().add(processFile);
     }
 
-    public static TaskDto createDtoFromEntity(Task task) {
-        return new TaskDto(
-            task.getId(),
-            task.getTimestamp(),
-            task.getStatus(),
-            task.getProcessFiles().stream().map(ProcessFile::createDtofromEntity).collect(Collectors.toList()),
-            task.getProcessEvents().stream().map(ProcessEvent::createDtoFromEntity).collect(Collectors.toList()));
+    public void removeProcessFile(ProcessFile processFile) {
+        getProcessFiles().remove(processFile);
+    }
+
+    public Optional<ProcessFile> getProcessFile(String fileType) {
+        return processFiles.stream()
+            .filter(file -> file.getFileType().equals(fileType))
+            .findFirst();
     }
 }

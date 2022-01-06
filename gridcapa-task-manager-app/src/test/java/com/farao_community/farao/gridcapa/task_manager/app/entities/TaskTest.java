@@ -8,13 +8,14 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,13 +24,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
+@SpringBootTest
 class TaskTest {
+
+    @Autowired
+    private TaskDtoBuilder taskDtoBuilder;
 
     private Task task;
 
     @BeforeEach
     public void setUp() {
-        task = new Task(OffsetDateTime.now(), new ArrayList<>());
+        task = new Task(OffsetDateTime.parse("2021-01-01T00:00Z"));
     }
 
     @Test
@@ -42,7 +47,6 @@ class TaskTest {
     @Test
     void setTimestamp() {
         OffsetDateTime newDateTime = OffsetDateTime.parse("2021-01-01T00:00Z");
-        task.setTimestamp(newDateTime);
         assertEquals(newDateTime, task.getTimestamp());
     }
 
@@ -59,30 +63,23 @@ class TaskTest {
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        List<ProcessFile> processFiles = new ArrayList<>();
-        processFiles.add(processFileMock);
-        task.setProcessFiles(processFiles);
-        assertEquals(processFileMock, task.getProcessFiles().get(0));
-        assertEquals(processFileMock, task.getProcessFile(fileType));
+        task.addProcessFile(processFileMock);
+        assertEquals(processFileMock, task.getProcessFiles().iterator().next());
+        assertEquals(processFileMock, task.getProcessFile(fileType).get());
     }
 
     @Test
     void getProcessEventsTest() {
         assertTrue(task.getProcessEvents().isEmpty());
-        ProcessEvent processEventMock = Mockito.mock(ProcessEvent.class);
-        Mockito.when(processEventMock.getLevel()).thenReturn("WARN");
-        List<ProcessEvent> processEvents = new ArrayList<>();
-        processEvents.add(processEventMock);
-        task.setProcessEvents(processEvents);
-        assertEquals(processEventMock, task.getProcessEvents().get(0));
-        assertEquals("WARN", task.getProcessEvents().get(0).getLevel());
+        task.addProcessEvent(OffsetDateTime.now(), "WARN", null);
+        assertEquals("WARN", task.getProcessEvents().iterator().next().getLevel());
     }
 
     @Test
     void testConstructorFromEntity() {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
-        Task task = new Task(timestamp, List.of("CGM", "CRAC"));
-        TaskDto taskDto = Task.createDtoFromEntity(task);
+        Task task = new Task(timestamp);
+        TaskDto taskDto = taskDtoBuilder.createDtoFromEntity(task);
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getProcessFiles().size());

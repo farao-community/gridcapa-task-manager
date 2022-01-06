@@ -7,8 +7,10 @@
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.OffsetDateTime;
 
@@ -18,13 +20,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
+@SpringBootTest
 class ProcessEventTest {
+
+    @Autowired
+    private TaskDtoBuilder taskDtoBuilder;
 
     @Test
     void testConstructorFromEntity() {
-        Task task = Mockito.mock(Task.class);
-        ProcessEvent processEvent = new ProcessEvent(task, OffsetDateTime.now(), "INFO", "CGM arrived");
-        ProcessEventDto processEventDto = ProcessEvent.createDtoFromEntity(processEvent);
+        ProcessEvent processEvent = new ProcessEvent(OffsetDateTime.now(), "INFO", "CGM arrived");
+        ProcessEventDto processEventDto = taskDtoBuilder.createDtoFromEntity(processEvent);
         assertEquals("INFO", processEventDto.getLevel());
         assertNotNull(processEvent.getTimestamp());
         assertEquals("CGM arrived", processEventDto.getMessage());

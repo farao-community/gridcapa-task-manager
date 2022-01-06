@@ -22,14 +22,14 @@ import java.time.OffsetDateTime;
 @RequestMapping
 public class TaskManagerController {
 
-    private final TaskManager taskManager;
+    private final TaskDtoBuilder builder;
 
-    public TaskManagerController(TaskManager taskManager) {
-        this.taskManager = taskManager;
+    public TaskManagerController(TaskDtoBuilder builder) {
+        this.builder = builder;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
     public ResponseEntity<TaskDto> getTaskFromTimestamp(@PathVariable String timestamp) {
-        return ResponseEntity.ok().body(taskManager.getTaskDto(OffsetDateTime.parse(timestamp)));
+        return ResponseEntity.ok().body(builder.getTaskDto(OffsetDateTime.parse(timestamp)));
     }
 }

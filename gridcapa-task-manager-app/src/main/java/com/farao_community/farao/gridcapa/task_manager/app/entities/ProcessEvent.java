@@ -6,17 +6,16 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
-
 import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
 @Entity
-public class ProcessEvent {
+public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -31,19 +30,14 @@ public class ProcessEvent {
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    private Task task;
-
     public ProcessEvent() {
     }
 
-    public ProcessEvent(Task task, OffsetDateTime timestamp, String level, String message) {
+    public ProcessEvent(OffsetDateTime timestamp, String level, String message) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
-        this.task = task;
     }
 
     public OffsetDateTime getTimestamp() {
@@ -58,17 +52,25 @@ public class ProcessEvent {
         return message;
     }
 
-    public Task getTask() {
-        return task;
+    @Override
+    public int compareTo(ProcessEvent o) {
+        return timestamp.compareTo(o.getTimestamp());
     }
 
-    public void setTask(Task task) {
-        this.task = task;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ProcessEvent that = (ProcessEvent) o;
+        return id.equals(that.id) && level.equals(that.level) && timestamp.equals(that.timestamp) && message.equals(that.message);
     }
 
-    public static ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
-        return new ProcessEventDto(processEvent.getTimestamp(),
-                processEvent.getLevel(),
-                processEvent.getMessage());
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, level, timestamp, message);
     }
 }
