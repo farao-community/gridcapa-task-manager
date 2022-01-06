@@ -21,7 +21,9 @@ public class ProcessEventDto {
     private String message;
 
     @JsonCreator
-    public ProcessEventDto(@JsonProperty OffsetDateTime timestamp, @JsonProperty String level, @JsonProperty String message) {
+    public ProcessEventDto(@JsonProperty("timestamp") OffsetDateTime timestamp,
+                           @JsonProperty("level") String level,
+                           @JsonProperty("message") String message) {
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
