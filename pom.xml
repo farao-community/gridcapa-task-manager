@@ -47,7 +47,6 @@
     <properties>
         <!-- Dependency versions -->
         <apache.commons.verion>2.11.0</apache.commons.verion>
-        <aws.sdk.version>1.12.132</aws.sdk.version>
         <postgres.jdbc.version>42.3.1</postgres.jdbc.version>
     </properties>
 
@@ -57,11 +56,6 @@
     <dependencyManagement>
         <dependencies>
             <!-- Compile dependencies -->
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-s3</artifactId>
-                <version>${aws.sdk.version}</version>
-            </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
