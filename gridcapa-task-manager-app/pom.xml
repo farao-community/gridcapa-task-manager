@@ -39,11 +39,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <version>${aws.sdk.version}</version>
-        </dependency>
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${apache.commons.verion}</version>
@@ -69,7 +64,6 @@
             <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
         </dependency>
 
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -78,7 +72,6 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>${postgres.jdbc.version}</version>
             <scope>runtime</scope>
         </dependency>
 
