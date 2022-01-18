@@ -9,19 +9,19 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
 public class ProcessEventDto {
 
-    private String level;
-    private OffsetDateTime timestamp;
-    private String message;
+    private final String level;
+    private final LocalDateTime timestamp;
+    private final String message;
 
     @JsonCreator
-    public ProcessEventDto(@JsonProperty("timestamp") OffsetDateTime timestamp,
+    public ProcessEventDto(@JsonProperty("timestamp") LocalDateTime timestamp,      // LocalDateTime is used only in DTO in order to be displayed directly and avoid conversion in front-end
                            @JsonProperty("level") String level,
                            @JsonProperty("message") String message) {
         this.timestamp = timestamp;
@@ -29,7 +29,7 @@ public class ProcessEventDto {
         this.message = message;
     }
 
-    public OffsetDateTime getTimestamp() {
+    public LocalDateTime getTimestamp() {
         return timestamp;
     }
 

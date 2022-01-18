@@ -16,7 +16,9 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.stream.Collectors;
 
 /**
@@ -66,8 +68,13 @@ public class TaskDtoBuilder {
     }
 
     public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
-        return new ProcessEventDto(processEvent.getTimestamp(),
+        LocalDateTime localDateTime = convertOffsetToLocalAtSameInstant(processEvent.getTimestamp());
+        return new ProcessEventDto(localDateTime,
             processEvent.getLevel(),
             processEvent.getMessage());
+    }
+
+    private LocalDateTime convertOffsetToLocalAtSameInstant(OffsetDateTime offsetDateTime) {
+        return offsetDateTime.toZonedDateTime().withZoneSameInstant(ZoneId.of(properties.getProcess().getTimezone())).toLocalDateTime();
     }
 }

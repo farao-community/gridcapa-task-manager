@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,7 +19,7 @@ class ProcessEventDtoTest {
 
     @Test
     void testConstructorEmptyProcessFile() {
-        ProcessEventDto processEventDto = new ProcessEventDto(OffsetDateTime.now(), "INFO", "CGM created");
+        ProcessEventDto processEventDto = new ProcessEventDto(LocalDateTime.now(), "INFO", "CGM created");
         assertNotNull(processEventDto.getTimestamp());
         assertEquals("INFO", processEventDto.getLevel());
         assertEquals("CGM created", processEventDto.getMessage());
