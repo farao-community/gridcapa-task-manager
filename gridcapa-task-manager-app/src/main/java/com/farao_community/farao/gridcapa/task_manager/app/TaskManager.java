@@ -84,8 +84,7 @@ public class TaskManager {
                 Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
                 if (optionalTask.isPresent()) {
                     Task task = optionalTask.get();
-                    LOGGER.info(loggerEvent.getTimestamp());
-                    OffsetDateTime offsetDateTime = getOffsetDateTimeAtSameInstant(LocalDateTime.parse(loggerEvent.getTimestamp().substring(0, 19)));
+                    OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
                     task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task);
@@ -193,10 +192,6 @@ public class TaskManager {
         } else {
             return String.format("A new version of %s is available : '%s'", fileType, fileName);
         }
-    }
-
-    private OffsetDateTime getOffsetDateTimeAtSameInstant(LocalDateTime localDateTime) {
-        return localDateTime.atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).withZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
     }
 
     private Set<Task> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {
