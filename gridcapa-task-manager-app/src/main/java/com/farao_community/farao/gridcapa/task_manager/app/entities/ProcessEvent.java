@@ -54,6 +54,9 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Override
     public int compareTo(ProcessEvent o) {
+        if (timestamp.compareTo(o.getTimestamp()) == 0) {
+            return message.compareTo(o.getMessage());
+        }
         return timestamp.compareTo(o.getTimestamp());
     }
 

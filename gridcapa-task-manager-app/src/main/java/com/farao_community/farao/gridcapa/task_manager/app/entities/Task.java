@@ -43,7 +43,7 @@ public class Task {
         orphanRemoval = true
     )
     @SortNatural
-    private SortedSet<ProcessEvent> processEvents = new TreeSet<>();
+    private SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(

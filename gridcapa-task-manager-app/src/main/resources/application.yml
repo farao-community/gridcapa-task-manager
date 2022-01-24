@@ -17,7 +17,7 @@ spring:
       default:
         group: task-manager
       bindings:
-        handleMinioEvent-in-0:
+        consumeMinioEvent-in-0:
           destination: gridcapa.minio.events
         handleTaskStatusUpdate-in-0:
           destination: task-status-updated
@@ -31,11 +31,11 @@ spring:
             auto-bind-dlq: true
             max-attempts: 1
         bindings:
-          handleMinioEvent-in-0:
+          consumeMinioEvent-in-0:
             consumer:
               exchange-type: fanout
     function:
-      definition: handleMinioEvent;handleTaskStatusUpdate;handleTaskLogEventUpdate
+      definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskLogEventUpdate
 
 task-server:
   minio:
