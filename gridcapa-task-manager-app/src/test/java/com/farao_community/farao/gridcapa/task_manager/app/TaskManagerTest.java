@@ -279,11 +279,11 @@ class TaskManagerTest {
             "  \"message\": \"Hello from backend\",\n" +
             "  \"serviceName\": \"GRIDCAPA\" \n" +
             "}";
-        taskManager.handleTaskLogEventUpdate().accept(logEvent);
+        taskManager.handleTaskLogEventUpdate(logEvent);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(1, updatedTask.getProcessEvents().size());
         ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33Z"), event.getTimestamp());
+        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
         assertEquals("INFO", event.getLevel());
         assertEquals("Hello from backend", event.getMessage());
     }

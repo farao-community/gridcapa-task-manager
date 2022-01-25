@@ -19,12 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.UUID;
 import java.time.*;
 import java.util.*;
 import java.util.function.Consumer;
@@ -61,46 +61,60 @@ public class TaskManager {
     }
 
     @Bean
-    public Consumer<TaskStatusUpdate> handleTaskStatusUpdate() {
-        return taskStatusUpdate -> {
-            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
+    public Consumer<Flux<TaskStatusUpdate>> consumeTaskStatusUpdate() {
+        return f -> f
+            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
+            .subscribe(this::handleTaskStatusUpdate);
+    }
+
+    public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
+        Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
+        if (optionalTask.isPresent()) {
+            Task task = optionalTask.get();
+            task.setStatus(taskStatusUpdate.getTaskStatus());
+            taskRepository.save(task);
+            taskUpdateNotifier.notify(task);
+        } else {
+            LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+        }
+    }
+
+    @Bean
+    public Consumer<Flux<String>> consumeTaskLogEventUpdate() {
+        return f -> f
+            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
+            .subscribe(this::handleTaskLogEventUpdate);
+    }
+
+    void handleTaskLogEventUpdate(String loggerEventString) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
+            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
             if (optionalTask.isPresent()) {
                 Task task = optionalTask.get();
-                task.setStatus(taskStatusUpdate.getTaskStatus());
+                OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
+                task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                 taskRepository.save(task);
                 taskUpdateNotifier.notify(task);
+
             } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+                LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
             }
-        };
+        } catch (JsonProcessingException e) {
+            LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
+        }
     }
 
     @Bean
-    public Consumer<String> handleTaskLogEventUpdate() {
-        return loggerEventString -> {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
-                Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
-                if (optionalTask.isPresent()) {
-                    Task task = optionalTask.get();
-                    LOGGER.info(loggerEvent.getTimestamp());
-                    OffsetDateTime offsetDateTime = getOffsetDateTimeAtSameInstant(LocalDateTime.parse(loggerEvent.getTimestamp().substring(0, 19)));
-                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
-                    taskRepository.save(task);
-                    taskUpdateNotifier.notify(task);
-                } else {
-                    LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
-                }
-            } catch (JsonProcessingException e) {
-                LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
-            }
-        };
+    public Consumer<Flux<NotificationRecords>> consumeMinioEvent() {
+        return f -> f
+            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
+            .subscribe(this::handleMinioEvent);
     }
 
-    @Bean
-    public Consumer<NotificationRecords> handleMinioEvent() {
-        return notificationRecords -> notificationRecords.events().forEach(event -> {
+    public void handleMinioEvent(NotificationRecords notificationRecords) {
+        notificationRecords.events().forEach(event -> {
             LOGGER.debug("s3 event received");
             switch (event.eventType()) {
                 case OBJECT_CREATED_ANY:
@@ -193,10 +207,6 @@ public class TaskManager {
         } else {
             return String.format("A new version of %s is available : '%s'", fileType, fileName);
         }
-    }
-
-    private OffsetDateTime getOffsetDateTimeAtSameInstant(LocalDateTime localDateTime) {
-        return localDateTime.atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).withZoneSameInstant(ZoneOffset.UTC).toOffsetDateTime();
     }
 
     private Set<Task> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {

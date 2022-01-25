@@ -1,9 +1,9 @@
 task-server:
   minio:
     connect:
-      url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
-      access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
-      secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
+      url: rabbitmq-test
+      access-key: gridcapa
+      secret-key: gridcapa
   process:
     tag: CSE_D2CC
     timezone: CET
