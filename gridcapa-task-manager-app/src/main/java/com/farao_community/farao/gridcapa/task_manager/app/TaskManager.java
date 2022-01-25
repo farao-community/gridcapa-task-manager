@@ -80,13 +80,13 @@ public class TaskManager {
     }
 
     @Bean
-    public Consumer<Flux<String>> consumeTaskLogEventUpdate() {
+    public Consumer<Flux<String>> consumeTaskEventUpdate() {
         return f -> f
             .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleTaskLogEventUpdate);
+            .subscribe(this::handleTaskEventUpdate);
     }
 
-    void handleTaskLogEventUpdate(String loggerEventString) {
+    void handleTaskEventUpdate(String loggerEventString) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
