@@ -279,7 +279,7 @@ class TaskManagerTest {
             "  \"message\": \"Hello from backend\",\n" +
             "  \"serviceName\": \"GRIDCAPA\" \n" +
             "}";
-        taskManager.handleTaskLogEventUpdate(logEvent);
+        taskManager.handleTaskEventUpdate(logEvent);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(1, updatedTask.getProcessEvents().size());
         ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
