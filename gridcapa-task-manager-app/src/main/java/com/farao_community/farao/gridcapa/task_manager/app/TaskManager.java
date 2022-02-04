@@ -103,6 +103,8 @@ public class TaskManager {
             }
         } catch (JsonProcessingException e) {
             LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
+        } catch (Exception e) {
+            LOGGER.warn("Impossible to match the event with concerned task", e);
         }
     }
 
