@@ -103,8 +103,6 @@ public class TaskManager {
             }
         } catch (JsonProcessingException e) {
             LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
-        } catch (Exception e) {
-            LOGGER.warn("Impossible to match the event with concerned task", e);
         }
     }
 
@@ -140,12 +138,12 @@ public class TaskManager {
 
     public void updateTasks(Event event) {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        if (processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
+        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
                 && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE))) {
             String fileType = event.userMetadata().get(FILE_TYPE);
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
-            if (validityInterval != null) {
-                String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+            String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+            if (validityInterval != null && !validityInterval.isEmpty()) {
                 LOGGER.info("Adding MinIO object {}", objectKey);
                 String[] interval = validityInterval.split("/");
                 ProcessFileArrival processFileArrival = getProcessFileArrival(
@@ -157,6 +155,8 @@ public class TaskManager {
                 processFileRepository.save(processFileArrival.processFile);
                 saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
                 LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
+            } else {
+                LOGGER.warn("Minio object {} has not been added ", objectKey);
             }
         }
     }

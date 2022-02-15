@@ -121,6 +121,16 @@ class TaskManagerTest {
     }
 
     @Test
+    void testUpdateWithEmptyIntervalFileType() {
+        String cgmUrl = "cgmUrl";
+        Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "", cgmUrl);
+
+        taskManager.updateTasks(event);
+
+        assertEquals(0, taskRepository.findAll().size());
+    }
+
+    @Test
     void testUpdateWithDailyFile() {
         String cgmUrl = "cgmUrl";
         Event event = createEvent("CSE_D2CC", "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T22:00Z/2021-10-01T22:00Z", cgmUrl);
