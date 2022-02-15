@@ -63,8 +63,8 @@ public class TaskManager {
     @Bean
     public Consumer<Flux<TaskStatusUpdate>> consumeTaskStatusUpdate() {
         return f -> f
-            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleTaskStatusUpdate);
+                .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
+                .subscribe(this::handleTaskStatusUpdate);
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
@@ -82,8 +82,8 @@ public class TaskManager {
     @Bean
     public Consumer<Flux<String>> consumeTaskEventUpdate() {
         return f -> f
-            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleTaskEventUpdate);
+                .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
+                .subscribe(this::handleTaskEventUpdate);
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
@@ -103,16 +103,14 @@ public class TaskManager {
             }
         } catch (JsonProcessingException e) {
             LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
-        } catch (Exception e) {
-            LOGGER.warn("Impossible to match the event with concerned task", e);
         }
     }
 
     @Bean
     public Consumer<Flux<NotificationRecords>> consumeMinioEvent() {
         return f -> f
-            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleMinioEvent);
+                .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
+                .subscribe(this::handleMinioEvent);
     }
 
     public void handleMinioEvent(NotificationRecords notificationRecords) {
@@ -139,29 +137,27 @@ public class TaskManager {
     }
 
     public void updateTasks(Event event) {
-        try {
-            TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-            if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
-                    && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE))) {
-                String fileType = event.userMetadata().get(FILE_TYPE);
-                String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
-                if (validityInterval != null && !validityInterval.isEmpty()) {
-                    String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-                    LOGGER.info("Adding MinIO object {}", objectKey);
-                    String[] interval = validityInterval.split("/");
-                    ProcessFileArrival processFileArrival = getProcessFileArrival(
-                            OffsetDateTime.parse(interval[0]),
-                            OffsetDateTime.parse(interval[1]),
-                            event,
-                            objectKey,
-                            fileType);
-                    processFileRepository.save(processFileArrival.processFile);
-                    saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
-                    LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
-                }
+        TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
+        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
+                && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE))) {
+            String fileType = event.userMetadata().get(FILE_TYPE);
+            String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
+            String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+            if (validityInterval != null && !validityInterval.isEmpty()) {
+                LOGGER.info("Adding MinIO object {}", objectKey);
+                String[] interval = validityInterval.split("/");
+                ProcessFileArrival processFileArrival = getProcessFileArrival(
+                        OffsetDateTime.parse(interval[0]),
+                        OffsetDateTime.parse(interval[1]),
+                        event,
+                        objectKey,
+                        fileType);
+                processFileRepository.save(processFileArrival.processFile);
+                saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
+                LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
+            } else {
+                LOGGER.warn("Minio object {} has not been added ", objectKey);
             }
-        } catch (Exception e) {
-            LOGGER.error("Impossible to match the event with concerned task", e);
         }
     }
 
@@ -218,33 +214,33 @@ public class TaskManager {
     private Set<Task> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {
         LOGGER.debug("Adding process file to the related tasks");
         return Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
-            .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
-            .parallel()
-            .map(timestamp -> {
-                Task task = taskRepository.findByTimestamp(timestamp).orElseGet(() -> new Task(timestamp));
-                addFileEventToTask(task, fileEventType, processFile);
-                task.addProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
-                return task;
-            })
-            .collect(Collectors.toSet());
+                .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
+                .parallel()
+                .map(timestamp -> {
+                    Task task = taskRepository.findByTimestamp(timestamp).orElseGet(() -> new Task(timestamp));
+                    addFileEventToTask(task, fileEventType, processFile);
+                    task.addProcessFile(processFile);
+                    checkAndUpdateTaskStatus(task);
+                    return task;
+                })
+                .collect(Collectors.toSet());
     }
 
     private Set<Task> removeProcessFileFromTasks(ProcessFile processFile) {
         LOGGER.debug("Removing process file of the related tasks");
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
-            .parallelStream()
-            .map(task -> {
-                task.removeProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
-                if (task.getProcessFiles().isEmpty()) {
-                    task.getProcessEvents().clear();
-                } else {
-                    addFileEventToTask(task, FileEventType.DELETED, processFile);
-                }
-                return task;
-            })
-            .collect(Collectors.toSet());
+                .parallelStream()
+                .map(task -> {
+                    task.removeProcessFile(processFile);
+                    checkAndUpdateTaskStatus(task);
+                    if (task.getProcessFiles().isEmpty()) {
+                        task.getProcessEvents().clear();
+                    } else {
+                        addFileEventToTask(task, FileEventType.DELETED, processFile);
+                    }
+                    return task;
+                })
+                .collect(Collectors.toSet());
     }
 
     private void checkAndUpdateTaskStatus(Task task) {
