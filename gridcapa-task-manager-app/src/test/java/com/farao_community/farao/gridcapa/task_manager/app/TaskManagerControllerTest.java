@@ -16,7 +16,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.time.OffsetDateTime;
+import java.time.*;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,5 +42,13 @@ class TaskManagerControllerTest {
         ResponseEntity<TaskDto> taskResponse = taskManagerController.getTaskFromTimestamp(taskTimestamp.toString());
 
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testGetListTasksOk() {
+        LocalDate businessDate = LocalDate.parse("2021-01-30");
+        ResponseEntity<List<TaskDto>> taskResponse = taskManagerController.getListTasksFromBusinessDate(businessDate.toString());
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+        assertEquals(24, taskResponse.getBody().size());
     }
 }

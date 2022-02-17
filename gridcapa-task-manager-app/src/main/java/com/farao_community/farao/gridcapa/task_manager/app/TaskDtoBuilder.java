@@ -16,7 +16,9 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
+import java.time.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +39,19 @@ public class TaskDtoBuilder {
         return taskRepository.findByTimestamp(timestamp)
             .map(this::createDtoFromEntity)
             .orElse(getEmptyTask(timestamp));
+    }
+
+    public List<TaskDto> getListTasksDto(LocalDate businessDate) {
+        List<TaskDto> listTasks = new ArrayList<>();
+        ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
+        LocalDateTime businessDateStartTime = businessDate.atTime(00, 30);
+        ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
+        OffsetDateTime timestamp = businessDateStartTime.atOffset(zoneOffSet);
+        while (timestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
+            listTasks.add(getTaskDto(timestamp));
+            timestamp = timestamp.plusHours(1);
+        }
+        return listTasks;
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
