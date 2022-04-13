@@ -20,10 +20,16 @@ public class TaskManagerConfigurationProperties {
 
     private final MinIoProperties minio;
     private final ProcessProperties process;
+    private final List<String> whitelist;
 
-    public TaskManagerConfigurationProperties(MinIoProperties minio, ProcessProperties process) {
+    public List<String> getWhitelist() {
+        return whitelist;
+    }
+
+    public TaskManagerConfigurationProperties(MinIoProperties minio, ProcessProperties process, List<String> whitelist) {
         this.minio = minio;
         this.process = process;
+        this.whitelist = whitelist;
     }
 
     public MinIoProperties getMinio() {

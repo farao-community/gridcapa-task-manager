@@ -6,13 +6,18 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -25,14 +30,41 @@ import java.util.List;
 public class TaskManagerController {
 
     private final TaskDtoBuilder builder;
+    private final FileManager fileManager;
 
-    public TaskManagerController(TaskDtoBuilder builder) {
+    public TaskManagerController(TaskDtoBuilder builder, FileManager fileManager) {
         this.builder = builder;
+        this.fileManager = fileManager;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
     public ResponseEntity<TaskDto> getTaskFromTimestamp(@PathVariable String timestamp) {
         return ResponseEntity.ok().body(builder.getTaskDto(OffsetDateTime.parse(timestamp)));
+    }
+
+    @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")
+    public ResponseEntity<byte[]> getZippedInputs(@PathVariable String timestamp) {
+        return getZippedGroup(OffsetDateTime.parse(timestamp), FileGroup.INPUT);
+    }
+
+    @GetMapping(value = "/tasks/{timestamp}/outputs", produces = "application/octet-stream")
+    public ResponseEntity<byte[]> getZippedOutputs(@PathVariable String timestamp) {
+        return getZippedGroup(OffsetDateTime.parse(timestamp), FileGroup.OUTPUT);
+    }
+
+    private ResponseEntity<byte[]> getZippedGroup(OffsetDateTime timestamp, FileGroup fileGroup) {
+        try {
+            ByteArrayOutputStream zip = fileManager.getZippedGroup(timestamp, fileGroup);
+            String zipName = fileManager.getZippedOutputsName();
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment;filename=\"" + zipName + "\"")
+                .body(zip.toByteArray());
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        } catch (TaskNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping(value = "/tasks/businessdate/{businessDate}")

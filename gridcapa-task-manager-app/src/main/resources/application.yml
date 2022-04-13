@@ -48,3 +48,5 @@ task-server:
     timezone: CET
     inputs:
       - CGM
+  whitelist:
+    - http://minio:9000/

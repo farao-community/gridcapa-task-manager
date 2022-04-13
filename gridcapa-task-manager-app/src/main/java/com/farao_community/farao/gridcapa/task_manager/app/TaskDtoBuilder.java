@@ -74,6 +74,7 @@ public class TaskDtoBuilder {
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
             processFile.getFileType(),
+            processFile.getFileGroup().getMetadataValue(),
             ProcessFileStatus.VALIDATED,
             processFile.getFilename(),
             processFile.getLastModificationDate(),

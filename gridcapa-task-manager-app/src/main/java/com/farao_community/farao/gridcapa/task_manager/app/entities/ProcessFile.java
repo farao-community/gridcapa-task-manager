@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
@@ -37,6 +38,9 @@ public class ProcessFile implements Comparable<ProcessFile> {
     @Column(name = "file_type")
     private String fileType;
 
+    @Column(name = "file_group")
+    private FileGroup fileGroup;
+
     @Column(name = "starting_availability_date")
     private OffsetDateTime startingAvailabilityDate;
 
@@ -62,6 +66,8 @@ public class ProcessFile implements Comparable<ProcessFile> {
         this.id = UUID.randomUUID();
         this.fileObjectKey = fileObjectKey;
         this.fileType = fileType;
+        // TODO: To be filled later
+        this.fileGroup = FileGroup.OUTPUT;
         this.startingAvailabilityDate = startingAvailabilityDate;
         this.endingAvailabilityDate = endingAvailabilityDate;
         this.fileUrl = fileUrl;
@@ -74,6 +80,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public String getFileType() {
         return fileType;
+    }
+
+    public FileGroup getFileGroup() {
+        return fileGroup;
     }
 
     public String getFilename() {
