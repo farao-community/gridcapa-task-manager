@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
@@ -226,6 +227,7 @@ class TaskManagerTest {
         task.addProcessFile(
             "CSE/D2CC/CGMs/cgm-test",
             "CGM",
+            FileGroup.INPUT,
             OffsetDateTime.parse("2021-10-01T21:00Z"),
             OffsetDateTime.parse("2021-10-01T22:00Z"),
             "cgmUrl",
@@ -235,6 +237,7 @@ class TaskManagerTest {
         task.addProcessFile(
             "CSE/D2CC/CRACs/crac-test",
             "CRAC",
+            FileGroup.INPUT,
             OffsetDateTime.parse("2021-10-01T21:00Z"),
             OffsetDateTime.parse("2021-10-01T22:00Z"),
             "cracUrl",
@@ -264,6 +267,7 @@ class TaskManagerTest {
         task.addProcessFile(
             "CSE/D2CC/CRACs/crac-test",
             "CRAC",
+            FileGroup.INPUT,
             OffsetDateTime.parse("2021-10-01T21:00Z"),
             OffsetDateTime.parse("2021-10-01T22:00Z"),
             "cracUrl",

@@ -39,6 +39,7 @@ public class TaskManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
     static final String FILE_PROCESS_TAG = "X-Amz-Meta-Gridcapa_file_target_process";
     static final String FILE_TYPE = "X-Amz-Meta-Gridcapa_file_type";
+    static final String FILE_GROUP = "X-Amz-Meta-Gridcapa_file_group";
     static final String FILE_VALIDITY_INTERVAL = "X-Amz-Meta-Gridcapa_file_validity_interval";
     private static final String FILE_EVENT_DEFAULT_LEVEL = "INFO";
 
@@ -141,6 +142,7 @@ public class TaskManager {
         if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
                 && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE))) {
             String fileType = event.userMetadata().get(FILE_TYPE);
+            FileGroup fileGroup = FileGroup.get(event.userMetadata().get(FILE_GROUP));
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
             if (validityInterval != null && !validityInterval.isEmpty()) {
@@ -151,7 +153,8 @@ public class TaskManager {
                     OffsetDateTime.parse(interval[1]),
                     event,
                     objectKey,
-                    fileType);
+                    fileType,
+                    fileGroup);
                 processFileRepository.save(processFileArrival.processFile);
                 saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
                 LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
@@ -161,7 +164,8 @@ public class TaskManager {
         }
     }
 
-    private ProcessFileArrival getProcessFileArrival(OffsetDateTime startTime, OffsetDateTime endTime, Event event, String objectKey, String fileType) {
+    private ProcessFileArrival getProcessFileArrival(OffsetDateTime startTime, OffsetDateTime endTime, Event event,
+                                                     String objectKey, String fileType, FileGroup fileGroup) {
         LOGGER.debug("Start finding process file");
         Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileType(startTime, fileType);
         if (optProcessFile.isPresent()) {
@@ -173,7 +177,7 @@ public class TaskManager {
             return new ProcessFileArrival(processFile, FileEventType.UPDATED);
         } else {
             LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
-            ProcessFile processFile = new ProcessFile(objectKey, fileType, startTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
+            ProcessFile processFile = new ProcessFile(objectKey, fileType, fileGroup, startTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.AVAILABLE);
         }
     }
@@ -220,7 +224,9 @@ public class TaskManager {
                 Task task = taskRepository.findByTimestamp(timestamp).orElseGet(() -> new Task(timestamp));
                 addFileEventToTask(task, fileEventType, processFile);
                 task.addProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
+                if (processFile.getFileGroup() == FileGroup.INPUT) {
+                    checkAndUpdateTaskStatus(task);
+                }
                 return task;
             })
             .collect(Collectors.toSet());
@@ -232,7 +238,9 @@ public class TaskManager {
             .parallelStream()
             .map(task -> {
                 task.removeProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
+                if (processFile.getFileGroup() == FileGroup.INPUT) {
+                    checkAndUpdateTaskStatus(task);
+                }
                 if (task.getProcessFiles().isEmpty()) {
                     task.getProcessEvents().clear();
                 } else {
@@ -243,8 +251,19 @@ public class TaskManager {
             .collect(Collectors.toSet());
     }
 
+    /**
+     * We compare the size of inputs list from process files of the task and the size of inputs from configuration.
+     * If its equal task is ready otherwise it is created. When it is null it is not created.
+     * This works because we consider there are only one file type per inputs. We call this method at adding and
+     * deletion to check if the status has changed.
+     *
+     * @param task: Task on which to evaluate the status.
+     */
     private void checkAndUpdateTaskStatus(Task task) {
-        int fileNumber = task.getProcessFiles().size();
+        int fileNumber = task.getProcessFiles().stream()
+            .filter(pf -> pf.getFileGroup() == FileGroup.INPUT)
+            .collect(Collectors.toSet())
+            .size();
         if (fileNumber == 0) {
             task.setStatus(TaskStatus.NOT_CREATED);
         } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == fileNumber) {

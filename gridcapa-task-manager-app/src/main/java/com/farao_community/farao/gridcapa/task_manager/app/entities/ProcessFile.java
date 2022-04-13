@@ -59,6 +59,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public ProcessFile(String fileObjectKey,
                        String fileType,
+                       FileGroup fileGroup,
                        OffsetDateTime startingAvailabilityDate,
                        OffsetDateTime endingAvailabilityDate,
                        String fileUrl,
@@ -66,8 +67,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
         this.id = UUID.randomUUID();
         this.fileObjectKey = fileObjectKey;
         this.fileType = fileType;
-        // TODO: To be filled later
-        this.fileGroup = FileGroup.OUTPUT;
+        this.fileGroup = fileGroup;
         this.startingAvailabilityDate = startingAvailabilityDate;
         this.endingAvailabilityDate = endingAvailabilityDate;
         this.fileUrl = fileUrl;

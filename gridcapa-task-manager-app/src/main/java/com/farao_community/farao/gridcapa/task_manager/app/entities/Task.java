@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
@@ -97,11 +98,12 @@ public class Task {
 
     public void addProcessFile(String fileObjectKey,
                                String fileType,
+                               FileGroup fileGroup,
                                OffsetDateTime startingAvailabilityDate,
                                OffsetDateTime endingAvailabilityDate,
                                String fileUrl,
                                OffsetDateTime lastModificationDate) {
-        addProcessFile(new ProcessFile(fileObjectKey, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
+        addProcessFile(new ProcessFile(fileObjectKey, fileType, fileGroup, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
     }
 
     public void addProcessFile(ProcessFile processFile) {

@@ -25,4 +25,13 @@ public enum FileGroup {
     public String getMetadataValue() {
         return metadataValue;
     }
+
+    public static FileGroup get(String name) {
+        for (FileGroup category : values()) {
+            if (category.metadataValue.equals(name)) {
+                return category;
+            }
+        }
+        return INPUT;
+    }
 }

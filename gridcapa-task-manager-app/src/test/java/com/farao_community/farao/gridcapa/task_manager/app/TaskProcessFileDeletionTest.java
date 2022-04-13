@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
@@ -56,6 +57,7 @@ class TaskProcessFileDeletionTest {
         ProcessFile cgmFile1 = new ProcessFile(
             "/CGM",
             "CGM",
+            FileGroup.INPUT,
             offsetDateTime0,
             offsetDateTime0.plusHours(1),
             "http://CGM",
@@ -65,6 +67,7 @@ class TaskProcessFileDeletionTest {
         ProcessFile cgmFile2 = new ProcessFile(
             "/CGM2",
             "CGM",
+            FileGroup.INPUT,
             offsetDateTime1,
             offsetDateTime1.plusHours(1),
             "http://CGM2",
@@ -74,6 +77,7 @@ class TaskProcessFileDeletionTest {
         ProcessFile cgmFile3 = new ProcessFile(
             "/CGM3",
             "CGM",
+            FileGroup.INPUT,
             offsetDateTime2,
             offsetDateTime2.plusHours(1),
             "http://CGM3",
@@ -83,6 +87,7 @@ class TaskProcessFileDeletionTest {
         ProcessFile refprogFile = new ProcessFile(
             "/REFPROG",
             "REFPROG",
+            FileGroup.INPUT,
             offsetDateTime0,
             offsetDateTime0.plusHours(4),
             "http://REFPROG",

@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
@@ -63,6 +64,7 @@ class TaskTest {
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
+        Mockito.when(processFileMock.getFileGroup()).thenReturn(FileGroup.INPUT);
         task.addProcessFile(processFileMock);
         assertEquals(processFileMock, task.getProcessFiles().iterator().next());
         assertEquals(processFileMock, task.getProcessFile(fileType).get());
