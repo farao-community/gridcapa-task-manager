@@ -256,7 +256,7 @@ public class TaskManager {
      */
     private void checkAndUpdateTaskStatus(Task task) {
         long fileNumber = task.getProcessFiles().stream()
-                .filter(processFile -> processFile.getFileGroup().equals(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))
+                .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
                 .count();
         if (fileNumber == 0) {
             task.setStatus(TaskStatus.NOT_CREATED);

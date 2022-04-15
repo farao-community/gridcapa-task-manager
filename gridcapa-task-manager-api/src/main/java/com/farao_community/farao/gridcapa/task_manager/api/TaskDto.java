@@ -33,7 +33,7 @@ public class TaskDto {
                    @JsonProperty("timestamp") OffsetDateTime timestamp,
                    @JsonProperty("status") TaskStatus status,
                    @JsonProperty("processFiles") List<ProcessFileDto> processFiles,
-                   @JsonProperty("outputs") List<ProcessFileDto> inputs,
+                   @JsonProperty("inputs") List<ProcessFileDto> inputs,
                    @JsonProperty("outputs") List<ProcessFileDto> outputs,
                    @JsonProperty("processEvents") List<ProcessEventDto> processEvents) {
         this.id = id;
