@@ -18,37 +18,33 @@ import java.util.List;
 @ConfigurationProperties("task-server")
 public class TaskManagerConfigurationProperties {
 
-    private final MinIoProperties minio;
     private final ProcessProperties process;
     private final List<String> whitelist;
 
-    public List<String> getWhitelist() {
-        return whitelist;
-    }
-
-    public TaskManagerConfigurationProperties(MinIoProperties minio, ProcessProperties process, List<String> whitelist) {
-        this.minio = minio;
+    public TaskManagerConfigurationProperties(ProcessProperties process, List<String> whitelist) {
         this.process = process;
         this.whitelist = whitelist;
-    }
-
-    public MinIoProperties getMinio() {
-        return minio;
     }
 
     public ProcessProperties getProcess() {
         return process;
     }
 
+    public List<String> getWhitelist() {
+        return whitelist;
+    }
+
     public static final class ProcessProperties {
         private final String tag;
         private final String timezone;
         private final List<String> inputs;
+        private final List<String> outputs;
 
-        private ProcessProperties(String tag, String timezone, List<String> inputs) {
+        private ProcessProperties(String tag, String timezone, List<String> inputs, List<String> outputs) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
+            this.outputs = outputs;
         }
 
         public String getTag() {
@@ -62,41 +58,9 @@ public class TaskManagerConfigurationProperties {
         public List<String> getInputs() {
             return inputs;
         }
-    }
 
-    public static final class MinIoProperties {
-        private final ConnectionProperties connect;
-
-        private MinIoProperties(ConnectionProperties connect) {
-            this.connect = connect;
-        }
-
-        public ConnectionProperties getConnect() {
-            return connect;
-        }
-
-        public static final class ConnectionProperties {
-            private final String url;
-            private final String accessKey;
-            private final String secretKey;
-
-            private ConnectionProperties(String url, String accessKey, String secretKey) {
-                this.url = url;
-                this.accessKey = accessKey;
-                this.secretKey = secretKey;
-            }
-
-            public String getUrl() {
-                return url;
-            }
-
-            public String getAccessKey() {
-                return accessKey;
-            }
-
-            public String getSecretKey() {
-                return secretKey;
-            }
+        public List<String> getOutputs() {
+            return outputs;
         }
     }
 }

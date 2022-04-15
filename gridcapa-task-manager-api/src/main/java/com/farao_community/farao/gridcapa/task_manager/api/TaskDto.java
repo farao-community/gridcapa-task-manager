@@ -22,7 +22,10 @@ public class TaskDto {
     private final UUID id;
     private final OffsetDateTime timestamp;
     private final TaskStatus status;
+    @Deprecated
     private final List<ProcessFileDto> processFiles;
+    private final List<ProcessFileDto> inputs;
+    private final List<ProcessFileDto> outputs;
     private final List<ProcessEventDto> processEvents;
 
     @JsonCreator
@@ -30,11 +33,15 @@ public class TaskDto {
                    @JsonProperty("timestamp") OffsetDateTime timestamp,
                    @JsonProperty("status") TaskStatus status,
                    @JsonProperty("processFiles") List<ProcessFileDto> processFiles,
+                   @JsonProperty("outputs") List<ProcessFileDto> inputs,
+                   @JsonProperty("outputs") List<ProcessFileDto> outputs,
                    @JsonProperty("processEvents") List<ProcessEventDto> processEvents) {
         this.id = id;
         this.timestamp = timestamp;
         this.status = status;
         this.processFiles = processFiles;
+        this.inputs = inputs;
+        this.outputs = outputs;
         this.processEvents = processEvents;
     }
 
@@ -44,6 +51,8 @@ public class TaskDto {
                 timestamp,
                 TaskStatus.NOT_CREATED,
                 fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                new ArrayList<>(),
                 new ArrayList<>());
     }
 
@@ -59,8 +68,17 @@ public class TaskDto {
         return status;
     }
 
+    @Deprecated
     public List<ProcessFileDto> getProcessFiles() {
         return processFiles;
+    }
+
+    public List<ProcessFileDto> getInputs() {
+        return inputs;
+    }
+
+    public List<ProcessFileDto> getOutputs() {
+        return outputs;
     }
 
     public List<ProcessEventDto> getProcessEvents() {

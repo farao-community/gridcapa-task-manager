@@ -6,9 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
-import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -44,15 +44,15 @@ public class TaskManagerController {
 
     @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getZippedInputs(@PathVariable String timestamp) {
-        return getZippedGroup(OffsetDateTime.parse(timestamp), FileGroup.INPUT);
+        return getZippedGroup(OffsetDateTime.parse(timestamp), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE);
     }
 
     @GetMapping(value = "/tasks/{timestamp}/outputs", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getZippedOutputs(@PathVariable String timestamp) {
-        return getZippedGroup(OffsetDateTime.parse(timestamp), FileGroup.OUTPUT);
+        return getZippedGroup(OffsetDateTime.parse(timestamp), MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
-    private ResponseEntity<byte[]> getZippedGroup(OffsetDateTime timestamp, FileGroup fileGroup) {
+    private ResponseEntity<byte[]> getZippedGroup(OffsetDateTime timestamp, String fileGroup) {
         try {
             ByteArrayOutputStream zip = fileManager.getZippedGroup(timestamp, fileGroup);
             String zipName = fileManager.getZippedOutputsName();

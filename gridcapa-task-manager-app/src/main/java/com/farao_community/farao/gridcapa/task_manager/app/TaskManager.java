@@ -11,6 +11,8 @@ import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskMan
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.messages.Event;
@@ -37,10 +39,10 @@ import java.util.stream.Stream;
 @Service
 public class TaskManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
-    static final String FILE_PROCESS_TAG = "X-Amz-Meta-Gridcapa_file_target_process";
-    static final String FILE_TYPE = "X-Amz-Meta-Gridcapa_file_type";
-    static final String FILE_GROUP = "X-Amz-Meta-Gridcapa_file_group";
-    static final String FILE_VALIDITY_INTERVAL = "X-Amz-Meta-Gridcapa_file_validity_interval";
+    static final String FILE_GROUP_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
+    static final String FILE_TARGET_PROCESS_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
+    static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
+    static final String FILE_VALIDITY_INTERVAL_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY;
     private static final String FILE_EVENT_DEFAULT_LEVEL = "INFO";
 
     private final TaskUpdateNotifier taskUpdateNotifier;
@@ -139,22 +141,21 @@ public class TaskManager {
 
     public void updateTasks(Event event) {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_PROCESS_TAG))
-                && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE))) {
-            String fileType = event.userMetadata().get(FILE_TYPE);
-            FileGroup fileGroup = FileGroup.get(event.userMetadata().get(FILE_GROUP));
-            String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL);
+        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))
+                && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE_METADATA_KEY))) {
+            String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
+            String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
+            String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
             if (validityInterval != null && !validityInterval.isEmpty()) {
                 LOGGER.info("Adding MinIO object {}", objectKey);
                 String[] interval = validityInterval.split("/");
                 ProcessFileArrival processFileArrival = getProcessFileArrival(
-                    OffsetDateTime.parse(interval[0]),
-                    OffsetDateTime.parse(interval[1]),
-                    event,
-                    objectKey,
-                    fileType,
-                    fileGroup);
+                        OffsetDateTime.parse(interval[0]),
+                        OffsetDateTime.parse(interval[1]),
+                        objectKey,
+                        fileType,
+                        fileGroup);
                 processFileRepository.save(processFileArrival.processFile);
                 saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
                 LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
@@ -164,20 +165,19 @@ public class TaskManager {
         }
     }
 
-    private ProcessFileArrival getProcessFileArrival(OffsetDateTime startTime, OffsetDateTime endTime, Event event,
-                                                     String objectKey, String fileType, FileGroup fileGroup) {
+    private ProcessFileArrival getProcessFileArrival(OffsetDateTime startTime, OffsetDateTime endTime, String objectKey, String fileType, String fileGroup) {
         LOGGER.debug("Start finding process file");
-        Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileType(startTime, fileType);
+        Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileTypeAndGroup(startTime, fileType, fileGroup);
         if (optProcessFile.isPresent()) {
             LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, startTime);
             ProcessFile processFile = optProcessFile.get();
-            processFile.setFileUrl(minioAdapter.generatePreSignedUrl(event));
+            processFile.setFileUrl(minioAdapter.generatePreSignedUrl(objectKey));
             processFile.setFileObjectKey(objectKey);
             processFile.setLastModificationDate(getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.UPDATED);
         } else {
             LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
-            ProcessFile processFile = new ProcessFile(objectKey, fileType, fileGroup, startTime, endTime, minioAdapter.generatePreSignedUrl(event), getProcessNow());
+            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, minioAdapter.generatePreSignedUrl(objectKey), getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.AVAILABLE);
         }
     }
@@ -224,9 +224,7 @@ public class TaskManager {
                 Task task = taskRepository.findByTimestamp(timestamp).orElseGet(() -> new Task(timestamp));
                 addFileEventToTask(task, fileEventType, processFile);
                 task.addProcessFile(processFile);
-                if (processFile.getFileGroup() == FileGroup.INPUT) {
-                    checkAndUpdateTaskStatus(task);
-                }
+                checkAndUpdateTaskStatus(task);
                 return task;
             })
             .collect(Collectors.toSet());
@@ -236,17 +234,14 @@ public class TaskManager {
         LOGGER.debug("Removing process file of the related tasks");
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
             .parallelStream()
-            .map(task -> {
+            .peek(task -> {
                 task.removeProcessFile(processFile);
-                if (processFile.getFileGroup() == FileGroup.INPUT) {
-                    checkAndUpdateTaskStatus(task);
-                }
+                checkAndUpdateTaskStatus(task);
                 if (task.getProcessFiles().isEmpty()) {
                     task.getProcessEvents().clear();
                 } else {
                     addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
-                return task;
             })
             .collect(Collectors.toSet());
     }
@@ -260,10 +255,9 @@ public class TaskManager {
      * @param task: Task on which to evaluate the status.
      */
     private void checkAndUpdateTaskStatus(Task task) {
-        int fileNumber = task.getProcessFiles().stream()
-            .filter(pf -> pf.getFileGroup() == FileGroup.INPUT)
-            .collect(Collectors.toSet())
-            .size();
+        long fileNumber = task.getProcessFiles().stream()
+                .filter(processFile -> processFile.getFileGroup().equals(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))
+                .count();
         if (fileNumber == 0) {
             task.setStatus(TaskStatus.NOT_CREATED);
         } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == fileNumber) {

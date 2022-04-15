@@ -6,10 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -63,11 +63,35 @@ class TaskTest {
         assertTrue(task.getProcessFiles().isEmpty());
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
+        String fileGroup = "input";
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Mockito.when(processFileMock.getFileGroup()).thenReturn(FileGroup.INPUT);
+        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
         task.addProcessFile(processFileMock);
         assertEquals(processFileMock, task.getProcessFiles().iterator().next());
-        assertEquals(processFileMock, task.getProcessFile(fileType).get());
+    }
+
+    @Test
+    void getInput() {
+        assertTrue(task.getProcessFiles().isEmpty());
+        ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
+        String fileType = "testFileType";
+        String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
+        Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
+        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
+        task.addProcessFile(processFileMock);
+        assertEquals(processFileMock, task.getInput(fileType).get());
+    }
+
+    @Test
+    void getOutput() {
+        assertTrue(task.getProcessFiles().isEmpty());
+        ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
+        String fileType = "testFileType";
+        String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE;
+        Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
+        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
+        task.addProcessFile(processFileMock);
+        assertEquals(processFileMock, task.getOutput(fileType).get());
     }
 
     @Test
@@ -84,6 +108,6 @@ class TaskTest {
         TaskDto taskDto = taskDtoBuilder.createDtoFromEntity(task);
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.CREATED, taskDto.getStatus());
-        assertEquals(2, taskDto.getProcessFiles().size());
+        assertEquals(2, taskDto.getInputs().size());
     }
 }

@@ -6,7 +6,6 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
-import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
@@ -40,7 +39,7 @@ public class FileManager {
         return "just-a-try.zip";
     }
 
-    public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, FileGroup fileGroup) throws IOException {
+    public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
         Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
         if (optTask.isPresent()) {
             Task task = optTask.get();
@@ -50,7 +49,7 @@ public class FileManager {
         }
     }
 
-    private ByteArrayOutputStream getZippedFileGroup(Task task, FileGroup fileGroup) throws IOException {
+    private ByteArrayOutputStream getZippedFileGroup(Task task, String fileGroup) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             Set<ProcessFile> outputProcessFiles = getProcessFiles(task, fileGroup);
@@ -61,8 +60,8 @@ public class FileManager {
         }
     }
 
-    private Set<ProcessFile> getProcessFiles(Task task, FileGroup fileGroup) {
-        return task.getProcessFiles().stream().filter(processFile -> processFile.getFileGroup() == fileGroup).collect(Collectors.toSet());
+    private Set<ProcessFile> getProcessFiles(Task task, String fileGroup) {
+        return task.getProcessFiles().stream().filter(processFile -> processFile.getFileGroup().equals(fileGroup)).collect(Collectors.toSet());
     }
 
     private void writeZipEntry(ZipOutputStream zos, ProcessFile processFile) throws IOException {

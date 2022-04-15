@@ -16,7 +16,6 @@ import java.time.OffsetDateTime;
  */
 public class ProcessFileDto {
     private final String fileType;
-    private final String fileGroup;
     private final ProcessFileStatus processFileStatus;
     private final String filename;
     private final OffsetDateTime lastModificationDate;
@@ -24,13 +23,11 @@ public class ProcessFileDto {
 
     @JsonCreator
     public ProcessFileDto(@JsonProperty("fileType") String fileType,
-                          @JsonProperty("fileGroup") String fileGroup,
                           @JsonProperty("processFileStatus") ProcessFileStatus processFileStatus,
                           @JsonProperty("fileName") String filename,
                           @JsonProperty("lastModificationDate") OffsetDateTime lastModificationDate,
                           @JsonProperty("fileUrl") String fileUrl) {
         this.fileType = fileType;
-        this.fileGroup = fileGroup;
         this.processFileStatus = processFileStatus;
         this.filename = filename;
         this.lastModificationDate = lastModificationDate;
@@ -40,7 +37,6 @@ public class ProcessFileDto {
     public static ProcessFileDto emptyProcessFile(String fileType) {
         return new ProcessFileDto(
                 fileType,
-                FileGroup.ARTIFACT.getMetadataValue(),
                 ProcessFileStatus.NOT_PRESENT,
                 null,
                 null,
@@ -49,10 +45,6 @@ public class ProcessFileDto {
 
     public String getFileType() {
         return fileType;
-    }
-
-    public String getFileGroup() {
-        return fileGroup;
     }
 
     public ProcessFileStatus getProcessFileStatus() {

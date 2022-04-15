@@ -6,8 +6,8 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
@@ -97,13 +97,13 @@ public class Task {
     }
 
     public void addProcessFile(String fileObjectKey,
+                               String fileGroup,
                                String fileType,
-                               FileGroup fileGroup,
                                OffsetDateTime startingAvailabilityDate,
                                OffsetDateTime endingAvailabilityDate,
                                String fileUrl,
                                OffsetDateTime lastModificationDate) {
-        addProcessFile(new ProcessFile(fileObjectKey, fileType, fileGroup, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
+        addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
     }
 
     public void addProcessFile(ProcessFile processFile) {
@@ -114,9 +114,17 @@ public class Task {
         getProcessFiles().remove(processFile);
     }
 
-    public Optional<ProcessFile> getProcessFile(String fileType) {
+    public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-            .filter(file -> file.getFileType().equals(fileType))
-            .findFirst();
+                .filter(file -> file.getFileGroup().equals(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))
+                .filter(file -> file.getFileType().equals(fileType))
+                .findFirst();
+    }
+
+    public Optional<ProcessFile> getOutput(String fileType) {
+        return processFiles.stream()
+                .filter(file -> file.getFileGroup().equals(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE))
+                .filter(file -> file.getFileType().equals(fileType))
+                .findFirst();
     }
 }

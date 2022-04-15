@@ -6,7 +6,6 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.FileGroup;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
@@ -35,11 +34,11 @@ public class ProcessFile implements Comparable<ProcessFile> {
     @Column(name = "file_object_key", length = 500, nullable = false, unique = true)
     private String fileObjectKey;
 
+    @Column(name = "file_group")
+    private String fileGroup;
+
     @Column(name = "file_type")
     private String fileType;
-
-    @Column(name = "file_group")
-    private FileGroup fileGroup;
 
     @Column(name = "starting_availability_date")
     private OffsetDateTime startingAvailabilityDate;
@@ -58,16 +57,16 @@ public class ProcessFile implements Comparable<ProcessFile> {
     }
 
     public ProcessFile(String fileObjectKey,
+                       String fileGroup,
                        String fileType,
-                       FileGroup fileGroup,
                        OffsetDateTime startingAvailabilityDate,
                        OffsetDateTime endingAvailabilityDate,
                        String fileUrl,
                        OffsetDateTime lastModificationDate) {
         this.id = UUID.randomUUID();
         this.fileObjectKey = fileObjectKey;
-        this.fileType = fileType;
         this.fileGroup = fileGroup;
+        this.fileType = fileType;
         this.startingAvailabilityDate = startingAvailabilityDate;
         this.endingAvailabilityDate = endingAvailabilityDate;
         this.fileUrl = fileUrl;
@@ -78,12 +77,12 @@ public class ProcessFile implements Comparable<ProcessFile> {
         return id;
     }
 
-    public String getFileType() {
-        return fileType;
+    public String getFileGroup() {
+        return fileGroup;
     }
 
-    public FileGroup getFileGroup() {
-        return fileGroup;
+    public String getFileType() {
+        return fileType;
     }
 
     public String getFilename() {
@@ -136,11 +135,15 @@ public class ProcessFile implements Comparable<ProcessFile> {
             return false;
         }
         ProcessFile that = (ProcessFile) o;
-        return Objects.equals(id, that.id) && Objects.equals(fileType, that.fileType) && Objects.equals(lastModificationDate, that.lastModificationDate) && Objects.equals(fileObjectKey, that.fileObjectKey);
+        return Objects.equals(id, that.id) &&
+                Objects.equals(fileGroup, that.fileGroup) &&
+                Objects.equals(fileType, that.fileType) &&
+                Objects.equals(lastModificationDate, that.lastModificationDate) &&
+                Objects.equals(fileObjectKey, that.fileObjectKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, fileType, lastModificationDate, fileObjectKey);
+        return Objects.hash(id, fileGroup, fileType, lastModificationDate, fileObjectKey);
     }
 }

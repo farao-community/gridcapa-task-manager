@@ -24,7 +24,8 @@ class TaskDtoTest {
         TaskDto taskDto = TaskDto.emptyTask(timestamp, List.of("CGM", "CRAC"));
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.NOT_CREATED, taskDto.getStatus());
-        assertEquals(2, taskDto.getProcessFiles().size());
+        assertEquals(2, taskDto.getInputs().size());
+        assertEquals(0, taskDto.getOutputs().size());
         assertEquals(0, taskDto.getProcessEvents().size());
     }
 }

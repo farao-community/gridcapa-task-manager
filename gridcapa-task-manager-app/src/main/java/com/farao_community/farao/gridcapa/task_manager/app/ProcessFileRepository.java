@@ -26,7 +26,8 @@ public interface ProcessFileRepository extends JpaRepository<ProcessFile, UUID> 
     Optional<ProcessFile> findByFileObjectKey(@Param("fileObjectKey") String fileObjectKey);
 
     @Query("SELECT process_file FROM ProcessFile process_file " +
-        "WHERE process_file.startingAvailabilityDate = :startingAvailabilityDate AND process_file.fileType = :fileType")
-    Optional<ProcessFile> findByStartingAvailabilityDateAndFileType(@Param("startingAvailabilityDate") OffsetDateTime startingAvailabilityDate,
-                                                                    @Param("fileType") String fileType);
+        "WHERE process_file.startingAvailabilityDate = :startingAvailabilityDate AND process_file.fileType = :fileType AND process_file.fileGroup = :fileGroup")
+    Optional<ProcessFile> findByStartingAvailabilityDateAndFileTypeAndGroup(@Param("startingAvailabilityDate") OffsetDateTime startingAvailabilityDate,
+                                                                            @Param("fileType") String fileType,
+                                                                            @Param("fileGroup") String fileGroup);
 }

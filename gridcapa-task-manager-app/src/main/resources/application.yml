@@ -38,15 +38,19 @@ spring:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
 
 task-server:
-  minio:
-    connect:
-      url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
-      access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
-      secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
   process:
     tag: CSE_D2CC
     timezone: CET
     inputs:
       - CGM
+    outputs:
+      - CNE
   whitelist:
     - http://minio:9000/
+
+minio-adapter:
+  bucket: ${GRIDCAPA_MINIO_BUCKET:gridcapa}
+  base-path: ${GRIDCAPA_MINIO_BASE_PATH:""}
+  url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
+  access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
+  secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
