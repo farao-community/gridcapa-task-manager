@@ -55,7 +55,7 @@ public class TaskManagerController {
     private ResponseEntity<byte[]> getZippedGroup(OffsetDateTime timestamp, String fileGroup) {
         try {
             ByteArrayOutputStream zip = fileManager.getZippedGroup(timestamp, fileGroup);
-            String zipName = fileManager.getZippedOutputsName();
+            String zipName = fileGroup + ".zip";
             return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment;filename=\"" + zipName + "\"")

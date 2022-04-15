@@ -35,10 +35,6 @@ public class FileManager {
         this.urlValidationService = urlValidationService;
     }
 
-    public String getZippedOutputsName() {
-        return "just-a-try.zip";
-    }
-
     public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
         Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
         if (optTask.isPresent()) {
