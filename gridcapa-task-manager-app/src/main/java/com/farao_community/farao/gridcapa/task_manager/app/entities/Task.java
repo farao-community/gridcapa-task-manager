@@ -116,15 +116,15 @@ public class Task {
 
     public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-                .filter(file -> file.getFileGroup().equals(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))
-                .filter(file -> file.getFileType().equals(fileType))
+                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(file -> fileType.equals(file.getFileType()))
                 .findFirst();
     }
 
     public Optional<ProcessFile> getOutput(String fileType) {
         return processFiles.stream()
-                .filter(file -> file.getFileGroup().equals(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE))
-                .filter(file -> file.getFileType().equals(fileType))
+                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(file -> fileType.equals(file.getFileType()))
                 .findFirst();
     }
 }
