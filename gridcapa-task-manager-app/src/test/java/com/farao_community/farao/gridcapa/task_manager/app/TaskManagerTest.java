@@ -115,16 +115,6 @@ class TaskManagerTest {
     }
 
     @Test
-    void testUpdateWithNotHandledFileType() {
-        String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "GLSK", "CSE/D2CC/GLSKs/glsk-test", "2021-09-30T23:00Z/2021-10-01T00:00Z", cgmUrl);
-
-        taskManager.updateTasks(event);
-
-        assertEquals(0, taskRepository.findAll().size());
-    }
-
-    @Test
     void testUpdateWithEmptyIntervalFileType() {
         String cgmUrl = "cgmUrl";
         Event event = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "", cgmUrl);

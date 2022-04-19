@@ -55,7 +55,7 @@ public class TaskDtoBuilder {
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs());
+        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs());
     }
 
     public TaskDto createDtoFromEntity(Task task) {

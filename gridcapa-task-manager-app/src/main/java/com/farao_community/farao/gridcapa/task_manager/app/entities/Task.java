@@ -44,7 +44,7 @@ public class Task {
         orphanRemoval = true
     )
     @SortNatural
-    private SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
+    private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(
@@ -52,7 +52,7 @@ public class Task {
         joinColumns = @JoinColumn(name = "fk_task"),
         inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
     @SortNatural
-    private SortedSet<ProcessFile> processFiles = new TreeSet<>();
+    private final SortedSet<ProcessFile> processFiles = new TreeSet<>();
 
     public Task() {
 
@@ -89,7 +89,7 @@ public class Task {
     }
 
     public void addProcessEvent(OffsetDateTime timestamp, String level, String message) {
-        getProcessEvents().add(new ProcessEvent(timestamp, level, message));
+        processEvents.add(new ProcessEvent(timestamp, level, message));
     }
 
     public SortedSet<ProcessFile> getProcessFiles() {
@@ -107,11 +107,11 @@ public class Task {
     }
 
     public void addProcessFile(ProcessFile processFile) {
-        getProcessFiles().add(processFile);
+        processFiles.add(processFile);
     }
 
     public void removeProcessFile(ProcessFile processFile) {
-        getProcessFiles().remove(processFile);
+        processFiles.remove(processFile);
     }
 
     public Optional<ProcessFile> getInput(String fileType) {

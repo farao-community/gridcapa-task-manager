@@ -141,8 +141,7 @@ public class TaskManager {
 
     public void updateTasks(Event event) {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))
-                && processProperties.getInputs().contains(event.userMetadata().get(FILE_TYPE_METADATA_KEY))) {
+        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
             String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
             String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
             String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
@@ -151,11 +150,11 @@ public class TaskManager {
                 LOGGER.info("Adding MinIO object {}", objectKey);
                 String[] interval = validityInterval.split("/");
                 ProcessFileArrival processFileArrival = getProcessFileArrival(
-                        OffsetDateTime.parse(interval[0]),
-                        OffsetDateTime.parse(interval[1]),
-                        objectKey,
-                        fileType,
-                        fileGroup);
+                    OffsetDateTime.parse(interval[0]),
+                    OffsetDateTime.parse(interval[1]),
+                    objectKey,
+                    fileType,
+                    fileGroup);
                 processFileRepository.save(processFileArrival.processFile);
                 saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
                 LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
@@ -234,7 +233,7 @@ public class TaskManager {
         LOGGER.debug("Removing process file of the related tasks");
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
             .parallelStream()
-            .peek(task -> {
+            .map(task -> {
                 task.removeProcessFile(processFile);
                 checkAndUpdateTaskStatus(task);
                 if (task.getProcessFiles().isEmpty()) {
@@ -242,6 +241,7 @@ public class TaskManager {
                 } else {
                     addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
+                return task;
             })
             .collect(Collectors.toSet());
     }

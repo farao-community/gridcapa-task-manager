@@ -45,14 +45,14 @@ public class TaskDto {
         this.processEvents = processEvents;
     }
 
-    public static TaskDto emptyTask(OffsetDateTime timestamp, List<String> fileTypes) {
+    public static TaskDto emptyTask(OffsetDateTime timestamp, List<String> inputs, List<String> outputs) {
         return new TaskDto(
                 UUID.randomUUID(),
                 timestamp,
                 TaskStatus.NOT_CREATED,
-                fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
-                fileTypes.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
-                new ArrayList<>(),
+                inputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                inputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                outputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
                 new ArrayList<>());
     }
 
