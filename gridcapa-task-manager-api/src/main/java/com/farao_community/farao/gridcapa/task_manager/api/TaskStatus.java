@@ -13,6 +13,7 @@ public enum TaskStatus {
     NOT_CREATED,
     CREATED,
     READY,
+    PENDING,
     RUNNING,
     SUCCESS,
     ERROR
