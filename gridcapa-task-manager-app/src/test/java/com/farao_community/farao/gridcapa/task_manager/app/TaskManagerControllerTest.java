@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class TaskManagerControllerTest {
     @MockBean
     private TaskRepository taskRepository;
 
+    @MockBean
+    private TaskManager taskManager;
+
     @Autowired
     private TaskManagerController taskManagerController;
 
@@ -50,5 +54,34 @@ class TaskManagerControllerTest {
         ResponseEntity<List<TaskDto>> taskResponse = taskManagerController.getListTasksFromBusinessDate(businessDate.toString());
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
         assertEquals(24, taskResponse.getBody().size());
+    }
+
+    @Test
+    void testUpdateWithInvalidTaskStatus() {
+        ResponseEntity<TaskDto> taskResponse = taskManagerController.updateStatus("2021-09-30T23:00Z", "WRONG_STATUS");
+        assertEquals(HttpStatus.BAD_REQUEST, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testUpdateWithNotFoundTask() {
+        String timestamp = "2021-09-30T23:00Z";
+        Mockito.when(taskRepository.findByTimestamp(OffsetDateTime.parse(timestamp))).thenReturn(Optional.empty());
+        ResponseEntity<TaskDto> taskResponse = taskManagerController.updateStatus(timestamp, "RUNNING");
+        assertEquals(HttpStatus.NOT_FOUND, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testUpdateOk() {
+        String timestamp = "2021-09-30T23:00Z";
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
+        Task task = new Task(taskTimestamp);
+        Mockito.when(taskRepository.findByTimestamp(OffsetDateTime.parse(timestamp))).thenReturn(Optional.of(task));
+        Mockito.doAnswer((answer) -> {
+            task.setStatus(TaskStatus.RUNNING);
+            return Optional.of(task);
+        }).when(taskManager).handleTaskStatusUpdate(taskTimestamp, TaskStatus.RUNNING);
+        ResponseEntity<TaskDto> taskResponse = taskManagerController.updateStatus(timestamp, "RUNNING");
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+        assertEquals(TaskStatus.RUNNING, taskResponse.getBody().getStatus());
     }
 }
