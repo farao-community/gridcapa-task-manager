@@ -36,7 +36,6 @@ import java.util.stream.Stream;
  */
 @Service
 public class TaskManager {
-    private static final Object LOCK = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
     static final String FILE_PROCESS_TAG = "X-Amz-Meta-Gridcapa_file_target_process";
     static final String FILE_TYPE = "X-Amz-Meta-Gridcapa_file_type";
@@ -69,35 +68,30 @@ public class TaskManager {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        synchronized (LOCK) {
-            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
-            if (optionalTask.isPresent()) {
-                Task task = optionalTask.get();
-                task.setStatus(taskStatusUpdate.getTaskStatus());
-                taskRepository.saveAndFlush(task);
-                taskUpdateNotifier.notify(task);
-                LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatusUpdate.getTaskStatus());
-            } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
-            }
+        Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
+        if (optionalTask.isPresent()) {
+            updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
+        } else {
+            LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
         }
     }
 
     public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
-        synchronized (LOCK) {
-            Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
-            if (optionalTask.isPresent()) {
-                Task task = optionalTask.get();
-                task.setStatus(taskStatus);
-                taskRepository.saveAndFlush(task);
-                taskUpdateNotifier.notify(task);
-                LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
-                return Optional.of(task);
-            } else {
-                LOGGER.warn("Task at {} does not exist. Impossible to update status", timestamp);
-                return Optional.empty();
-            }
+        Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
+        if (optionalTask.isPresent()) {
+            updateTaskStatus(optionalTask.get(), taskStatus);
+            return optionalTask;
+        } else {
+            LOGGER.warn("Task at {} does not exist. Impossible to update status", timestamp);
+            return Optional.empty();
         }
+    }
+
+    private void updateTaskStatus(Task task, TaskStatus taskStatus) {
+        task.setStatus(taskStatus);
+        taskRepository.saveAndFlush(task);
+        taskUpdateNotifier.notify(task);
+        LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
     }
 
     @Bean
@@ -108,24 +102,22 @@ public class TaskManager {
     }
 
     public void handleTaskEventUpdate(String loggerEventString) {
-        synchronized (LOCK) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
-                Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
-                if (optionalTask.isPresent()) {
-                    Task task = optionalTask.get();
-                    OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
-                    taskRepository.save(task);
-                    taskUpdateNotifier.notify(task);
-                    LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
-                } else {
-                    LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
-                }
-            } catch (JsonProcessingException e) {
-                LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
+            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
+            if (optionalTask.isPresent()) {
+                Task task = optionalTask.get();
+                OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
+                task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
+                taskRepository.save(task);
+                taskUpdateNotifier.notify(task);
+                LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
+            } else {
+                LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
             }
+        } catch (JsonProcessingException e) {
+            LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
         }
     }
 
