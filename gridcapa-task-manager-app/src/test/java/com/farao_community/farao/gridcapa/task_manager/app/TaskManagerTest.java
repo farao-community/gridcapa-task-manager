@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import io.minio.messages.Event;
@@ -296,5 +297,29 @@ class TaskManagerTest {
         assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
         assertEquals("INFO", event.getLevel());
         assertEquals("Hello from backend", event.getMessage());
+    }
+
+    @Test
+    void handleTaskStatusUpdateFromMessagesTest() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        Task task = new Task(taskTimestamp);
+        taskRepository.save(task);
+
+        taskManager.handleTaskStatusUpdate(new TaskStatusUpdate(task.getId(), RUNNING));
+
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        assertEquals(RUNNING, updatedTask.getStatus());
+    }
+
+    @Test
+    void handleTaskStatusUpdateFromApiTest() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        Task task = new Task(taskTimestamp);
+        taskRepository.save(task);
+
+        taskManager.handleTaskStatusUpdate(taskTimestamp, RUNNING);
+
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        assertEquals(RUNNING, updatedTask.getStatus());
     }
 }
