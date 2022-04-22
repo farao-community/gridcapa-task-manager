@@ -170,13 +170,13 @@ public class TaskManager {
         if (optProcessFile.isPresent()) {
             LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, startTime);
             ProcessFile processFile = optProcessFile.get();
-            processFile.setFileUrl(minioAdapter.generatePreSignedUrl(objectKey, 24 * 60 * 60));
+            processFile.setFileUrl(minioAdapter.generatePreSignedUrl(objectKey));
             processFile.setFileObjectKey(objectKey);
             processFile.setLastModificationDate(getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.UPDATED);
         } else {
             LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
-            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, minioAdapter.generatePreSignedUrl(objectKey, 24 * 60 * 60), getProcessNow());
+            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, minioAdapter.generatePreSignedUrl(objectKey), getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.AVAILABLE);
         }
     }
