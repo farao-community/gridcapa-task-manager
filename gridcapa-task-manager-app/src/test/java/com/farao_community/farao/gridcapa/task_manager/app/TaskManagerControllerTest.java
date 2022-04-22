@@ -76,7 +76,7 @@ class TaskManagerControllerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
         Task task = new Task(taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(OffsetDateTime.parse(timestamp))).thenReturn(Optional.of(task));
-        Mockito.doAnswer((answer) -> {
+        Mockito.doAnswer(answer -> {
             task.setStatus(TaskStatus.RUNNING);
             return Optional.of(task);
         }).when(taskManager).handleTaskStatusUpdate(taskTimestamp, TaskStatus.RUNNING);
