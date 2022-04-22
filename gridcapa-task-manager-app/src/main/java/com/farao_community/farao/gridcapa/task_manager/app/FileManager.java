@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -37,6 +38,16 @@ public class FileManager {
 
     public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
         Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        if (optTask.isPresent()) {
+            Task task = optTask.get();
+            return getZippedFileGroup(task, fileGroup);
+        } else {
+            throw new TaskNotFoundException();
+        }
+    }
+
+    public ByteArrayOutputStream getZippedGroupById(String id, String fileGroup) throws IOException {
+        Optional<Task> optTask = taskRepository.findById(UUID.fromString(id));
         if (optTask.isPresent()) {
             Task task = optTask.get();
             return getZippedFileGroup(task, fileGroup);
