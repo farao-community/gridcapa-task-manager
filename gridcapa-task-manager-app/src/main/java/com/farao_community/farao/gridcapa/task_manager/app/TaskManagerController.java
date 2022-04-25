@@ -67,11 +67,13 @@ public class TaskManagerController {
         }
     }
 
+    // TODO: To be removed, task-manager should expose timestamp instead
     @GetMapping(value = "/tasks/{id}/outputs-by-id", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getZippedOutputsById(@PathVariable String id) {
         return getZippedGroup(id, MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
+    // TODO: To be removed, task-manager should expose timestamp instead
     private ResponseEntity<byte[]> getZippedGroup(String id, String fileGroup) {
         try {
             ByteArrayOutputStream zip = fileManager.getZippedGroupById(id, fileGroup);

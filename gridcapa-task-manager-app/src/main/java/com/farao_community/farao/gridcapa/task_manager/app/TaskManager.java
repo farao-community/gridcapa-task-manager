@@ -166,6 +166,10 @@ public class TaskManager {
 
     private ProcessFileArrival getProcessFileArrival(OffsetDateTime startTime, OffsetDateTime endTime, String objectKey, String fileType, String fileGroup) {
         LOGGER.debug("Start finding process file");
+        /*
+        This implies that only one file per type and group can exist. If another one is imported it would just
+        replace the previous one.
+        */
         Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileTypeAndGroup(startTime, fileType, fileGroup);
         if (optProcessFile.isPresent()) {
             LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, startTime);

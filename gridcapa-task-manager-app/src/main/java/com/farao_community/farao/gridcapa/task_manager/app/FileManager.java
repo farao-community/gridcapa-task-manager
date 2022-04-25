@@ -59,8 +59,8 @@ public class FileManager {
     private ByteArrayOutputStream getZippedFileGroup(Task task, String fileGroup) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-            Set<ProcessFile> outputProcessFiles = getProcessFiles(task, fileGroup);
-            for (ProcessFile processFile : outputProcessFiles) {
+            Set<ProcessFile> groupProcessFiles = getProcessFiles(task, fileGroup);
+            for (ProcessFile processFile : groupProcessFiles) {
                 writeZipEntry(zos, processFile);
             }
             return baos;
@@ -68,7 +68,9 @@ public class FileManager {
     }
 
     private Set<ProcessFile> getProcessFiles(Task task, String fileGroup) {
-        return task.getProcessFiles().stream().filter(processFile -> processFile.getFileGroup().equals(fileGroup)).collect(Collectors.toSet());
+        return task.getProcessFiles().stream()
+            .filter(processFile -> processFile.getFileGroup().equals(fileGroup))
+            .collect(Collectors.toSet());
     }
 
     private void writeZipEntry(ZipOutputStream zos, ProcessFile processFile) throws IOException {

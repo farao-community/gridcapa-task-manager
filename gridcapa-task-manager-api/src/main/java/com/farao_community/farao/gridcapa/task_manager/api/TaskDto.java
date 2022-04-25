@@ -32,7 +32,6 @@ public class TaskDto {
     @Deprecated(since = "1.1.0", forRemoval = true)
     private final List<ProcessFileDto> processFiles;
 
-
     @JsonCreator
     public TaskDto(@JsonProperty("id") UUID id,
                    @JsonProperty("timestamp") OffsetDateTime timestamp,
