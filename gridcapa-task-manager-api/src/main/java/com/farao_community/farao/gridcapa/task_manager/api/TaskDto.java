@@ -22,11 +22,16 @@ public class TaskDto {
     private final UUID id;
     private final OffsetDateTime timestamp;
     private final TaskStatus status;
-    @Deprecated
-    private final List<ProcessFileDto> processFiles;
     private final List<ProcessFileDto> inputs;
     private final List<ProcessFileDto> outputs;
     private final List<ProcessEventDto> processEvents;
+
+    /**
+     * @deprecated Since 1.1.0 version because we now want to separate inputs from outputs
+     */
+    @Deprecated(since = "1.1.0", forRemoval = true)
+    private final List<ProcessFileDto> processFiles;
+
 
     @JsonCreator
     public TaskDto(@JsonProperty("id") UUID id,
@@ -68,7 +73,11 @@ public class TaskDto {
         return status;
     }
 
-    @Deprecated
+    /**
+     * @deprecated Since 1.1.0 version because we now want to separate inputs from outputs
+     * @return The list of process files store in the Task
+     */
+    @Deprecated(since = "1.1.0", forRemoval = true)
     public List<ProcessFileDto> getProcessFiles() {
         return processFiles;
     }
