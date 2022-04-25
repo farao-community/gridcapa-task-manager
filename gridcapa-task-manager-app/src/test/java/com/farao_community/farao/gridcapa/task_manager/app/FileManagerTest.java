@@ -17,6 +17,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
 @SpringBootTest
-public class FileManagerTest {
+class FileManagerTest {
 
     @MockBean
     private TaskRepository taskRepository;
@@ -45,5 +46,18 @@ public class FileManagerTest {
     void checkThrowsExceptionWhenNoTaskAtGivenDate() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         assertThrows(TaskNotFoundException.class, () -> fileManager.getZippedGroup(taskTimestamp, MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
+    }
+
+    @Test
+    void checkBytesForFileGroupGeneratedProperlyFromId() throws Exception {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Task task = new Task(taskTimestamp);
+        Mockito.when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
+        assertNotNull(fileManager.getZippedGroupById(task.getId().toString(), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
+    }
+
+    @Test
+    void checkThrowsExceptionWhenNoTaskAtGivenDateById() {
+        assertThrows(TaskNotFoundException.class, () -> fileManager.getZippedGroupById(UUID.randomUUID().toString(), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
 }

@@ -40,7 +40,7 @@ public class TaskManagerConfigurationProperties {
         private final List<String> inputs;
         private final List<String> outputs;
 
-        private ProcessProperties(String tag, String timezone, List<String> inputs, List<String> outputs) {
+        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> outputs) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;

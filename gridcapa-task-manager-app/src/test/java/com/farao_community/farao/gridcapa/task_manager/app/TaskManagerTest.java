@@ -65,7 +65,7 @@ class TaskManagerTest {
         );
         Mockito.when(event.userMetadata()).thenReturn(metadata);
         Mockito.when(event.objectName()).thenReturn(fileKey);
-        Mockito.when(minioAdapter.generatePreSignedUrl(Mockito.eq(event.objectName()))).thenReturn(fileUrl);
+        Mockito.when(minioAdapter.generatePreSignedUrl(event.objectName())).thenReturn(fileUrl);
         return event;
     }
 
@@ -106,32 +106,26 @@ class TaskManagerTest {
 
     @Test
     void testUpdateWithNotHandledProcess() {
-        String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_IDCC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T23:00Z/2021-10-01T00:00Z", cgmUrl);
-
-        taskManager.updateTasks(event);
-
-        assertEquals(0, taskRepository.findAll().size());
+        testTimeInterval("CSE_IDCC", "2021-09-30T23:00Z/2021-10-01T00:00Z", 0);
     }
 
     @Test
     void testUpdateWithEmptyIntervalFileType() {
-        String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "", cgmUrl);
-
-        taskManager.updateTasks(event);
-
-        assertEquals(0, taskRepository.findAll().size());
+        testTimeInterval("CSE_D2CC", "", 0);
     }
 
     @Test
     void testUpdateWithDailyFile() {
+        testTimeInterval("CSE_D2CC", "2021-09-30T22:00Z/2021-10-01T22:00Z", 24);
+    }
+
+    private void testTimeInterval(String process, String interval, int expectedFileNumber) {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T22:00Z/2021-10-01T22:00Z", cgmUrl);
+        Event event = createEvent(process, INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval, cgmUrl);
 
         taskManager.updateTasks(event);
 
-        assertEquals(24, taskRepository.findAll().size());
+        assertEquals(expectedFileNumber, taskRepository.findAll().size());
     }
 
     @Test
