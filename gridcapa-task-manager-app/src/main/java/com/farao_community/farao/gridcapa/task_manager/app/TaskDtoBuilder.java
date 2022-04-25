@@ -44,7 +44,7 @@ public class TaskDtoBuilder {
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
         List<TaskDto> listTasks = new ArrayList<>();
         ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
-        LocalDateTime businessDateStartTime = businessDate.atTime(00, 30);
+        LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime timestamp = businessDateStartTime.atOffset(zoneOffSet);
         while (timestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
@@ -55,19 +55,27 @@ public class TaskDtoBuilder {
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs());
+        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs());
     }
 
     public TaskDto createDtoFromEntity(Task task) {
+        var inputs = properties.getProcess().getInputs().stream()
+                        .map(input -> task.getInput(input)
+                                .map(this::createDtoFromEntity)
+                                .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+                        .collect(Collectors.toList());
+        var outputs = properties.getProcess().getOutputs().stream()
+                .map(output -> task.getOutput(output)
+                        .map(this::createDtoFromEntity)
+                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
+                .collect(Collectors.toList());
         return new TaskDto(
             task.getId(),
             task.getTimestamp(),
             task.getStatus(),
-            properties.getProcess().getInputs().stream()
-                .map(input -> task.getProcessFile(input)
-                    .map(this::createDtoFromEntity)
-                    .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-                .collect(Collectors.toList()),
+            inputs,
+            inputs,
+            outputs,
             task.getProcessEvents().stream().map(this::createDtoFromEntity).collect(Collectors.toList()));
     }
 

@@ -34,6 +34,9 @@ public class ProcessFile implements Comparable<ProcessFile> {
     @Column(name = "file_object_key", length = 500, nullable = false, unique = true)
     private String fileObjectKey;
 
+    @Column(name = "file_group")
+    private String fileGroup;
+
     @Column(name = "file_type")
     private String fileType;
 
@@ -54,6 +57,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
     }
 
     public ProcessFile(String fileObjectKey,
+                       String fileGroup,
                        String fileType,
                        OffsetDateTime startingAvailabilityDate,
                        OffsetDateTime endingAvailabilityDate,
@@ -61,6 +65,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
                        OffsetDateTime lastModificationDate) {
         this.id = UUID.randomUUID();
         this.fileObjectKey = fileObjectKey;
+        this.fileGroup = fileGroup;
         this.fileType = fileType;
         this.startingAvailabilityDate = startingAvailabilityDate;
         this.endingAvailabilityDate = endingAvailabilityDate;
@@ -70,6 +75,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public UUID getId() {
         return id;
+    }
+
+    public String getFileGroup() {
+        return fileGroup;
     }
 
     public String getFileType() {
@@ -126,11 +135,15 @@ public class ProcessFile implements Comparable<ProcessFile> {
             return false;
         }
         ProcessFile that = (ProcessFile) o;
-        return Objects.equals(id, that.id) && Objects.equals(fileType, that.fileType) && Objects.equals(lastModificationDate, that.lastModificationDate) && Objects.equals(fileObjectKey, that.fileObjectKey);
+        return Objects.equals(id, that.id) &&
+                Objects.equals(fileGroup, that.fileGroup) &&
+                Objects.equals(fileType, that.fileType) &&
+                Objects.equals(lastModificationDate, that.lastModificationDate) &&
+                Objects.equals(fileObjectKey, that.fileObjectKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, fileType, lastModificationDate, fileObjectKey);
+        return Objects.hash(id, fileGroup, fileType, lastModificationDate, fileObjectKey);
     }
 }

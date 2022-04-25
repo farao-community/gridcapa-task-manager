@@ -29,12 +29,13 @@ class ProcessFileTest {
     @Test
     void testConstructorFromEntity() {
         ProcessFile processFile = new ProcessFile(
-            "cgm-name",
-            "CGM",
-            OffsetDateTime.parse("2021-10-11T00:00Z"),
-            OffsetDateTime.parse("2021-10-12T00:00Z"),
-            "cgm-url",
-            OffsetDateTime.parse("2021-10-11T10:18Z"));
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                "cgm-url",
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         ProcessFileDto processFileDto = taskDtoBuilder.createDtoFromEntity(processFile);
         assertEquals("CGM", processFileDto.getFileType());
