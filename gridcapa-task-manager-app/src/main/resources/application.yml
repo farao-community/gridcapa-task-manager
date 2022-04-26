@@ -25,6 +25,8 @@ spring:
           destination: task-manager-logs-exchange
         task-updated:
           destination: task-updated
+        task-status-updated:
+          destination: task-updated
       rabbit:
         default:
           consumer:
@@ -34,6 +36,9 @@ spring:
           consumeMinioEvent-in-0:
             consumer:
               exchange-type: fanout
+          task-status-updated:
+            producer:
+              routing-key-expression: '''status'''
     function:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
 
