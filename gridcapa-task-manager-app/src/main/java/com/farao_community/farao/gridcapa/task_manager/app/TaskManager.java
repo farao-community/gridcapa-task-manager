@@ -76,7 +76,7 @@ public class TaskManager {
             Task task = optionalTask.get();
             task.setStatus(taskStatusUpdate.getTaskStatus());
             taskRepository.save(task);
-            taskUpdateNotifier.notify(task);
+            taskUpdateNotifier.notify(task, true);
         } else {
             LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
         }
@@ -99,8 +99,7 @@ public class TaskManager {
                 OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
                 task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                 taskRepository.save(task);
-                taskUpdateNotifier.notify(task);
-
+                taskUpdateNotifier.notify(task, false);
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
             }
@@ -218,34 +217,39 @@ public class TaskManager {
         }
     }
 
-    private Set<Task> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {
+    private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {
         LOGGER.debug("Adding process file to the related tasks");
         return Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
             .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
             .parallel()
             .map(timestamp -> {
-                Task task = taskRepository.findByTimestamp(timestamp).orElseGet(() -> new Task(timestamp));
+                TaskWithStatusUpdate taskWithStatusUpdate = taskRepository.findByTimestamp(timestamp)
+                    .map(task -> new TaskWithStatusUpdate(task, false))
+                    .orElseGet(() -> new TaskWithStatusUpdate(new Task(timestamp), true));
+                Task task = taskWithStatusUpdate.getTask();
                 addFileEventToTask(task, fileEventType, processFile);
                 task.addProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
-                return task;
+                // If the task is created the status will be set as updated whatever the check gives as output
+                // and in case the task was not created here, it will depend on the output of the check.
+                taskWithStatusUpdate.setStatusUpdated(checkAndUpdateTaskStatus(task) || taskWithStatusUpdate.isStatusUpdated());
+                return taskWithStatusUpdate;
             })
             .collect(Collectors.toSet());
     }
 
-    private Set<Task> removeProcessFileFromTasks(ProcessFile processFile) {
+    private Set<TaskWithStatusUpdate> removeProcessFileFromTasks(ProcessFile processFile) {
         LOGGER.debug("Removing process file of the related tasks");
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
             .parallelStream()
             .map(task -> {
                 task.removeProcessFile(processFile);
-                checkAndUpdateTaskStatus(task);
+                boolean statusUpdated = checkAndUpdateTaskStatus(task);
                 if (task.getProcessFiles().isEmpty()) {
                     task.getProcessEvents().clear();
                 } else {
                     addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
-                return task;
+                return new TaskWithStatusUpdate(task, statusUpdated);
             })
             .collect(Collectors.toSet());
     }
@@ -258,7 +262,8 @@ public class TaskManager {
      *
      * @param task: Task on which to evaluate the status.
      */
-    private void checkAndUpdateTaskStatus(Task task) {
+    private boolean checkAndUpdateTaskStatus(Task task) {
+        TaskStatus initialTaskStatus = task.getStatus();
         long fileNumber = task.getProcessFiles().stream()
                 .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
                 .count();
@@ -269,13 +274,14 @@ public class TaskManager {
         } else {
             task.setStatus(TaskStatus.CREATED);
         }
+        return initialTaskStatus != task.getStatus();
     }
 
-    private void saveAndNotifyTasks(Set<Task> tasks) {
+    private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
         LOGGER.debug("Saving related tasks");
-        taskRepository.saveAll(tasks);
+        taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
         LOGGER.debug("Notifying on web-sockets");
-        taskUpdateNotifier.notify(tasks);
+        taskUpdateNotifier.notify(taskWithStatusUpdateSet);
     }
 
     private static final class ProcessFileArrival {
