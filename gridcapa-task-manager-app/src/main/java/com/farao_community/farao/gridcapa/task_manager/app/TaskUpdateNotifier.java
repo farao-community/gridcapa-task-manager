@@ -18,7 +18,7 @@ import java.util.Set;
 @Service
 public class TaskUpdateNotifier {
     private static final String TASK_UPDATED_BINDING = "task-updated";
-    private static final String TASK_UPDATED_STATUS_BINDING = "task-status-updated";
+    private static final String TASK_STATUS_UPDATED_BINDING = "task-status-updated";
 
     private final StreamBridge streamBridge;
     private final TaskDtoBuilder taskDtoBuilder;
@@ -29,18 +29,11 @@ public class TaskUpdateNotifier {
     }
 
     public void notify(Task task, boolean withStatusUpdate) {
-        streamBridge.send(
-            withStatusUpdate ? TASK_UPDATED_STATUS_BINDING : TASK_UPDATED_BINDING,
-            taskDtoBuilder.createDtoFromEntity(task));
-    }
-
-    public void notify(TaskWithStatusUpdate taskWithStatusUpdate) {
-        streamBridge.send(
-            taskWithStatusUpdate.isStatusUpdated() ? TASK_UPDATED_STATUS_BINDING : TASK_UPDATED_BINDING,
-            taskDtoBuilder.createDtoFromEntity(taskWithStatusUpdate.getTask()));
+        String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
+        streamBridge.send(bindingName, taskDtoBuilder.createDtoFromEntity(task));
     }
 
     public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        taskWithStatusUpdateSet.parallelStream().forEach(this::notify);
+        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
     }
 }
