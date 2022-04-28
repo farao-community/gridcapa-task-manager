@@ -72,7 +72,7 @@ public class TaskManager {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        synchronized(LOCK) {
+        synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 Task task = optionalTask.get();
@@ -93,7 +93,7 @@ public class TaskManager {
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
-        synchronized(LOCK) {
+        synchronized (LOCK) {
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
