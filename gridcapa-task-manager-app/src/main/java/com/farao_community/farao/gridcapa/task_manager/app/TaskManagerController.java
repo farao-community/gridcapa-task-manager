@@ -67,28 +67,6 @@ public class TaskManagerController {
         }
     }
 
-    // TODO: To be removed, task-manager should expose timestamp instead
-    @GetMapping(value = "/tasks/{id}/outputs-by-id", produces = "application/octet-stream")
-    public ResponseEntity<byte[]> getZippedOutputsById(@PathVariable String id) {
-        return getZippedGroup(id, MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
-    }
-
-    // TODO: To be removed, task-manager should expose timestamp instead
-    private ResponseEntity<byte[]> getZippedGroup(String id, String fileGroup) {
-        try {
-            ByteArrayOutputStream zip = fileManager.getZippedGroupById(id, fileGroup);
-            String zipName = fileGroup + ".zip";
-            return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", "attachment;filename=\"" + zipName + "\"")
-                .body(zip.toByteArray());
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
-        } catch (TaskNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
     @GetMapping(value = "/tasks/businessdate/{businessDate}")
     public ResponseEntity<List<TaskDto>> getListTasksFromBusinessDate(@PathVariable String businessDate) {
         return ResponseEntity.ok().body(builder.getListTasksDto(LocalDate.parse(businessDate)));
