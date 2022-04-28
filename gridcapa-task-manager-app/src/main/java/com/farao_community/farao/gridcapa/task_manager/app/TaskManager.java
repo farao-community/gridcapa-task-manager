@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 @Service
 public class TaskManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
+    private static final Object LOCK = new Object();
     static final String FILE_GROUP_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
     static final String FILE_TARGET_PROCESS_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
     static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
@@ -71,14 +72,16 @@ public class TaskManager {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
-        if (optionalTask.isPresent()) {
-            Task task = optionalTask.get();
-            task.setStatus(taskStatusUpdate.getTaskStatus());
-            taskRepository.save(task);
-            taskUpdateNotifier.notify(task, true);
-        } else {
-            LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+        synchronized(LOCK) {
+            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
+            if (optionalTask.isPresent()) {
+                Task task = optionalTask.get();
+                task.setStatus(taskStatusUpdate.getTaskStatus());
+                taskRepository.save(task);
+                taskUpdateNotifier.notify(task, true);
+            } else {
+                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+            }
         }
     }
 
@@ -90,21 +93,23 @@ public class TaskManager {
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
-            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
-            if (optionalTask.isPresent()) {
-                Task task = optionalTask.get();
-                OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-                task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
-                taskRepository.save(task);
-                taskUpdateNotifier.notify(task, false);
-            } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
+        synchronized(LOCK) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
+                Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
+                if (optionalTask.isPresent()) {
+                    Task task = optionalTask.get();
+                    OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
+                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
+                    taskRepository.save(task);
+                    taskUpdateNotifier.notify(task, false);
+                } else {
+                    LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
+                }
+            } catch (JsonProcessingException e) {
+                LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
             }
-        } catch (JsonProcessingException e) {
-            LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
         }
     }
 
