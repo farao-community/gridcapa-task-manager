@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 @Service
 public class TaskManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
+    private static final Object LOCK = new Object();
     static final String FILE_GROUP_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
     static final String FILE_TARGET_PROCESS_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
     static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
@@ -71,14 +72,16 @@ public class TaskManager {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
-        if (optionalTask.isPresent()) {
-            Task task = optionalTask.get();
-            task.setStatus(taskStatusUpdate.getTaskStatus());
-            taskRepository.save(task);
-            taskUpdateNotifier.notify(task, true);
-        } else {
-            LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+        synchronized (LOCK) {
+            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
+            if (optionalTask.isPresent()) {
+                Task task = optionalTask.get();
+                task.setStatus(taskStatusUpdate.getTaskStatus());
+                taskRepository.save(task);
+                taskUpdateNotifier.notify(task, true);
+            } else {
+                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
+            }
         }
     }
 
@@ -90,21 +93,22 @@ public class TaskManager {
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            TaskLogEventUpdate loggerEvent = objectMapper.readValue(loggerEventString, TaskLogEventUpdate.class);
-            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
-            if (optionalTask.isPresent()) {
-                Task task = optionalTask.get();
-                OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-                task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
-                taskRepository.save(task);
-                taskUpdateNotifier.notify(task, false);
-            } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
+        synchronized (LOCK) {
+            try {
+                TaskLogEventUpdate loggerEvent = new ObjectMapper().readValue(loggerEventString, TaskLogEventUpdate.class);
+                Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
+                if (optionalTask.isPresent()) {
+                    Task task = optionalTask.get();
+                    OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
+                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
+                    taskRepository.save(task);
+                    taskUpdateNotifier.notify(task, false);
+                } else {
+                    LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
+                }
+            } catch (JsonProcessingException e) {
+                LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
             }
-        } catch (JsonProcessingException e) {
-            LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
         }
     }
 
@@ -139,26 +143,29 @@ public class TaskManager {
     }
 
     public void updateTasks(Event event) {
-        TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
-            String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
-            String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
-            String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
-            String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-            if (validityInterval != null && !validityInterval.isEmpty()) {
-                LOGGER.info("Adding MinIO object {}", objectKey);
-                String[] interval = validityInterval.split("/");
-                ProcessFileArrival processFileArrival = getProcessFileArrival(
-                    OffsetDateTime.parse(interval[0]),
-                    OffsetDateTime.parse(interval[1]),
-                    objectKey,
-                    fileType,
-                    fileGroup);
-                processFileRepository.save(processFileArrival.processFile);
-                saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType));
-                LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
-            } else {
-                LOGGER.warn("Minio object {} has not been added ", objectKey);
+        synchronized (LOCK) {
+            TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
+            if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
+                String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
+                String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
+                String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
+                String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+                if (validityInterval != null && !validityInterval.isEmpty()) {
+                    LOGGER.info("Adding MinIO object {}", objectKey);
+                    String[] interval = validityInterval.split("/");
+                    ProcessFileArrival processFileArrival = getProcessFileArrival(
+                        OffsetDateTime.parse(interval[0]),
+                        OffsetDateTime.parse(interval[1]),
+                        objectKey,
+                        fileType,
+                        fileGroup);
+                    processFileRepository.save(processFileArrival.processFile);
+                    boolean checkStatusChange = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(fileGroup);
+                    saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType, checkStatusChange));
+                    LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
+                } else {
+                    LOGGER.warn("Minio object {} has not been added ", objectKey);
+                }
             }
         }
     }
@@ -217,7 +224,7 @@ public class TaskManager {
         }
     }
 
-    private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType) {
+    private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType, boolean checkStatusChange) {
         LOGGER.debug("Adding process file to the related tasks");
         return Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
             .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
@@ -231,7 +238,11 @@ public class TaskManager {
                 task.addProcessFile(processFile);
                 // If the task is created the status will be set as updated whatever the check gives as output
                 // and in case the task was not created here, it will depend on the output of the check.
-                taskWithStatusUpdate.setStatusUpdated(checkAndUpdateTaskStatus(task) || taskWithStatusUpdate.isStatusUpdated());
+                boolean statusUpdateDueToFileArrival = false;
+                if (checkStatusChange) {
+                    statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task);
+                }
+                taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival || taskWithStatusUpdate.isStatusUpdated());
                 return taskWithStatusUpdate;
             })
             .collect(Collectors.toSet());
@@ -243,7 +254,10 @@ public class TaskManager {
             .parallelStream()
             .map(task -> {
                 task.removeProcessFile(processFile);
-                boolean statusUpdated = checkAndUpdateTaskStatus(task);
+                boolean statusUpdated = false;
+                if (MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup())) {
+                    statusUpdated = checkAndUpdateTaskStatus(task);
+                }
                 if (task.getProcessFiles().isEmpty()) {
                     task.getProcessEvents().clear();
                 } else {
