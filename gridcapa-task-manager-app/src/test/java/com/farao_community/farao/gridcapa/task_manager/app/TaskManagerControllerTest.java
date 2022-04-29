@@ -63,7 +63,7 @@ class TaskManagerControllerTest {
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());
         ResponseEntity<byte[]> inputsBytesResponse = taskManagerController.getZippedInputs(taskTimestamp.toString());
         assertEquals(HttpStatus.OK, inputsBytesResponse.getStatusCode());
-        assertEquals("attachment;filename=\"input.zip\"", inputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
+        assertEquals("attachment;filename=\"2021-09-30_2330_input.zip\"", inputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
     }
 
     @Test
@@ -72,6 +72,6 @@ class TaskManagerControllerTest {
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());
         ResponseEntity<byte[]> outputsBytesResponse = taskManagerController.getZippedOutputs(taskTimestamp.toString());
         assertEquals(HttpStatus.OK, outputsBytesResponse.getStatusCode());
-        assertEquals("attachment;filename=\"output.zip\"", outputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
+        assertEquals("attachment;filename=\"2021-09-30_2330_output.zip\"", outputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
     }
 }
