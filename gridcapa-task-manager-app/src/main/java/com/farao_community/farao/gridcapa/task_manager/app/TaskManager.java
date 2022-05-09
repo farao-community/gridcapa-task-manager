@@ -278,12 +278,12 @@ public class TaskManager {
      */
     private boolean checkAndUpdateTaskStatus(Task task) {
         TaskStatus initialTaskStatus = task.getStatus();
-        long fileNumber = task.getProcessFiles().stream()
-                .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
-                .count();
-        if (fileNumber == 0) {
+        List<String> availableInputFileTypes = task.getProcessFiles().stream()
+            .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
+            .map(ProcessFile::getFileType).collect(Collectors.toList());
+        if (availableInputFileTypes.size() == 0) {
             task.setStatus(TaskStatus.NOT_CREATED);
-        } else if (taskManagerConfigurationProperties.getProcess().getInputs().size() == fileNumber) {
+        } else if (availableInputFileTypes.containsAll(taskManagerConfigurationProperties.getProcess().getInputs())) {
             task.setStatus(TaskStatus.READY);
         } else {
             task.setStatus(TaskStatus.CREATED);

@@ -5,6 +5,7 @@ task-server:
     inputs:
       - CGM
       - CRAC
+    optional-inputs:
     outputs:
       - CNE
 
