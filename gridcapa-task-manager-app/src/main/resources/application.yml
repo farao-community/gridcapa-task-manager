@@ -48,6 +48,7 @@ task-server:
     timezone: CET
     inputs:
       - CGM
+    optional-inputs:
     outputs:
       - CNE
   whitelist:

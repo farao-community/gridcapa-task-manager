@@ -64,6 +64,12 @@ public class TaskDtoBuilder {
                                 .map(this::createDtoFromEntity)
                                 .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                         .collect(Collectors.toList());
+        var optionalInputs = properties.getProcess().getOptionalInputs().stream()
+            .map(input -> task.getInput(input)
+                .map(this::createDtoFromEntity)
+                .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+            .collect(Collectors.toList());
+        inputs.addAll(optionalInputs);
         var outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
                         .map(this::createDtoFromEntity)

@@ -38,12 +38,14 @@ public class TaskManagerConfigurationProperties {
         private final String tag;
         private final String timezone;
         private final List<String> inputs;
+        private final List<String> optionalInputs;
         private final List<String> outputs;
 
-        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> outputs) {
+        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, List<String> outputs) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
+            this.optionalInputs = optionalInputs;
             this.outputs = outputs;
         }
 
@@ -57,6 +59,10 @@ public class TaskManagerConfigurationProperties {
 
         public List<String> getInputs() {
             return inputs;
+        }
+
+        public List<String> getOptionalInputs() {
+            return optionalInputs;
         }
 
         public List<String> getOutputs() {
