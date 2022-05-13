@@ -7,7 +7,6 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +18,7 @@ import java.util.Set;
 @Service
 public class TaskUpdateNotifier {
     private static final String TASK_UPDATED_BINDING = "task-updated";
+    private static final String TASK_STATUS_UPDATED_BINDING = "task-status-updated";
 
     private final StreamBridge streamBridge;
     private final TaskDtoBuilder taskDtoBuilder;
@@ -28,11 +28,12 @@ public class TaskUpdateNotifier {
         this.taskDtoBuilder = taskDtoBuilder;
     }
 
-    public void notify(Task task) {
-        streamBridge.send(TASK_UPDATED_BINDING, taskDtoBuilder.createDtoFromEntity(task));
+    public void notify(Task task, boolean withStatusUpdate) {
+        String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
+        streamBridge.send(bindingName, taskDtoBuilder.createDtoFromEntity(task));
     }
 
-    public void notify(Set<Task> tasks) {
-        tasks.parallelStream().forEach(task -> streamBridge.send(TASK_UPDATED_BINDING, taskDtoBuilder.createDtoFromEntity(task)));
+    public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
     }
 }

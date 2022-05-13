@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
@@ -43,7 +44,7 @@ public class Task {
         orphanRemoval = true
     )
     @SortNatural
-    private SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
+    private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
     @JoinTable(
@@ -51,7 +52,7 @@ public class Task {
         joinColumns = @JoinColumn(name = "fk_task"),
         inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
     @SortNatural
-    private SortedSet<ProcessFile> processFiles = new TreeSet<>();
+    private final SortedSet<ProcessFile> processFiles = new TreeSet<>();
 
     public Task() {
 
@@ -88,7 +89,7 @@ public class Task {
     }
 
     public void addProcessEvent(OffsetDateTime timestamp, String level, String message) {
-        getProcessEvents().add(new ProcessEvent(timestamp, level, message));
+        processEvents.add(new ProcessEvent(timestamp, level, message));
     }
 
     public SortedSet<ProcessFile> getProcessFiles() {
@@ -96,25 +97,34 @@ public class Task {
     }
 
     public void addProcessFile(String fileObjectKey,
+                               String fileGroup,
                                String fileType,
                                OffsetDateTime startingAvailabilityDate,
                                OffsetDateTime endingAvailabilityDate,
                                String fileUrl,
                                OffsetDateTime lastModificationDate) {
-        addProcessFile(new ProcessFile(fileObjectKey, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
+        addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
     }
 
     public void addProcessFile(ProcessFile processFile) {
-        getProcessFiles().add(processFile);
+        processFiles.add(processFile);
     }
 
     public void removeProcessFile(ProcessFile processFile) {
-        getProcessFiles().remove(processFile);
+        processFiles.remove(processFile);
     }
 
-    public Optional<ProcessFile> getProcessFile(String fileType) {
+    public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-            .filter(file -> file.getFileType().equals(fileType))
-            .findFirst();
+                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(file -> fileType.equals(file.getFileType()))
+                .findFirst();
+    }
+
+    public Optional<ProcessFile> getOutput(String fileType) {
+        return processFiles.stream()
+                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(file -> fileType.equals(file.getFileType()))
+                .findFirst();
     }
 }

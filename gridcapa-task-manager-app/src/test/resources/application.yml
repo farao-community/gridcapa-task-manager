@@ -1,12 +1,17 @@
 task-server:
-  minio:
-    connect:
-      url: rabbitmq-test
-      access-key: gridcapa
-      secret-key: gridcapa
   process:
     tag: CSE_D2CC
     timezone: CET
     inputs:
       - CGM
       - CRAC
+    optional-inputs:
+    outputs:
+      - CNE
+
+minio-adapter:
+  bucket: gridcapa
+  base-path: /cse/d2cc
+  url: http://minio.url
+  access-key: gridcapa
+  secret-key: gridcapa
