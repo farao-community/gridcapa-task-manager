@@ -37,6 +37,7 @@ class TaskManagerControllerTest {
     @MockBean
     private TaskManager taskManager;
 
+    @MockBean
     private FileManager fileManager;
 
     @Autowired
