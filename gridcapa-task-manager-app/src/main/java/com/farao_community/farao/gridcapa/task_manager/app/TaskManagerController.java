@@ -7,14 +7,14 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -31,16 +32,31 @@ import java.util.List;
 public class TaskManagerController {
 
     private final TaskDtoBuilder builder;
+    private final TaskManager taskManager;
     private final FileManager fileManager;
 
-    public TaskManagerController(TaskDtoBuilder builder, FileManager fileManager) {
+    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager) {
         this.builder = builder;
+        this.taskManager = taskManager;
         this.fileManager = fileManager;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
     public ResponseEntity<TaskDto> getTaskFromTimestamp(@PathVariable String timestamp) {
         return ResponseEntity.ok().body(builder.getTaskDto(OffsetDateTime.parse(timestamp)));
+    }
+
+    @PutMapping(value = "/tasks/{timestamp}/status")
+    public ResponseEntity<TaskDto> updateStatus(@PathVariable String timestamp, @RequestParam String status) {
+        TaskStatus taskStatus;
+        try {
+            taskStatus = TaskStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        Optional<Task> optTask = taskManager.handleTaskStatusUpdate(OffsetDateTime.parse(timestamp), taskStatus);
+        return optTask.map(task -> ResponseEntity.ok(builder.createDtoFromEntity(task)))
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")

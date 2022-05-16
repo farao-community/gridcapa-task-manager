@@ -75,14 +75,31 @@ public class TaskManager {
         synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
-                Task task = optionalTask.get();
-                task.setStatus(taskStatusUpdate.getTaskStatus());
-                taskRepository.save(task);
-                taskUpdateNotifier.notify(task, true);
+                updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
             }
         }
+    }
+
+    public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
+        synchronized (LOCK) {
+            Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
+            if (optionalTask.isPresent()) {
+                updateTaskStatus(optionalTask.get(), taskStatus);
+                return optionalTask;
+            } else {
+                LOGGER.warn("Task at {} does not exist. Impossible to update status", timestamp);
+                return Optional.empty();
+            }
+        }
+    }
+
+    private void updateTaskStatus(Task task, TaskStatus taskStatus) {
+        task.setStatus(taskStatus);
+        taskRepository.saveAndFlush(task);
+        taskUpdateNotifier.notify(task, true);
+        LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
     }
 
     @Bean
@@ -103,6 +120,7 @@ public class TaskManager {
                     task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task, false);
+                    LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
                 } else {
                     LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
                 }
