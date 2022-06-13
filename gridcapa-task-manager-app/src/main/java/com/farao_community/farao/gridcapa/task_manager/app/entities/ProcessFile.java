@@ -147,7 +147,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.fileGroup, this.fileType, this.lastModificationDate, this.fileObjectKey);
+        return Objects.hash(this.id, this.fileType, this.fileGroup, this.startingAvailabilityDate);
     }
 
 }
