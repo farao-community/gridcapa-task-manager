@@ -80,8 +80,8 @@ class TaskManagerTest {
 
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(cgmUrl, task.getInput("CGM").orElseThrow().getFileUrl());
-        assertEquals("cgm-test", task.getInput("CGM").orElseThrow().getFilename());
+        assertEquals(cgmUrl, task.getInput("CGM", task.getTimestamp()).orElseThrow().getFileUrl());
+        assertEquals("cgm-test", task.getInput("CGM", task.getTimestamp()).orElseThrow().getFilename());
     }
 
     @Test
@@ -99,10 +99,10 @@ class TaskManagerTest {
         assertEquals(1, taskRepository.findAll().size());
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(cgmUrl, task.getInput("CGM").orElseThrow().getFileUrl());
-        assertEquals(cracUrl, task.getInput("CRAC").orElseThrow().getFileUrl());
-        assertEquals("cgm-test", task.getInput("CGM").orElseThrow().getFilename());
-        assertEquals("crac-test", task.getInput("CRAC").orElseThrow().getFilename());
+        assertEquals(cgmUrl, task.getInput("CGM", task.getTimestamp()).orElseThrow().getFileUrl());
+        assertEquals(cracUrl, task.getInput("CRAC", task.getTimestamp()).orElseThrow().getFileUrl());
+        assertEquals("cgm-test", task.getInput("CGM", task.getTimestamp()).orElseThrow().getFilename());
+        assertEquals("crac-test", task.getInput("CRAC", task.getTimestamp()).orElseThrow().getFilename());
     }
 
     @Test

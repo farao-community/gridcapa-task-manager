@@ -13,6 +13,7 @@ import org.hibernate.annotations.NaturalIdCache;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -122,8 +123,11 @@ public class ProcessFile implements Comparable<ProcessFile> {
     }
 
     @Override
-    public int compareTo(ProcessFile o) {
-        return fileType.compareTo(o.getFileType());
+    public int compareTo(ProcessFile otherProcessFile) {
+        Comparator<ProcessFile> processFileComparator = Comparator.comparing(ProcessFile::getFileType)
+            .thenComparing(ProcessFile::getFileGroup)
+            .thenComparing(ProcessFile::getStartingAvailabilityDate);
+        return processFileComparator.compare(this, otherProcessFile);
     }
 
     @Override
@@ -135,15 +139,15 @@ public class ProcessFile implements Comparable<ProcessFile> {
             return false;
         }
         ProcessFile that = (ProcessFile) o;
-        return Objects.equals(id, that.id) &&
-                Objects.equals(fileGroup, that.fileGroup) &&
-                Objects.equals(fileType, that.fileType) &&
-                Objects.equals(lastModificationDate, that.lastModificationDate) &&
-                Objects.equals(fileObjectKey, that.fileObjectKey);
+        return Objects.equals(this.id, that.id) &&
+            Objects.equals(this.fileType, that.fileType) &&
+            Objects.equals(this.fileGroup, that.fileGroup) &&
+            Objects.equals(this.startingAvailabilityDate, that.startingAvailabilityDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, fileGroup, fileType, lastModificationDate, fileObjectKey);
+        return Objects.hash(this.id, this.fileGroup, this.fileType, this.lastModificationDate, this.fileObjectKey);
     }
+
 }
