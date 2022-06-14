@@ -14,7 +14,6 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -22,7 +21,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
@@ -56,42 +54,28 @@ class TaskManagerTest {
         processFileRepository.deleteAll();
     }
 
-    private Event createEvent(String processTag, String fileGroup, String fileType, String fileKey, String validityInterval, String fileUrl) {
-        Event event = Mockito.mock(Event.class);
-        Map<String, String> metadata = Map.of(
-            TaskManager.FILE_GROUP_METADATA_KEY, fileGroup,
-            TaskManager.FILE_TARGET_PROCESS_METADATA_KEY, processTag,
-            TaskManager.FILE_TYPE_METADATA_KEY, fileType,
-            TaskManager.FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval
-        );
-        Mockito.when(event.userMetadata()).thenReturn(metadata);
-        Mockito.when(event.objectName()).thenReturn(fileKey);
-        Mockito.when(minioAdapter.generatePreSignedUrl(event.objectName())).thenReturn(fileUrl);
-        return event;
-    }
-
     @Test
     void testUpdate() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event event = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
+        Event event = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         taskManager.updateTasks(event);
 
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(cgmUrl, task.getInput("CGM", task.getTimestamp()).orElseThrow().getFileUrl());
-        assertEquals("cgm-test", task.getInput("CGM", task.getTimestamp()).orElseThrow().getFilename());
+        assertEquals(cgmUrl, task.getInput("CGM").orElseThrow().getFileUrl());
+        assertEquals("cgm-test", task.getInput("CGM").orElseThrow().getFilename());
     }
 
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
+        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
+        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
@@ -99,10 +83,10 @@ class TaskManagerTest {
         assertEquals(1, taskRepository.findAll().size());
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(cgmUrl, task.getInput("CGM", task.getTimestamp()).orElseThrow().getFileUrl());
-        assertEquals(cracUrl, task.getInput("CRAC", task.getTimestamp()).orElseThrow().getFileUrl());
-        assertEquals("cgm-test", task.getInput("CGM", task.getTimestamp()).orElseThrow().getFilename());
-        assertEquals("crac-test", task.getInput("CRAC", task.getTimestamp()).orElseThrow().getFilename());
+        assertEquals(cgmUrl, task.getInput("CGM").orElseThrow().getFileUrl());
+        assertEquals(cracUrl, task.getInput("CRAC").orElseThrow().getFileUrl());
+        assertEquals("cgm-test", task.getInput("CGM").orElseThrow().getFilename());
+        assertEquals("crac-test", task.getInput("CRAC").orElseThrow().getFilename());
     }
 
     @Test
@@ -122,7 +106,7 @@ class TaskManagerTest {
 
     private void testTimeInterval(String process, String interval, int expectedFileNumber) {
         String cgmUrl = "cgmUrl";
-        Event event = createEvent(process, INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval, cgmUrl);
+        Event event = TaskManagerTestUtil.createEvent(minioAdapter, process, INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval, cgmUrl);
 
         taskManager.updateTasks(event);
 
@@ -133,10 +117,10 @@ class TaskManagerTest {
     void checkStatusUpdateToReady() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
+        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
+        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
@@ -148,10 +132,10 @@ class TaskManagerTest {
     void checkStatusUpdateBackToCreated() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
+        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
+        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
@@ -163,10 +147,10 @@ class TaskManagerTest {
     void testCreationEventsForTwoFilesWithDifferentTypesAndSameTs() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
+        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cracUrl = "cracUrl";
-        Event eventCrac = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
+        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCrac);
@@ -186,10 +170,10 @@ class TaskManagerTest {
     void testUpdateEventsForTwoFilesWithSameTypeAndSameTs() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         String cgmUrl = "cgmUrl";
-        Event eventCgm = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
+        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         String cgmUrlNew = "cgmUrlNew";
-        Event eventCgmNew = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrlNew);
+        Event eventCgmNew = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrlNew);
 
         taskManager.updateTasks(eventCgm);
         taskManager.updateTasks(eventCgmNew);
@@ -233,7 +217,7 @@ class TaskManagerTest {
 
         taskRepository.save(task);
 
-        Event eventCracDeletion = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
+        Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
@@ -262,7 +246,7 @@ class TaskManagerTest {
             OffsetDateTime.now());
         taskRepository.save(task);
 
-        Event eventCracDeletion = createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
+        Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", "cracUrl");
         taskManager.removeProcessFile(eventCracDeletion);
 
         assertEquals(NOT_CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());

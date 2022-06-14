@@ -120,9 +120,9 @@ class TaskProcessFileDeletionTest {
         taskManager.removeProcessFile(event);
 
         Task task1 = taskRepository.findByTimestamp(offsetDateTime0).orElseThrow();
-        assertTrue(task1.getInput("CGM", task1.getTimestamp()).isPresent());
+        assertTrue(task1.getInput("CGM").isPresent());
         Task task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
-        assertTrue(task2.getInput("CGM", task2.getTimestamp()).isPresent());
+        assertTrue(task2.getInput("CGM").isPresent());
     }
 
     @Test
@@ -131,12 +131,12 @@ class TaskProcessFileDeletionTest {
         Mockito.when(event.objectName()).thenReturn("/CGM2");
 
         Task task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
-        assertTrue(task2.getInput("CGM", task2.getTimestamp()).isPresent());
+        assertTrue(task2.getInput("CGM").isPresent());
 
         taskManager.removeProcessFile(event);
 
         task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
-        assertTrue(task2.getInput("CGM", task2.getTimestamp()).isEmpty());
+        assertTrue(task2.getInput("CGM").isEmpty());
     }
 
     @Test
@@ -155,14 +155,14 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/REFPROG");
 
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getInput("REFPROG", offsetDateTime0).isPresent());
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getInput("REFPROG", offsetDateTime1).isPresent());
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime3).orElseThrow().getInput("REFPROG", offsetDateTime3).isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getInput("REFPROG").isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getInput("REFPROG").isPresent());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime3).orElseThrow().getInput("REFPROG").isPresent());
 
         taskManager.removeProcessFile(event);
 
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getInput("REFPROG", offsetDateTime0).isEmpty());
-        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getInput("REFPROG", offsetDateTime1).isEmpty());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getInput("REFPROG").isEmpty());
+        assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getInput("REFPROG").isEmpty());
 
         assertEquals(TaskStatus.NOT_CREATED, taskRepository.findByTimestamp(offsetDateTime3).orElseThrow().getStatus());
     }

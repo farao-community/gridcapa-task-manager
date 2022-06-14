@@ -81,7 +81,7 @@ class TaskTest {
         Mockito.when(processFileMock.getStartingAvailabilityDate()).thenReturn(task.getTimestamp());
         Mockito.when(processFileMock.getEndingAvailabilityDate()).thenReturn(task.getTimestamp().plusHours(1));
         task.addProcessFile(processFileMock);
-        assertEquals(processFileMock, task.getInput(fileType, task.getTimestamp()).get());
+        assertEquals(processFileMock, task.getInput(fileType).get());
     }
 
     @Test

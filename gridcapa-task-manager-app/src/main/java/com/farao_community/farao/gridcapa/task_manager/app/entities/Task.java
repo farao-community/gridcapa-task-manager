@@ -114,12 +114,10 @@ public class Task {
         processFiles.remove(processFile);
     }
 
-    public Optional<ProcessFile> getInput(String fileType, OffsetDateTime taskOffsetDateTime) {
+    public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
             .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
             .filter(file -> fileType.equals(file.getFileType()))
-            .filter(file -> (taskOffsetDateTime.isEqual(file.getStartingAvailabilityDate()) || taskOffsetDateTime.isAfter(file.getStartingAvailabilityDate()))
-                && taskOffsetDateTime.isBefore(file.getEndingAvailabilityDate()))
             .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
     }
 
