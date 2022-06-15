@@ -54,10 +54,10 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Override
     public int compareTo(ProcessEvent o) {
-        if (timestamp.compareTo(o.getTimestamp()) == 0) {
-            return message.compareTo(o.getMessage());
+        if (this.timestamp.compareTo(o.getTimestamp()) == 0) {
+            return this.message.compareTo(o.getMessage());
         }
-        return timestamp.compareTo(o.getTimestamp());
+        return this.timestamp.compareTo(o.getTimestamp());
     }
 
     @Override
@@ -69,11 +69,11 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
             return false;
         }
         ProcessEvent that = (ProcessEvent) o;
-        return id.equals(that.id) && level.equals(that.level) && timestamp.equals(that.timestamp) && message.equals(that.message);
+        return this.id.equals(that.id) && this.level.equals(that.level) && this.timestamp.equals(that.timestamp) && this.message.equals(that.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, level, timestamp, message);
+        return Objects.hash(this.id, this.level, this.timestamp, this.message);
     }
 }

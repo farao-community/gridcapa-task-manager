@@ -78,6 +78,8 @@ class TaskTest {
         String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
         Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
+        Mockito.when(processFileMock.getStartingAvailabilityDate()).thenReturn(task.getTimestamp());
+        Mockito.when(processFileMock.getEndingAvailabilityDate()).thenReturn(task.getTimestamp().plusHours(1));
         task.addProcessFile(processFileMock);
         assertEquals(processFileMock, task.getInput(fileType).get());
     }

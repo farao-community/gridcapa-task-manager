@@ -90,6 +90,7 @@ class TaskManagerControllerTest {
         assertEquals(TaskStatus.RUNNING, taskResponse.getBody().getStatus());
     }
 
+    @Test
     void testZipInputsExportOk() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());

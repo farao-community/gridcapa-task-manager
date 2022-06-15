@@ -39,14 +39,14 @@ public class Task {
     private TaskStatus status;
 
     @OneToMany(
-        cascade = { CascadeType.MERGE, CascadeType.PERSIST },
+        cascade = {CascadeType.MERGE, CascadeType.PERSIST},
         fetch = FetchType.EAGER,
         orphanRemoval = true
     )
     @SortNatural
     private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
-    @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST })
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinTable(
         name = "task_process_file",
         joinColumns = @JoinColumn(name = "fk_task"),
@@ -116,15 +116,15 @@ public class Task {
 
     public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
-                .filter(file -> fileType.equals(file.getFileType()))
-                .findFirst();
+            .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+            .filter(file -> fileType.equals(file.getFileType()))
+            .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
     }
 
     public Optional<ProcessFile> getOutput(String fileType) {
         return processFiles.stream()
-                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
-                .filter(file -> fileType.equals(file.getFileType()))
-                .findFirst();
+            .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+            .filter(file -> fileType.equals(file.getFileType()))
+            .findFirst();
     }
 }
