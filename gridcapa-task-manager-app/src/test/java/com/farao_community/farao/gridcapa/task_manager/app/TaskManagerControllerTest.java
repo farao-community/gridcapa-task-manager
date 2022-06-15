@@ -90,20 +90,23 @@ class TaskManagerControllerTest {
         assertEquals(TaskStatus.RUNNING, taskResponse.getBody().getStatus());
     }
 
+    @Test
     void testZipInputsExportOk() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());
+        Mockito.when(fileManager.getZipName(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))).thenReturn("2021-10-01_0130_input.zip");
         ResponseEntity<byte[]> inputsBytesResponse = taskManagerController.getZippedInputs(taskTimestamp.toString());
         assertEquals(HttpStatus.OK, inputsBytesResponse.getStatusCode());
-        assertEquals("attachment;filename=\"2021-09-30_2330_input.zip\"", inputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
+        assertEquals("attachment;filename=\"2021-10-01_0130_input.zip\"", inputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
     }
 
     @Test
     void testZipOutputsExportOk() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());
+        Mockito.when(fileManager.getZipName(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE))).thenReturn("2021-10-01_0130_output.zip");
         ResponseEntity<byte[]> outputsBytesResponse = taskManagerController.getZippedOutputs(taskTimestamp.toString());
         assertEquals(HttpStatus.OK, outputsBytesResponse.getStatusCode());
-        assertEquals("attachment;filename=\"2021-09-30_2330_output.zip\"", outputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
+        assertEquals("attachment;filename=\"2021-10-01_0130_output.zip\"", outputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
     }
 }

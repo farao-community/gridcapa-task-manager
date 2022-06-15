@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -28,12 +31,17 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class FileManager {
 
+    private static final DateTimeFormatter ZIP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH30");
+    private static final String ZIP_EXTENSION = ".zip";
+
     private final TaskRepository taskRepository;
     private final UrlValidationService urlValidationService;
+    private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
 
-    public FileManager(TaskRepository taskRepository, UrlValidationService urlValidationService) {
+    public FileManager(TaskRepository taskRepository, UrlValidationService urlValidationService, TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
         this.taskRepository = taskRepository;
         this.urlValidationService = urlValidationService;
+        this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
     }
 
     public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
@@ -54,6 +62,10 @@ public class FileManager {
         } else {
             throw new TaskNotFoundException();
         }
+    }
+
+    String getZipName(OffsetDateTime timestamp, String fileGroup) {
+        return timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(ZIP_DATE_TIME_FORMATTER) + "_" + fileGroup + ZIP_EXTENSION;
     }
 
     private ByteArrayOutputStream getZippedFileGroup(Task task, String fileGroup) throws IOException {
