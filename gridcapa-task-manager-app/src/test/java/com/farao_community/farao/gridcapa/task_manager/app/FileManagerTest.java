@@ -19,8 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
@@ -60,4 +59,13 @@ class FileManagerTest {
     void checkThrowsExceptionWhenNoTaskAtGivenDateById() {
         assertThrows(TaskNotFoundException.class, () -> fileManager.getZippedGroupById(UUID.randomUUID().toString(), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
+
+    @Test
+    void getZipNameTest() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        String actualZipName = fileManager.getZipName(taskTimestamp, MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
+        String expectedZipName = "2021-10-01_0130_output.zip";
+        assertEquals(expectedZipName, actualZipName);
+    }
+
 }

@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,7 +71,7 @@ public class TaskManagerController {
     private ResponseEntity<byte[]> getZippedGroup(OffsetDateTime timestamp, String fileGroup) {
         try {
             ByteArrayOutputStream zip = fileManager.getZippedGroup(timestamp, fileGroup);
-            String zipName = timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH30_")) + fileGroup + ".zip";
+            String zipName = fileManager.getZipName(timestamp, fileGroup);
             return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment;filename=\"" + zipName + "\"")
