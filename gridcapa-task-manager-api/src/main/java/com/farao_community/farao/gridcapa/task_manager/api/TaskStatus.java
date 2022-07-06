@@ -15,6 +15,8 @@ public enum TaskStatus {
     READY,
     PENDING,
     RUNNING,
+    INTERRUPTED,
     SUCCESS,
+    STOPPING,
     ERROR
 }
