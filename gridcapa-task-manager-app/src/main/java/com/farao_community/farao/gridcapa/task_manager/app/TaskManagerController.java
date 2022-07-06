@@ -6,20 +6,25 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,5 +91,21 @@ public class TaskManagerController {
     @GetMapping(value = "/tasks/businessdate/{businessDate}")
     public ResponseEntity<List<TaskDto>> getListTasksFromBusinessDate(@PathVariable String businessDate) {
         return ResponseEntity.ok().body(builder.getListTasksDto(LocalDate.parse(businessDate)));
+    }
+
+    @GetMapping(value = "/file/{fileType}/{timestamp}", produces = "application/octet-stream")
+    public @ResponseBody Object getFile(@PathVariable String fileType, @PathVariable String timestamp) throws IOException {
+        TaskDto task = builder.getTaskDto(OffsetDateTime.parse(timestamp));
+        List<ProcessFileDto> allFiles = new ArrayList<>();
+        allFiles.addAll(task.getInputs());
+        allFiles.addAll(task.getOutputs());
+        Optional<ProcessFileDto> myFile = allFiles.stream().filter(f -> f.getFileType().equals(fileType)).findFirst();
+        if (myFile.isPresent()) {
+            BufferedInputStream in = new BufferedInputStream(new URL(myFile.get().getFileUrl()).openStream());
+            return IOUtils.toByteArray(in);
+        }
+
+        return ResponseEntity.notFound();
+
     }
 }
