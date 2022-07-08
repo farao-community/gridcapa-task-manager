@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -39,10 +38,13 @@ public class TaskManagerController {
     private final TaskManager taskManager;
     private final FileManager fileManager;
 
-    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager) {
+    private final UrlValidationService urlValidationService;
+
+    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager, UrlValidationService urlValidationService) {
         this.builder = builder;
         this.taskManager = taskManager;
         this.fileManager = fileManager;
+        this.urlValidationService = urlValidationService;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -94,18 +96,22 @@ public class TaskManagerController {
     }
 
     @GetMapping(value = "/file/{fileType}/{timestamp}", produces = "application/octet-stream")
-    public @ResponseBody Object getFile(@PathVariable String fileType, @PathVariable String timestamp) throws IOException {
+    public @ResponseBody ResponseEntity<byte[]> getFile(@PathVariable String fileType, @PathVariable String timestamp) throws IOException {
+        ResponseEntity<byte[]> result = ResponseEntity.notFound().build();
         TaskDto task = builder.getTaskDto(OffsetDateTime.parse(timestamp));
         List<ProcessFileDto> allFiles = new ArrayList<>();
         allFiles.addAll(task.getInputs());
         allFiles.addAll(task.getOutputs());
         Optional<ProcessFileDto> myFile = allFiles.stream().filter(f -> f.getFileType().equals(fileType)).findFirst();
         if (myFile.isPresent()) {
-            BufferedInputStream in = new BufferedInputStream(new URL(myFile.get().getFileUrl()).openStream());
-            return IOUtils.toByteArray(in);
+            BufferedInputStream in = new BufferedInputStream(this.urlValidationService.openUrlStream(myFile.get().getFileUrl()));
+            result = ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header("Content-Disposition", "attachment;filename=\"" + myFile.get().getFilename() + "\"")
+                    .body(IOUtils.toByteArray(in));
         }
 
-        return ResponseEntity.notFound();
+        return result;
 
     }
 }
