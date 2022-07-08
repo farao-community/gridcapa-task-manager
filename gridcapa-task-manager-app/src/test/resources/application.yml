@@ -8,7 +8,8 @@ task-server:
     optional-inputs:
     outputs:
       - CNE
-
+  whitelist:
+    - http://fakeUrl
 minio-adapter:
   bucket: gridcapa
   base-path: /cse/d2cc

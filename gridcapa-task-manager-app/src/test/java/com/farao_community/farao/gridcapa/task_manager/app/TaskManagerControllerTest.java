@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.*;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,9 @@ class TaskManagerControllerTest {
 
     @Autowired
     private TaskManagerController taskManagerController;
+
+    @MockBean
+    private UrlValidationService urlValidationService;
 
     @Test
     void testGetTaskOk() {
@@ -108,5 +112,30 @@ class TaskManagerControllerTest {
         ResponseEntity<byte[]> outputsBytesResponse = taskManagerController.getZippedOutputs(taskTimestamp.toString());
         assertEquals(HttpStatus.OK, outputsBytesResponse.getStatusCode());
         assertEquals("attachment;filename=\"2021-10-01_0130_output.zip\"", outputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
+    }
+
+    @Test
+    void testGetUnknownFile() throws Exception {
+        String timestamp = "2021-09-30T23:00Z";
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
+        String fileType = "CrACk"; //bad file type
+        Task task = new Task(taskTimestamp);
+        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
+        assertEquals(HttpStatus.NOT_FOUND, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testGetFile() throws Exception {
+        String timestamp = "2021-09-01T23:30Z";
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
+        String fileType = "CRAC";
+        String fakeUrl = "http://fakeUrl";
+        Task task = new Task(taskTimestamp);
+        task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, fakeUrl, taskTimestamp);
+        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        Mockito.when(urlValidationService.openUrlStream(fakeUrl)).thenReturn(InputStream.nullInputStream());
+        ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
     }
 }
