@@ -56,7 +56,7 @@ task-server:
 
 minio-adapter:
   bucket: ${GRIDCAPA_MINIO_BUCKET:gridcapa}
-  base-path: ${GRIDCAPA_MINIO_BASE_PATH:""}
+  base-path: ${GRIDCAPA_MINIO_BASE_PATH:}
   url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
   access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
   secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
