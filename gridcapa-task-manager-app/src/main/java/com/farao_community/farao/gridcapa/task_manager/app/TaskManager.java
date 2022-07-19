@@ -98,7 +98,7 @@ public class TaskManager {
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
         task.setStatus(taskStatus);
         taskRepository.saveAndFlush(task);
-        taskUpdateNotifier.notify(task, true);
+        taskUpdateNotifier.notify(task);
         LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
     }
 
@@ -119,7 +119,7 @@ public class TaskManager {
                     OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
                     task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                     taskRepository.save(task);
-                    taskUpdateNotifier.notify(task, false);
+                    taskUpdateNotifier.notify(task);
                     LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
                 } else {
                     LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());

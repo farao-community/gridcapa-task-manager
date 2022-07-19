@@ -6,10 +6,13 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 /**
@@ -17,23 +20,24 @@ import java.util.Set;
  */
 @Service
 public class TaskUpdateNotifier {
-    private static final String TASK_UPDATED_BINDING = "task-updated";
-    private static final String TASK_STATUS_UPDATED_BINDING = "task-status-updated";
-
-    private final StreamBridge streamBridge;
     private final TaskDtoBuilder taskDtoBuilder;
 
-    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilder taskDtoBuilder) {
-        this.streamBridge = streamBridge;
+    @Autowired
+    private SimpMessagingTemplate broker;
+
+    public TaskUpdateNotifier(TaskDtoBuilder taskDtoBuilder) {
         this.taskDtoBuilder = taskDtoBuilder;
     }
 
-    public void notify(Task task, boolean withStatusUpdate) {
-        String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        streamBridge.send(bindingName, taskDtoBuilder.createDtoFromEntity(task));
+    public void notify(Task task) {
+        TaskDto taskdto = taskDtoBuilder.createDtoFromEntity(task);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        broker.convertAndSend("/topic/update/" + fmt.format(task.getTimestamp()), taskdto);
+        broker.convertAndSend("/topic/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskdto);
+
     }
 
     public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
+        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask()));
     }
 }
