@@ -63,6 +63,6 @@ minio-adapter:
 
 stomp:
   allowed-origin: http://localhost,http://127.0.0.1
-  starting-ws-endpoint: /web/notify
+  starting-ws-endpoint: /tasks/notify
   notify: /task
   receive-request: /app
