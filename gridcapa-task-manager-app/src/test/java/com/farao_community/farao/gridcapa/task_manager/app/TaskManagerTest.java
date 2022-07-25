@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskManagerTest {
     private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 
-    @Autowired
+    @MockBean
     private TaskUpdateNotifier taskUpdateNotifier; // Useful to avoid AMQP connection that would fail
 
     @MockBean

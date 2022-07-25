@@ -98,7 +98,7 @@ public class TaskManager {
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
         task.setStatus(taskStatus);
         taskRepository.saveAndFlush(task);
-        taskUpdateNotifier.notify(task);
+        taskUpdateNotifier.notify(task, true);
         LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
     }
 
@@ -119,7 +119,7 @@ public class TaskManager {
                     OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
                     task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
                     taskRepository.save(task);
-                    taskUpdateNotifier.notify(task);
+                    taskUpdateNotifier.notify(task, false);
                     LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
                 } else {
                     LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
@@ -299,7 +299,7 @@ public class TaskManager {
         List<String> availableInputFileTypes = task.getProcessFiles().stream()
             .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
             .map(ProcessFile::getFileType).collect(Collectors.toList());
-        if (availableInputFileTypes.size() == 0) {
+        if (availableInputFileTypes.isEmpty()) {
             task.setStatus(TaskStatus.NOT_CREATED);
         } else if (availableInputFileTypes.containsAll(taskManagerConfigurationProperties.getProcess().getInputs())) {
             task.setStatus(TaskStatus.READY);
