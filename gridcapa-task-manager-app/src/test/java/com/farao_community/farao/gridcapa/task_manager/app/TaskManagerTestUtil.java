@@ -28,7 +28,8 @@ public final class TaskManagerTestUtil {
             TaskManager.FILE_TYPE_METADATA_KEY, fileType,
             TaskManager.FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval
         );
-        Mockito.when(event.userMetadata()).thenReturn(metadata);
+        //The following mock is not use in all test that call this methods. With the "lenient" add you avoid an exception
+        Mockito.lenient().when(event.userMetadata()).thenReturn(metadata);
         Mockito.when(event.objectName()).thenReturn(fileKey);
         Mockito.when(minioAdapter.generatePreSignedUrl(event.objectName())).thenReturn(fileUrl);
         return event;

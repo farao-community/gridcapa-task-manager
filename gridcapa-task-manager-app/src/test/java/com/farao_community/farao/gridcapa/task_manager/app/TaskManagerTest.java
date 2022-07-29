@@ -14,9 +14,12 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cloud.stream.function.StreamBridge;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -30,12 +33,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class TaskManagerTest {
     private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 
-    @MockBean
-    private TaskUpdateNotifier taskUpdateNotifier; // Useful to avoid AMQP connection that would fail
+    @Autowired
+    private TaskUpdateNotifier taskUpdateNotifier;
 
+    @MockBean
+    private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
     @MockBean
     private MinioAdapter minioAdapter;
 
