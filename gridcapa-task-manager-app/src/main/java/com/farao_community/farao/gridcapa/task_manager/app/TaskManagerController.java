@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,14 +38,15 @@ public class TaskManagerController {
     private final TaskDtoBuilder builder;
     private final TaskManager taskManager;
     private final FileManager fileManager;
-
     private final UrlValidationService urlValidationService;
+    private final FTPSendFileService ftpSendFileService;
 
-    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager, UrlValidationService urlValidationService) {
+    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager, UrlValidationService urlValidationService, FTPSendFileService ftpSendFileService) {
         this.builder = builder;
         this.taskManager = taskManager;
         this.fileManager = fileManager;
         this.urlValidationService = urlValidationService;
+        this.ftpSendFileService = ftpSendFileService;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -114,4 +116,13 @@ public class TaskManagerController {
         return result;
 
     }
+
+    @PostMapping(value = "/tasks/file")
+    public ResponseEntity<String> postFile(@RequestParam("file") MultipartFile file,
+                                   @RequestParam("directory") String destDirectory,
+                                           @RequestParam("fileName") String fileName
+    ) throws IOException {
+        return ftpSendFileService.sendFile(file, fileName, destDirectory);
+    }
+
 }
