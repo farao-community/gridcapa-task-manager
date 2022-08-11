@@ -6,10 +6,14 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 /**
@@ -23,14 +27,25 @@ public class TaskUpdateNotifier {
     private final StreamBridge streamBridge;
     private final TaskDtoBuilder taskDtoBuilder;
 
-    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilder taskDtoBuilder) {
+    @Value("${stomp.notify}")
+    private String notify;
+
+    private final SimpMessagingTemplate broker;
+
+    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilder taskDtoBuilder, SimpMessagingTemplate broker) {
         this.streamBridge = streamBridge;
         this.taskDtoBuilder = taskDtoBuilder;
+        this.broker = broker;
     }
 
     public void notify(Task task, boolean withStatusUpdate) {
         String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        streamBridge.send(bindingName, taskDtoBuilder.createDtoFromEntity(task));
+        TaskDto taskdto = taskDtoBuilder.createDtoFromEntity(task);
+        streamBridge.send(bindingName, taskdto);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        broker.convertAndSend(notify + "/update/" + fmt.format(task.getTimestamp()), taskdto);
+        broker.convertAndSend(notify + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskdto);
+
     }
 
     public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
