@@ -299,7 +299,7 @@ public class TaskManager {
         List<String> availableInputFileTypes = task.getProcessFiles().stream()
             .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
             .map(ProcessFile::getFileType).collect(Collectors.toList());
-        if (availableInputFileTypes.size() == 0) {
+        if (availableInputFileTypes.isEmpty()) {
             task.setStatus(TaskStatus.NOT_CREATED);
         } else if (availableInputFileTypes.containsAll(taskManagerConfigurationProperties.getProcess().getInputs())) {
             task.setStatus(TaskStatus.READY);
