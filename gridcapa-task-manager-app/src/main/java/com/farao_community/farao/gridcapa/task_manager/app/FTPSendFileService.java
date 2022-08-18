@@ -35,6 +35,7 @@ public class FTPSendFileService {
         client.connect(ftpHost, ftpPort);
         boolean login = client.login(ftpUser, ftpPassword);
         if (login) {
+            client.setActivePortRange(21000, 21010);
             moveToDestDirectory(ftpDestination);
             // Store file to server
             client.setFileType(FTP.BINARY_FILE_TYPE);
