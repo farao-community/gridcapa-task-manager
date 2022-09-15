@@ -177,9 +177,9 @@ public class TaskManager {
                         objectKey,
                         fileType,
                         fileGroup);
-                    processFileRepository.save(processFileArrival.processFile);
+                    final ProcessFile savedProcessFile = processFileRepository.save(processFileArrival.processFile);
                     boolean checkStatusChange = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(fileGroup);
-                    saveAndNotifyTasks(addProcessFileToTasks(processFileArrival.processFile, processFileArrival.fileEventType, checkStatusChange));
+                    saveAndNotifyTasks(addProcessFileToTasks(savedProcessFile, processFileArrival.fileEventType, checkStatusChange));
                     LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
                 } else {
                     LOGGER.warn("Minio object {} has not been added ", objectKey);
