@@ -66,3 +66,7 @@ stomp:
   starting-ws-endpoint: /tasks/notify
   notify: /task
   receive-request: /app
+
+logback:
+  amqp:
+    exchange: task-manager-logs-exchange
