@@ -49,6 +49,8 @@
         <apache.commons.verion>2.11.0</apache.commons.verion>
         <gridcapa.starter.minio.adapter.version>0.2.0</gridcapa.starter.minio.adapter.version>
         <postgres.jdbc.version>42.3.1</postgres.jdbc.version>
+        <logstash.version>7.0.1</logstash.version>
+
     </properties>
 
     <dependencyManagement>
@@ -64,6 +66,11 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${apache.commons.verion}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash.version}</version>
             </dependency>
 
             <dependency>
