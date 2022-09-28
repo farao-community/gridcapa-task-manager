@@ -113,7 +113,7 @@ public class FileManager {
         }
     }
 
-    public String getFileNameFromUrl(String stringUrl) {
+    private String getFileNameFromUrl(String stringUrl) {
         try {
             URL url = new URL(stringUrl);
             return FilenameUtils.getName(url.getPath());
