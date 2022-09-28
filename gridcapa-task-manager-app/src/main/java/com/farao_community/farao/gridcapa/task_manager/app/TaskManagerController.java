@@ -38,13 +38,10 @@ public class TaskManagerController {
     private final TaskManager taskManager;
     private final FileManager fileManager;
 
-    private final UrlValidationService urlValidationService;
-
-    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager, UrlValidationService urlValidationService) {
+    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager) {
         this.builder = builder;
         this.taskManager = taskManager;
         this.fileManager = fileManager;
-        this.urlValidationService = urlValidationService;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -104,7 +101,7 @@ public class TaskManagerController {
         allFiles.addAll(task.getOutputs());
         Optional<ProcessFileDto> myFile = allFiles.stream().filter(f -> f.getFileType().equals(fileType)).findFirst();
         if (myFile.isPresent()) {
-            BufferedInputStream in = new BufferedInputStream(this.urlValidationService.openUrlStream(myFile.get().getFileUrl()));
+            BufferedInputStream in = new BufferedInputStream(this.fileManager.openUrlStream(myFile.get().getFileUrl()));
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header("Content-Disposition", "attachment;filename=\"" + myFile.get().getFilename() + "\"")

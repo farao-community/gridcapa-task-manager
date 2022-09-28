@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
@@ -14,8 +15,9 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -36,13 +38,13 @@ public class FileManager {
     private static final String RAO_LOGS_FILENAME = "rao_logs.txt";
 
     private final TaskRepository taskRepository;
-    private final UrlValidationService urlValidationService;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
+    private final Logger businessLogger;
 
-    public FileManager(TaskRepository taskRepository, UrlValidationService urlValidationService, TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
+    public FileManager(TaskRepository taskRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger) {
         this.taskRepository = taskRepository;
-        this.urlValidationService = urlValidationService;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
+        this.businessLogger = businessLogger;
     }
 
     public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
@@ -96,7 +98,7 @@ public class FileManager {
     }
 
     private void writeZipEntry(ZipOutputStream zos, ProcessFile processFile) throws IOException {
-        try (InputStream is = urlValidationService.openUrlStream(processFile.getFileUrl())) {
+        try (InputStream is = openUrlStream(processFile.getFileUrl())) {
             zos.putNextEntry(new ZipEntry(processFile.getFilename()));
             writeToZipOutputStream(zos, is);
         }
@@ -117,5 +119,27 @@ public class FileManager {
             baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
         }
         return new ByteArrayInputStream(baos.toByteArray());
+    }
+
+    public InputStream openUrlStream(String urlString) {
+        try {
+            if (taskManagerConfigurationProperties.getWhitelist().stream().noneMatch(urlString::startsWith)) {
+                throw new TaskManagerException(String.format("URL '%s' is not part of application's whitelisted url's.", urlString));
+            }
+            URL url = new URL(urlString);
+            return url.openStream(); // NOSONAR Usage of whitelist not triggered by Sonar quality assessment, even if listed as a solution to the vulnerability
+        } catch (IOException e) {
+            businessLogger.error("Error while retrieving content of file : {}, Link may have expired.", getFileNameFromUrl(urlString));
+            throw new TaskManagerException(String.format("Exception occurred while retrieving file content from : %s Cause: %s ", urlString, e.getMessage()));
+        }
+    }
+
+    private String getFileNameFromUrl(String stringUrl) {
+        try {
+            URL url = new URL(stringUrl);
+            return FilenameUtils.getName(url.getPath());
+        } catch (IOException e) {
+            throw new TaskManagerException(String.format("Exception occurred while retrieving file name from : %s Cause: %s ", stringUrl, e.getMessage()));
+        }
     }
 }
