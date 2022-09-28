@@ -44,9 +44,6 @@ class TaskManagerControllerTest {
     @Autowired
     private TaskManagerController taskManagerController;
 
-    @MockBean
-    private UrlValidationService urlValidationService;
-
     @Test
     void testGetTaskOk() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
@@ -134,7 +131,7 @@ class TaskManagerControllerTest {
         Task task = new Task(taskTimestamp);
         task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, fakeUrl, taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
-        Mockito.when(urlValidationService.openUrlStream(fakeUrl)).thenReturn(InputStream.nullInputStream());
+        Mockito.when(fileManager.openUrlStream(fakeUrl)).thenReturn(InputStream.nullInputStream());
         ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
     }
