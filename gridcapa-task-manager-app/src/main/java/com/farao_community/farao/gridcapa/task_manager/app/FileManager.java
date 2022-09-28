@@ -13,15 +13,23 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;

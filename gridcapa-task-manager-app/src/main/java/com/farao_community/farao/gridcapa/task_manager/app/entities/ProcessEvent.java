@@ -7,7 +7,6 @@
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -16,7 +15,7 @@ import java.util.UUID;
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
 @Entity
-public class ProcessEvent implements Comparable<ProcessEvent>, Serializable {
+public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -78,8 +77,7 @@ public class ProcessEvent implements Comparable<ProcessEvent>, Serializable {
         return Objects.hash(this.id, this.level, this.timestamp, this.message);
     }
 
-    @Override
     public String toString() {
-        return timestamp + " " + level + " " + message + "\n";
+        return timestamp + " " + level + " " + message + System.lineSeparator();
     }
 }
