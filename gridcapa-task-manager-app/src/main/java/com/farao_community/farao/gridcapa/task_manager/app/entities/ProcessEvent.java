@@ -76,4 +76,8 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
     public int hashCode() {
         return Objects.hash(this.id, this.level, this.timestamp, this.message);
     }
+
+    public String toString() {
+        return timestamp + " " + level + " " + message + System.lineSeparator();
+    }
 }
