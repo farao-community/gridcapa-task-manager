@@ -40,13 +40,15 @@ public class TaskManagerConfigurationProperties {
         private final List<String> inputs;
         private final List<String> optionalInputs;
         private final List<String> outputs;
+        private final Boolean enableExportLogs;
 
-        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, List<String> outputs) {
+        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, List<String> outputs, Boolean enableExportLogs) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
             this.optionalInputs = optionalInputs;
             this.outputs = outputs;
+            this.enableExportLogs = enableExportLogs;
         }
 
         public String getTag() {
@@ -67,6 +69,10 @@ public class TaskManagerConfigurationProperties {
 
         public List<String> getOutputs() {
             return outputs;
+        }
+
+        public Boolean getEnableExportLogs() {
+            return enableExportLogs;
         }
     }
 }

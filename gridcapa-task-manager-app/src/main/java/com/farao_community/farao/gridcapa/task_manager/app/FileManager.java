@@ -42,7 +42,6 @@ public class FileManager {
 
     private static final DateTimeFormatter ZIP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH30");
     private static final String ZIP_EXTENSION = ".zip";
-    private static final String CSE_EXPORT_PROCESS_TAG_COMMON_PART = "CSE_EXPORT";
     private static final String RAO_LOGS_FILENAME = "rao_logs.txt";
 
     private final TaskRepository taskRepository;
@@ -86,12 +85,16 @@ public class FileManager {
             for (ProcessFile processFile : groupProcessFiles) {
                 writeZipEntry(zos, processFile);
             }
-            if (taskManagerConfigurationProperties.getProcess().getTag().contains(CSE_EXPORT_PROCESS_TAG_COMMON_PART) &&
-                    fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE)) {
+            if (isExportLogsEnabledAndFileGroupIsGridcapaOutput(fileGroup)) {
                 addLogsFileToArchive(task, zos);
             }
             return baos;
         }
+    }
+
+    boolean isExportLogsEnabledAndFileGroupIsGridcapaOutput(String fileGroup) {
+        return taskManagerConfigurationProperties.getProcess().getEnableExportLogs().equals(Boolean.TRUE) &&
+                fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
     private Set<ProcessFile> getProcessFiles(Task task, String fileGroup) {
