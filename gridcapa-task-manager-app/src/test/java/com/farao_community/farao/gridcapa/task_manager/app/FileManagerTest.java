@@ -70,7 +70,7 @@ class FileManagerTest {
 
     @Test
     void isExportLogsEnabledAndFileGroupIsGridcapaOutputTest() {
-        assertEquals(Boolean.TRUE, fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE));
-        assertEquals(Boolean.FALSE, fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
+        assertTrue(fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE));
+        assertFalse(fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
 }
