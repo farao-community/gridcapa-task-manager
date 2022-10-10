@@ -93,7 +93,7 @@ public class FileManager {
     }
 
     boolean isExportLogsEnabledAndFileGroupIsGridcapaOutput(String fileGroup) {
-        return taskManagerConfigurationProperties.getProcess().getEnableExportLogs().equals(Boolean.TRUE) &&
+        return taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() &&
                 fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
