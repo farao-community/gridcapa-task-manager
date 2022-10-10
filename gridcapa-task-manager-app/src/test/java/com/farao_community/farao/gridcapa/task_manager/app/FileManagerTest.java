@@ -68,4 +68,9 @@ class FileManagerTest {
         assertEquals(expectedZipName, actualZipName);
     }
 
+    @Test
+    void isExportLogsEnabledAndFileGroupIsGridcapaOutputTest() {
+        assertTrue(fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE));
+        assertFalse(fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
+    }
 }

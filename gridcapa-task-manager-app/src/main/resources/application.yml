@@ -51,6 +51,7 @@ task-server:
     optional-inputs:
     outputs:
       - CNE
+    enable-export-logs: false
   whitelist:
     - http://minio:9000/
 

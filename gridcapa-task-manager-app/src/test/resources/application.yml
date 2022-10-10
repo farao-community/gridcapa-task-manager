@@ -8,6 +8,7 @@ task-server:
     optional-inputs:
     outputs:
       - CNE
+    enable-export-logs: true
   whitelist:
     - http://fakeUrl
 minio-adapter:
