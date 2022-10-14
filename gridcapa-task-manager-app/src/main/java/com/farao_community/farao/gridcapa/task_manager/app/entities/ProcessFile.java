@@ -13,9 +13,7 @@ import org.hibernate.annotations.NaturalIdCache;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -52,6 +50,9 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     @Column(name = "last_modification_date")
     private OffsetDateTime lastModificationDate;
+
+    @ManyToMany(mappedBy = "processFiles")
+    private final Set<Task> tasks = new HashSet<>();
 
     public ProcessFile() {
 
@@ -120,6 +121,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public void setFileObjectKey(String fileObjectKey) {
         this.fileObjectKey = fileObjectKey;
+    }
+
+    public Set<Task> getTasks() {
+        return tasks;
     }
 
     @Override
