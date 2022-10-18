@@ -210,17 +210,19 @@ public class TaskManager {
     }
 
     public void removeProcessFile(Event event) {
-        String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-        LOGGER.info("Removing MinIO object {}", objectKey);
-        Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
-        if (optionalProcessFile.isPresent()) {
-            ProcessFile processFile = optionalProcessFile.get();
-            LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
-            saveAndNotifyTasks(removeProcessFileFromTasks(processFile));
-            processFileRepository.delete(processFile);
-            LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
-        } else {
-            LOGGER.info("File not referenced in the database. Nothing to do.");
+        synchronized (LOCK) {
+            String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+            LOGGER.info("Removing MinIO object {}", objectKey);
+            Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
+            if (optionalProcessFile.isPresent()) {
+                ProcessFile processFile = optionalProcessFile.get();
+                LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
+                saveAndNotifyTasks(removeProcessFileFromTasks(processFile));
+                processFileRepository.delete(processFile);
+                LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
+            } else {
+                LOGGER.info("File not referenced in the database. Nothing to do.");
+            }
         }
     }
 
@@ -250,7 +252,7 @@ public class TaskManager {
             .map(timestamp -> {
                 TaskWithStatusUpdate taskWithStatusUpdate = taskRepository.findByTimestamp(timestamp)
                     .map(task -> new TaskWithStatusUpdate(task, false))
-                    .orElseGet(() -> new TaskWithStatusUpdate(new Task(timestamp), true));
+                    .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(timestamp)), true));
                 Task task = taskWithStatusUpdate.getTask();
                 addFileEventToTask(task, fileEventType, processFile);
                 task.addProcessFile(processFile);
