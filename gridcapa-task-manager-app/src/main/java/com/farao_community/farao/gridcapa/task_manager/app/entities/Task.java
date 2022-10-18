@@ -108,12 +108,10 @@ public class Task {
 
     public void addProcessFile(ProcessFile processFile) {
         processFiles.add(processFile);
-        processFile.getTasks().add(this);
     }
 
     public void removeProcessFile(ProcessFile processFile) {
         processFiles.remove(processFile);
-        processFile.getTasks().remove(this);
     }
 
     public Optional<ProcessFile> getInput(String fileType) {

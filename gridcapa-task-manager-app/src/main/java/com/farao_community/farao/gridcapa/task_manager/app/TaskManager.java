@@ -138,52 +138,52 @@ public class TaskManager {
     }
 
     public void handleMinioEvent(NotificationRecords notificationRecords) {
-        synchronized (LOCK) {
-            notificationRecords.events().forEach(event -> {
-                LOGGER.debug("s3 event received");
-                switch (event.eventType()) {
-                    case OBJECT_CREATED_ANY:
-                    case OBJECT_CREATED_PUT:
-                    case OBJECT_CREATED_POST:
-                    case OBJECT_CREATED_COPY:
-                    case OBJECT_CREATED_COMPLETE_MULTIPART_UPLOAD:
-                        updateTasks(event);
-                        break;
-                    case OBJECT_REMOVED_ANY:
-                    case OBJECT_REMOVED_DELETE:
-                    case OBJECT_REMOVED_DELETED_MARKER_CREATED:
-                        removeProcessFile(event);
-                        break;
-                    default:
-                        LOGGER.info("S3 event type {} not handled by task manager", event.eventType());
-                        break;
-                }
-            });
-        }
+        notificationRecords.events().forEach(event -> {
+            LOGGER.debug("s3 event received");
+            switch (event.eventType()) {
+                case OBJECT_CREATED_ANY:
+                case OBJECT_CREATED_PUT:
+                case OBJECT_CREATED_POST:
+                case OBJECT_CREATED_COPY:
+                case OBJECT_CREATED_COMPLETE_MULTIPART_UPLOAD:
+                    updateTasks(event);
+                    break;
+                case OBJECT_REMOVED_ANY:
+                case OBJECT_REMOVED_DELETE:
+                case OBJECT_REMOVED_DELETED_MARKER_CREATED:
+                    removeProcessFile(event);
+                    break;
+                default:
+                    LOGGER.info("S3 event type {} not handled by task manager", event.eventType());
+                    break;
+            }
+        });
     }
 
     public void updateTasks(Event event) {
-        TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
-            String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
-            String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
-            String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
-            String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-            if (validityInterval != null && !validityInterval.isEmpty()) {
-                LOGGER.info("Adding MinIO object {}", objectKey);
-                String[] interval = validityInterval.split("/");
-                ProcessFileArrival processFileArrival = getProcessFileArrival(
+        synchronized (LOCK) {
+            TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
+            if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
+                String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
+                String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
+                String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
+                String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+                if (validityInterval != null && !validityInterval.isEmpty()) {
+                    LOGGER.info("Adding MinIO object {}", objectKey);
+                    String[] interval = validityInterval.split("/");
+                    ProcessFileArrival processFileArrival = getProcessFileArrival(
                         OffsetDateTime.parse(interval[0]),
                         OffsetDateTime.parse(interval[1]),
                         objectKey,
                         fileType,
                         fileGroup);
-                final ProcessFile savedProcessFile = processFileRepository.save(processFileArrival.processFile);
-                boolean checkStatusChange = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(fileGroup);
-                saveAndNotifyTasks(addProcessFileToTasks(savedProcessFile, processFileArrival.fileEventType, checkStatusChange));
-                LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
-            } else {
-                LOGGER.warn("Minio object {} has not been added ", objectKey);
+                    final ProcessFile savedProcessFile = processFileRepository.save(processFileArrival.processFile);
+                    boolean checkStatusChange = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(fileGroup);
+                    saveAndNotifyTasks(addProcessFileToTasks(savedProcessFile, processFileArrival.fileEventType, checkStatusChange));
+                    LOGGER.info("Process file {} has been added properly", processFileArrival.processFile.getFilename());
+                } else {
+                    LOGGER.warn("Minio object {} has not been added ", objectKey);
+                }
             }
         }
     }
@@ -210,17 +210,19 @@ public class TaskManager {
     }
 
     public void removeProcessFile(Event event) {
-        String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
-        LOGGER.info("Removing MinIO object {}", objectKey);
-        Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
-        if (optionalProcessFile.isPresent()) {
-            ProcessFile processFile = optionalProcessFile.get();
-            LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
-            saveAndNotifyTasks(removeProcessFileFromTasks(processFile));
-            processFileRepository.delete(processFile);
-            LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
-        } else {
-            LOGGER.info("File not referenced in the database. Nothing to do.");
+        synchronized (LOCK) {
+            String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
+            LOGGER.info("Removing MinIO object {}", objectKey);
+            Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
+            if (optionalProcessFile.isPresent()) {
+                ProcessFile processFile = optionalProcessFile.get();
+                LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
+                saveAndNotifyTasks(removeProcessFileFromTasks(processFile));
+                processFileRepository.delete(processFile);
+                LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
+            } else {
+                LOGGER.info("File not referenced in the database. Nothing to do.");
+            }
         }
     }
 

@@ -22,10 +22,10 @@ import java.util.UUID;
 @Repository
 public interface ProcessFileRepository extends JpaRepository<ProcessFile, UUID> {
 
-    @Query("SELECT process_file FROM ProcessFile process_file LEFT JOIN FETCH process_file.tasks  WHERE process_file.fileObjectKey = :fileObjectKey")
+    @Query("SELECT process_file FROM ProcessFile process_file WHERE process_file.fileObjectKey = :fileObjectKey")
     Optional<ProcessFile> findByFileObjectKey(@Param("fileObjectKey") String fileObjectKey);
 
-    @Query("SELECT process_file FROM ProcessFile process_file LEFT JOIN FETCH process_file.tasks " +
+    @Query("SELECT process_file FROM ProcessFile process_file " +
         "WHERE process_file.startingAvailabilityDate = :startingAvailabilityDate AND process_file.fileType = :fileType AND process_file.fileGroup = :fileGroup")
     Optional<ProcessFile> findByStartingAvailabilityDateAndFileTypeAndGroup(@Param("startingAvailabilityDate") OffsetDateTime startingAvailabilityDate,
                                                                             @Param("fileType") String fileType,
