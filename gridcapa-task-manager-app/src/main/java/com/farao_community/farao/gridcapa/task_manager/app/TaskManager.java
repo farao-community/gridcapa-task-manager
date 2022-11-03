@@ -66,9 +66,13 @@ public class TaskManager {
 
     @Bean
     public Consumer<Flux<TaskStatusUpdate>> consumeTaskStatusUpdate() {
-        return f -> f
-            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleTaskStatusUpdate);
+        return f -> f.subscribe(taskStatusUpdate -> {
+            try {
+                handleTaskStatusUpdate(taskStatusUpdate);
+            } catch (Exception e) {
+                LOGGER.error(String.format("Unable to handle task status update properly %s", taskStatusUpdate), e);
+            }
+        });
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
@@ -104,9 +108,13 @@ public class TaskManager {
 
     @Bean
     public Consumer<Flux<String>> consumeTaskEventUpdate() {
-        return f -> f
-            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleTaskEventUpdate);
+        return f -> f.subscribe(event -> {
+            try {
+                handleTaskEventUpdate(event);
+            } catch (Exception e) {
+                LOGGER.error(String.format("Unable to handle task event update properly %s", event), e);
+            }
+        });
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
@@ -132,9 +140,13 @@ public class TaskManager {
 
     @Bean
     public Consumer<Flux<NotificationRecords>> consumeMinioEvent() {
-        return f -> f
-            .onErrorContinue((t, r) -> LOGGER.error(t.getMessage(), t))
-            .subscribe(this::handleMinioEvent);
+        return f -> f.subscribe(nr -> {
+            try {
+                handleMinioEvent(nr);
+            } catch (Exception e) {
+                LOGGER.error("Unable to handle MinIO event properly", e);
+            }
+        });
     }
 
     public void handleMinioEvent(NotificationRecords notificationRecords) {
