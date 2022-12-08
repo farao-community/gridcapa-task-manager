@@ -9,10 +9,12 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -37,11 +39,14 @@ public class TaskManagerController {
     private final TaskDtoBuilder builder;
     private final TaskManager taskManager;
     private final FileManager fileManager;
+    private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
 
-    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager) {
+    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager,
+                                 TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
         this.builder = builder;
         this.taskManager = taskManager;
         this.fileManager = fileManager;
+        this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -95,7 +100,8 @@ public class TaskManagerController {
     @GetMapping(value = "/tasks/{timestamp}/file/{fileType}", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getFile(@PathVariable String fileType, @PathVariable String timestamp) throws IOException {
         ResponseEntity<byte[]> result = ResponseEntity.notFound().build();
-        TaskDto task = builder.getTaskDto(OffsetDateTime.parse(timestamp));
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(timestamp);
+        TaskDto task = builder.getTaskDto(offsetDateTime);
         List<ProcessFileDto> allFiles = new ArrayList<>();
         allFiles.addAll(task.getInputs());
         allFiles.addAll(task.getOutputs());
@@ -106,6 +112,11 @@ public class TaskManagerController {
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header("Content-Disposition", "attachment;filename=\"" + myFile.get().getFilename() + "\"")
                     .body(IOUtils.toByteArray(in));
+        } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS",fileType)) {
+            result = ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header("Content-Disposition", "attachment;filename=\"rao_logs.zip\"")
+                    .body(fileManager.getLogs(offsetDateTime).toByteArray());
         }
 
         return result;
