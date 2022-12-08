@@ -112,7 +112,7 @@ public class TaskManagerController {
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header("Content-Disposition", "attachment;filename=\"" + myFile.get().getFilename() + "\"")
                     .body(IOUtils.toByteArray(in));
-        } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS",fileType)) {
+        } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS", fileType)) {
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header("Content-Disposition", "attachment;filename=\"rao_logs.zip\"")

@@ -79,7 +79,7 @@ public class FileManager {
         if (optTask.isPresent()) {
             Task task = optTask.get();
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-               ZipOutputStream zos = new ZipOutputStream(baos)) {
+                 ZipOutputStream zos = new ZipOutputStream(baos)) {
                 addLogsFileToArchive(task, zos);
                 return baos;
             }
