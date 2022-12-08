@@ -115,7 +115,7 @@ public class TaskManagerController {
         } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS", fileType)) {
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header("Content-Disposition", "attachment;filename=\"rao_logs.zip\"")
+                    .header("Content-Disposition", "attachment;filename=\"rao_logs_" + timestamp+".zip\"")
                     .body(fileManager.getLogs(offsetDateTime).toByteArray());
         }
 
