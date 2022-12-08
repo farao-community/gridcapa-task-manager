@@ -86,7 +86,7 @@ class FileManagerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
-        try{
+        try {
             assertNotNull(fileManager.getLogs(taskTimestamp));
         } catch (IOException e) {
             fail("GetLogs should not throw exception");
