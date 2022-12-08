@@ -36,6 +36,7 @@ import java.util.Optional;
 @RequestMapping
 public class TaskManagerController {
 
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
     private final TaskDtoBuilder builder;
     private final TaskManager taskManager;
     private final FileManager fileManager;
@@ -83,7 +84,7 @@ public class TaskManagerController {
             String zipName = fileManager.getZipName(timestamp, fileGroup);
             return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", "attachment;filename=\"" + zipName + "\"")
+                .header(CONTENT_DISPOSITION, "attachment;filename=\"" + zipName + "\"")
                 .body(zip.toByteArray());
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
@@ -110,12 +111,12 @@ public class TaskManagerController {
             BufferedInputStream in = new BufferedInputStream(this.fileManager.openUrlStream(myFile.get().getFileUrl()));
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header("Content-Disposition", "attachment;filename=\"" + myFile.get().getFilename() + "\"")
+                    .header(CONTENT_DISPOSITION, "attachment;filename=\"" + myFile.get().getFilename() + "\"")
                     .body(IOUtils.toByteArray(in));
         } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS", fileType)) {
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header("Content-Disposition", "attachment;filename=\"rao_logs_" + timestamp + ".zip\"")
+                    .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + timestamp + ".zip\"")
                     .body(fileManager.getLogs(offsetDateTime).toByteArray());
         }
 
