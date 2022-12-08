@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,5 +73,23 @@ class FileManagerTest {
     void isExportLogsEnabledAndFileGroupIsGridcapaOutputTest() {
         assertTrue(fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE));
         assertFalse(fileManager.isExportLogsEnabledAndFileGroupIsGridcapaOutput(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
+    }
+
+    @Test
+    void checkGetLogsThrowsExceptionWhenNoTaskAtGivenDate() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        assertThrows(TaskNotFoundException.class, () -> fileManager.getLogs(taskTimestamp));
+    }
+
+    @Test
+    void checkGetLogs() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Task task = new Task(taskTimestamp);
+        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        try {
+            assertNotNull(fileManager.getLogs(taskTimestamp));
+        } catch (IOException e) {
+            fail("GetLogs should not throw exception");
+        }
     }
 }

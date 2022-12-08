@@ -74,6 +74,20 @@ public class FileManager {
         }
     }
 
+    public ByteArrayOutputStream getLogs(OffsetDateTime timestamp) throws IOException {
+        Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        if (optTask.isPresent()) {
+            Task task = optTask.get();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 ZipOutputStream zos = new ZipOutputStream(baos)) {
+                addLogsFileToArchive(task, zos);
+                return baos;
+            }
+        } else {
+            throw new TaskNotFoundException();
+        }
+    }
+
     String getZipName(OffsetDateTime timestamp, String fileGroup) {
         return timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(ZIP_DATE_TIME_FORMATTER) + "_" + fileGroup + ZIP_EXTENSION;
     }
