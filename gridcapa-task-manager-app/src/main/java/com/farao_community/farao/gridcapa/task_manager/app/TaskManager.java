@@ -125,7 +125,8 @@ public class TaskManager {
                 if (optionalTask.isPresent()) {
                     Task task = optionalTask.get();
                     OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
+                    String updatedMessage = loggerEvent.getEventPrefix().isPresent() ? "[" + loggerEvent.getEventPrefix().get() + "] : " + loggerEvent.getMessage() : loggerEvent.getMessage();
+                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), updatedMessage);
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task, false);
                     LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
@@ -184,11 +185,11 @@ public class TaskManager {
                     LOGGER.info("Adding MinIO object {}", objectKey);
                     String[] interval = validityInterval.split("/");
                     ProcessFileArrival processFileArrival = getProcessFileArrival(
-                        OffsetDateTime.parse(interval[0]),
-                        OffsetDateTime.parse(interval[1]),
-                        objectKey,
-                        fileType,
-                        fileGroup);
+                            OffsetDateTime.parse(interval[0]),
+                            OffsetDateTime.parse(interval[1]),
+                            objectKey,
+                            fileType,
+                            fileGroup);
                     final ProcessFile savedProcessFile = processFileRepository.save(processFileArrival.processFile);
                     boolean checkStatusChange = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(fileGroup);
                     saveAndNotifyTasks(addProcessFileToTasks(savedProcessFile, processFileArrival.fileEventType, checkStatusChange));
@@ -259,45 +260,45 @@ public class TaskManager {
     private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType, boolean checkStatusChange) {
         LOGGER.debug("Adding process file to the related tasks");
         return Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
-            .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
-            .parallel()
-            .map(timestamp -> {
-                TaskWithStatusUpdate taskWithStatusUpdate = taskRepository.findByTimestamp(timestamp)
-                    .map(task -> new TaskWithStatusUpdate(task, false))
-                    .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(timestamp)), true));
-                Task task = taskWithStatusUpdate.getTask();
-                addFileEventToTask(task, fileEventType, processFile);
-                task.addProcessFile(processFile);
-                // If the task is created the status will be set as updated whatever the check gives as output
-                // and in case the task was not created here, it will depend on the output of the check.
-                boolean statusUpdateDueToFileArrival = false;
-                if (checkStatusChange) {
-                    statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task);
-                }
-                taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival || taskWithStatusUpdate.isStatusUpdated());
-                return taskWithStatusUpdate;
-            })
-            .collect(Collectors.toSet());
+                .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
+                .parallel()
+                .map(timestamp -> {
+                    TaskWithStatusUpdate taskWithStatusUpdate = taskRepository.findByTimestamp(timestamp)
+                            .map(task -> new TaskWithStatusUpdate(task, false))
+                            .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(timestamp)), true));
+                    Task task = taskWithStatusUpdate.getTask();
+                    addFileEventToTask(task, fileEventType, processFile);
+                    task.addProcessFile(processFile);
+                    // If the task is created the status will be set as updated whatever the check gives as output
+                    // and in case the task was not created here, it will depend on the output of the check.
+                    boolean statusUpdateDueToFileArrival = false;
+                    if (checkStatusChange) {
+                        statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task);
+                    }
+                    taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival || taskWithStatusUpdate.isStatusUpdated());
+                    return taskWithStatusUpdate;
+                })
+                .collect(Collectors.toSet());
     }
 
     private Set<TaskWithStatusUpdate> removeProcessFileFromTasks(ProcessFile processFile) {
         LOGGER.debug("Removing process file of the related tasks");
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
-            .parallelStream()
-            .map(task -> {
-                task.removeProcessFile(processFile);
-                boolean statusUpdated = false;
-                if (MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup())) {
-                    statusUpdated = checkAndUpdateTaskStatus(task);
-                }
-                if (task.getProcessFiles().isEmpty()) {
-                    task.getProcessEvents().clear();
-                } else {
-                    addFileEventToTask(task, FileEventType.DELETED, processFile);
-                }
-                return new TaskWithStatusUpdate(task, statusUpdated);
-            })
-            .collect(Collectors.toSet());
+                .parallelStream()
+                .map(task -> {
+                    task.removeProcessFile(processFile);
+                    boolean statusUpdated = false;
+                    if (MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup())) {
+                        statusUpdated = checkAndUpdateTaskStatus(task);
+                    }
+                    if (task.getProcessFiles().isEmpty()) {
+                        task.getProcessEvents().clear();
+                    } else {
+                        addFileEventToTask(task, FileEventType.DELETED, processFile);
+                    }
+                    return new TaskWithStatusUpdate(task, statusUpdated);
+                })
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -311,8 +312,8 @@ public class TaskManager {
     private boolean checkAndUpdateTaskStatus(Task task) {
         TaskStatus initialTaskStatus = task.getStatus();
         List<String> availableInputFileTypes = task.getProcessFiles().stream()
-            .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
-            .map(ProcessFile::getFileType).collect(Collectors.toList());
+                .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
+                .map(ProcessFile::getFileType).collect(Collectors.toList());
         if (availableInputFileTypes.isEmpty()) {
             task.setStatus(TaskStatus.NOT_CREATED);
         } else if (availableInputFileTypes.containsAll(taskManagerConfigurationProperties.getProcess().getInputs())) {

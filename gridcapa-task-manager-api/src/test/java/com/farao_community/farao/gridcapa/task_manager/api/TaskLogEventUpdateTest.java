@@ -9,6 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
@@ -23,5 +24,17 @@ class TaskLogEventUpdateTest {
         assertEquals("fake-level", taskLogEventUpdate.getLevel());
         assertEquals("fake-message", taskLogEventUpdate.getMessage());
         assertEquals("fake-service-name", taskLogEventUpdate.getServiceName());
+        assertTrue(taskLogEventUpdate.getEventPrefix().isEmpty());
+    }
+
+    @Test
+    void testConstructorLogEventUpdateWithPrefix() {
+        TaskLogEventUpdate taskLogEventUpdate =  new TaskLogEventUpdate("fake-id", "fake-ts", "fake-level", "fake-message", "fake-service-name", "fake-prefix");
+        assertEquals("fake-id", taskLogEventUpdate.getId());
+        assertEquals("fake-ts", taskLogEventUpdate.getTimestamp());
+        assertEquals("fake-level", taskLogEventUpdate.getLevel());
+        assertEquals("fake-message", taskLogEventUpdate.getMessage());
+        assertEquals("fake-service-name", taskLogEventUpdate.getServiceName());
+        assertEquals("fake-prefix", taskLogEventUpdate.getEventPrefix().get());
     }
 }
