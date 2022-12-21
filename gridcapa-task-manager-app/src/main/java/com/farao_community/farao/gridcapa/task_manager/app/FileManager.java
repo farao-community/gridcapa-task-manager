@@ -16,6 +16,7 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,6 +39,7 @@ import java.util.zip.ZipOutputStream;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Service
+@Transactional
 public class FileManager {
 
     private static final DateTimeFormatter ZIP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH30");
