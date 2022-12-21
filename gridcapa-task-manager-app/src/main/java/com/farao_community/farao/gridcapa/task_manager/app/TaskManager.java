@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import java.net.URLDecoder;
@@ -99,6 +100,7 @@ public class TaskManager {
         }
     }
 
+    @Transactional
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
         task.setStatus(taskStatus);
         taskRepository.saveAndFlush(task);
@@ -117,6 +119,7 @@ public class TaskManager {
         });
     }
 
+    @Transactional
     void handleTaskEventUpdate(String loggerEventString) {
         synchronized (LOCK) {
             try {
@@ -172,6 +175,7 @@ public class TaskManager {
         });
     }
 
+    @Transactional
     public void updateTasks(Event event) {
         synchronized (LOCK) {
             TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
@@ -221,6 +225,7 @@ public class TaskManager {
         }
     }
 
+    @Transactional
     public void removeProcessFile(Event event) {
         synchronized (LOCK) {
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
@@ -256,6 +261,7 @@ public class TaskManager {
         }
     }
 
+    @Transactional
     private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType, boolean checkStatusChange) {
         LOGGER.debug("Adding process file to the related tasks");
         return Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
@@ -323,6 +329,7 @@ public class TaskManager {
         return initialTaskStatus != task.getStatus();
     }
 
+    @Transactional
     private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
         LOGGER.debug("Saving related tasks");
         taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
