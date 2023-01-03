@@ -281,6 +281,29 @@ class TaskManagerTest {
     }
 
     @Test
+    void handleTaskLogEventUpdateWithPrefixTest() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        Task task = new Task(taskTimestamp);
+        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
+        taskRepository.save(task);
+        String logEvent = "{\n" +
+                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
+                "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
+                "  \"level\": \"INFO\",\n" +
+                "  \"message\": \"Hello from backend\",\n" +
+                "  \"serviceName\": \"GRIDCAPA\" ,\n" +
+                "  \"eventPrefix\": \"STEP-1\" \n" +
+                "}";
+        taskManager.handleTaskEventUpdate(logEvent);
+        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        assertEquals(1, updatedTask.getProcessEvents().size());
+        ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
+        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
+        assertEquals("INFO", event.getLevel());
+        assertEquals("[STEP-1] : Hello from backend", event.getMessage());
+    }
+
+    @Test
     void handleTaskStatusUpdateFromMessagesTest() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp);

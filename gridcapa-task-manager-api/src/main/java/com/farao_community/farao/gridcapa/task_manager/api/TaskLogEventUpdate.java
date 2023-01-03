@@ -9,6 +9,8 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Optional;
+
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
@@ -18,14 +20,20 @@ public class TaskLogEventUpdate {
     private final String timestamp;
     private final String message;
     private final String serviceName;
+    private final String eventPrefix;
 
     @JsonCreator
-    public TaskLogEventUpdate(@JsonProperty("gridcapa-task-id") String id, @JsonProperty("timestamp") String timestamp, @JsonProperty("level") String level, @JsonProperty("message") String message, @JsonProperty("serviceName") String serviceName) {
+    public TaskLogEventUpdate(@JsonProperty("gridcapa-task-id") String id, @JsonProperty("timestamp") String timestamp, @JsonProperty("level") String level, @JsonProperty("message") String message, @JsonProperty("serviceName") String serviceName, @JsonProperty(value = "eventPrefix") String eventPrefix) {
         this.id = id;
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
         this.serviceName = serviceName;
+        this.eventPrefix = eventPrefix;
+    }
+
+    public TaskLogEventUpdate(@JsonProperty("gridcapa-task-id") String id, @JsonProperty("timestamp") String timestamp, @JsonProperty("level") String level, @JsonProperty("message") String message, @JsonProperty("serviceName") String serviceName) {
+        this(id, timestamp, level, message, serviceName, null);
     }
 
     public String getId() {
@@ -41,10 +49,14 @@ public class TaskLogEventUpdate {
     }
 
     public String getMessage() {
-        return message;
+        return eventPrefix != null ? "[" + eventPrefix + "] : " + message : message;
     }
 
     public String getServiceName() {
         return serviceName;
+    }
+
+    public Optional<String> getEventPrefix() {
+        return Optional.ofNullable(eventPrefix);
     }
 }
