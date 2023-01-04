@@ -125,7 +125,8 @@ public class TaskManager {
                 if (optionalTask.isPresent()) {
                     Task task = optionalTask.get();
                     OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), loggerEvent.getMessage());
+                    String updatedMessage = loggerEvent.getEventPrefix().isPresent() ? "[" + loggerEvent.getEventPrefix().get() + "] : " + loggerEvent.getMessage() : loggerEvent.getMessage();
+                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), updatedMessage);
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task, false);
                     LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());

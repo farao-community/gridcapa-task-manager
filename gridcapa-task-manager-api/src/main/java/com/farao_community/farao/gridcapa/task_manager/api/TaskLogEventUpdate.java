@@ -49,7 +49,7 @@ public class TaskLogEventUpdate {
     }
 
     public String getMessage() {
-        return eventPrefix != null ? "[" + eventPrefix + "] : " + message : message;
+        return message;
     }
 
     public String getServiceName() {
