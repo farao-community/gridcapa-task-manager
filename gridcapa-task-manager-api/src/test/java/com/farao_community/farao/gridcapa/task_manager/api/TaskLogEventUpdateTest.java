@@ -33,7 +33,7 @@ class TaskLogEventUpdateTest {
         assertEquals("fake-id", taskLogEventUpdate.getId());
         assertEquals("fake-ts", taskLogEventUpdate.getTimestamp());
         assertEquals("fake-level", taskLogEventUpdate.getLevel());
-        assertEquals("[fake-prefix] : fake-message", taskLogEventUpdate.getMessage());
+        assertEquals("fake-message", taskLogEventUpdate.getMessage());
         assertEquals("fake-service-name", taskLogEventUpdate.getServiceName());
         assertEquals("fake-prefix", taskLogEventUpdate.getEventPrefix().get());
     }
