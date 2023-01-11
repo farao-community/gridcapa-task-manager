@@ -54,6 +54,10 @@ public class TaskDtoBuilder {
         return listTasks;
     }
 
+    public List<TaskDto> getListRunningTasksDto() {
+        return taskRepository.findAllRunning().stream().map(this::createDtoFromEntity).collect(Collectors.toUnmodifiableList());
+    }
+
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
         return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs());
     }

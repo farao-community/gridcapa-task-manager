@@ -25,6 +25,8 @@ import java.util.*;
     usage = CacheConcurrencyStrategy.READ_WRITE
 )
 @NaturalIdCache
+@Table(indexes = {
+        @Index(columnList = "status", name = "task_status_idx") })
 public class Task {
 
     @Id
