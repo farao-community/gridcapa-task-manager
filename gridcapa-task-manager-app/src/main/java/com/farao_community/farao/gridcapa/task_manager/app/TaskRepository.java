@@ -35,6 +35,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
 
     @Query("SELECT task FROM Task task JOIN FETCH task.processFiles "
-            + "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING")
+            + "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING "
+            + "OR task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING")
     Set<Task> findAllRunning();
 }
