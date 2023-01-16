@@ -55,7 +55,7 @@ public class TaskDtoBuilder {
     }
 
     public List<TaskDto> getListRunningTasksDto() {
-        return taskRepository.findAllRunning().stream().map(this::createDtoFromEntity).collect(Collectors.toUnmodifiableList());
+        return taskRepository.findAllRunningAndPending().stream().map(this::createDtoFromEntity).collect(Collectors.toUnmodifiableList());
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
