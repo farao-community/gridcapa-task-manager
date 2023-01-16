@@ -166,10 +166,10 @@ class TaskManagerTest {
         Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
         ProcessEvent event = processEventIterator.next();
         assertEquals("INFO", event.getLevel());
-        assertEquals("The CGM : 'cgm-test' is available", event.getMessage());
+        assertEquals("The CRAC : 'crac-test' is available", event.getMessage());
         event = processEventIterator.next();
         assertEquals("INFO", event.getLevel());
-        assertEquals("The CRAC : 'crac-test' is available", event.getMessage());
+        assertEquals("The CGM : 'cgm-test' is available", event.getMessage());
     }
 
     @Test
@@ -189,11 +189,11 @@ class TaskManagerTest {
         Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
         ProcessEvent event1 = processEventIterator.next();
         ProcessEvent event2 = processEventIterator.next();
-        assertTrue(event1.getTimestamp().isBefore(event2.getTimestamp()));
+        assertTrue(event2.getTimestamp().isBefore(event1.getTimestamp()));
         assertEquals("INFO", event1.getLevel());
         assertEquals("INFO", event2.getLevel());
-        assertEquals("The CGM : 'cgm-test' is available", event1.getMessage());
-        assertEquals("A new version of CGM is available : 'cgm-new-test'", event2.getMessage());
+        assertEquals("The CGM : 'cgm-test' is available", event2.getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-new-test'", event1.getMessage());
     }
 
     @Test
@@ -230,8 +230,6 @@ class TaskManagerTest {
         assertEquals(3, updatedTask.getProcessEvents().size());
 
         Iterator<ProcessEvent> processEventIterator = updatedTask.getProcessEvents().iterator();
-        processEventIterator.next();
-        processEventIterator.next();
         ProcessEvent event = processEventIterator.next();
         assertEquals("The CRAC : 'crac-test' is deleted", event.getMessage());
         assertEquals(1, updatedTask.getProcessFiles().size());
