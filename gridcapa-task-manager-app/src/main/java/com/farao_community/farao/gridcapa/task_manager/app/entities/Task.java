@@ -7,13 +7,13 @@
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.comparators.ReverseEventComparator;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.NaturalId;
-import org.hibernate.annotations.NaturalIdCache;
-import org.hibernate.annotations.SortNatural;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -43,7 +43,7 @@ public class Task {
         fetch = FetchType.EAGER,
         orphanRemoval = true
     )
-    @SortNatural
+    @SortComparator(ReverseEventComparator.class)
     private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
