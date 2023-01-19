@@ -33,4 +33,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
         "WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
     Set<Task> findAllByTimestampBetween(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
+
+    @Query("SELECT task FROM Task task JOIN FETCH task.processFiles "
+            + "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING "
+            + "OR task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING")
+    Set<Task> findAllRunningAndPending();
 }

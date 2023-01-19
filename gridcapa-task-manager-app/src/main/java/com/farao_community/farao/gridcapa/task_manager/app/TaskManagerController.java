@@ -98,6 +98,11 @@ public class TaskManagerController {
         return ResponseEntity.ok().body(builder.getListTasksDto(LocalDate.parse(businessDate)));
     }
 
+    @GetMapping(value = "/tasks/runningtasks")
+    public ResponseEntity<List<TaskDto>> getListRunningTasks() {
+        return ResponseEntity.ok().body(builder.getListRunningTasksDto());
+    }
+
     @GetMapping(value = "/tasks/{timestamp}/file/{fileType}", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getFile(@PathVariable String fileType, @PathVariable String timestamp) throws IOException {
         ResponseEntity<byte[]> result = ResponseEntity.notFound().build();
