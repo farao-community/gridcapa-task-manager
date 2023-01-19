@@ -9,7 +9,11 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.comparators.ReverseEventComparator;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.NaturalIdCache;
+import org.hibernate.annotations.SortNatural;
+import org.hibernate.annotations.SortComparator;
 
 import javax.persistence.*;
 import javax.persistence.CascadeType;
