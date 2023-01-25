@@ -63,7 +63,7 @@ class TaskManagerTest {
     @Test
     void testUpdate() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        String cgmUrl = "cgmUrl";
+        String cgmUrl = "CSE/D2CC/CGMs/cgm-test";
         Event event = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
         taskManager.updateTasks(event);
@@ -77,10 +77,10 @@ class TaskManagerTest {
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        String cgmUrl = "cgmUrl";
+        String cgmUrl = "CSE/D2CC/CGMs/cgm-test";
         Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cgmUrl);
 
-        String cracUrl = "cracUrl";
+        String cracUrl = "CSE/D2CC/CRACs/crac-test";
         Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z", cracUrl);
 
         taskManager.updateTasks(eventCgm);
