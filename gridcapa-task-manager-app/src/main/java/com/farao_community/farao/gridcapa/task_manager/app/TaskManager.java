@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import java.net.URLDecoder;
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Service
+@Transactional
 public class TaskManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
     private static final Object LOCK = new Object();
