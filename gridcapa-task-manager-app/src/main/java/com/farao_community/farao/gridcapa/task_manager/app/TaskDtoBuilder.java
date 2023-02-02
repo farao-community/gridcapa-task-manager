@@ -14,6 +14,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskMan
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.*;

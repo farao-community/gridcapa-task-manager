@@ -9,6 +9,9 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +43,7 @@ class TaskProcessFileDeletionTest {
     private ProcessFileRepository processFileRepository;
 
     @Autowired
-    private TaskManager taskManager;
+    private MinioHandler minioHandler;
 
     private final OffsetDateTime offsetDateTime0 = OffsetDateTime.of(2020, 1, 1, 0, 30, 0, 0, ZoneOffset.UTC);
     private final OffsetDateTime offsetDateTime1 = OffsetDateTime.of(2020, 1, 1, 1, 30, 0, 0, ZoneOffset.UTC);
@@ -117,7 +120,7 @@ class TaskProcessFileDeletionTest {
         Event event = Mockito.mock(Event.class);
         Mockito.when(event.objectName()).thenReturn("/CGMOther");
 
-        taskManager.removeProcessFile(event);
+        minioHandler.removeProcessFile(event);
 
         Task task1 = taskRepository.findByTimestamp(offsetDateTime0).orElseThrow();
         assertTrue(task1.getInput("CGM").isPresent());
@@ -133,7 +136,7 @@ class TaskProcessFileDeletionTest {
         Task task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
         assertTrue(task2.getInput("CGM").isPresent());
 
-        taskManager.removeProcessFile(event);
+        minioHandler.removeProcessFile(event);
 
         task2 = taskRepository.findByTimestamp(offsetDateTime1).orElseThrow();
         assertTrue(task2.getInput("CGM").isEmpty());
@@ -145,7 +148,7 @@ class TaskProcessFileDeletionTest {
         Mockito.when(event.objectName()).thenReturn("/CGM3");
         assertTrue(taskRepository.findByTimestamp(offsetDateTime2).isPresent());
 
-        taskManager.removeProcessFile(event);
+        minioHandler.removeProcessFile(event);
 
         assertEquals(TaskStatus.NOT_CREATED, taskRepository.findByTimestamp(offsetDateTime2).orElseThrow().getStatus());
     }
@@ -159,7 +162,7 @@ class TaskProcessFileDeletionTest {
         assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getInput("REFPROG").isPresent());
         assertTrue(taskRepository.findByTimestamp(offsetDateTime3).orElseThrow().getInput("REFPROG").isPresent());
 
-        taskManager.removeProcessFile(event);
+        minioHandler.removeProcessFile(event);
 
         assertTrue(taskRepository.findByTimestamp(offsetDateTime0).orElseThrow().getInput("REFPROG").isEmpty());
         assertTrue(taskRepository.findByTimestamp(offsetDateTime1).orElseThrow().getInput("REFPROG").isEmpty());
