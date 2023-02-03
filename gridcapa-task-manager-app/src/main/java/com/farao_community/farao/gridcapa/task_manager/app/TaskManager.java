@@ -298,6 +298,7 @@ public class TaskManager {
                 if (task.getProcessFiles().isEmpty()) {
                     task.getProcessEvents().clear();
                 } else {
+
                     addFileEventToTask(task, FileEventType.DELETED, processFile);
                 }
                 return new TaskWithStatusUpdate(task, statusUpdated);
