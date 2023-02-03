@@ -50,20 +50,17 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private final Logger businessLogger;
 
     private final Map<ProcessFile, List<TaskWithStatusUpdate>> mapWaitingFiles = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository,
                         TaskManagerConfigurationProperties taskManagerConfigurationProperties,
                         TaskRepository taskRepository,
-                        TaskUpdateNotifier taskUpdateNotifier,
-                        Logger businessLogger) {
+                        TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
-        this.businessLogger = businessLogger;
     }
 
     @Bean
@@ -223,16 +220,13 @@ public class MinioHandler {
     }
 
     public void emptyTasksWaitingList() {
-        Set<TaskWithStatusUpdate> taskToUpdate = new HashSet<>();
         for (Map.Entry<ProcessFile, List<TaskWithStatusUpdate>> entry : mapWaitingFiles.entrySet()) {
             ProcessFile processFile = entry.getKey();
             processFileRepository.save(processFile);
             for (TaskWithStatusUpdate taskWithStatusUpdate : entry.getValue()) {
                 taskWithStatusUpdate.getTask().addProcessFile(processFile);
-                taskToUpdate.add(taskWithStatusUpdate);
             }
         }
-        saveAndNotifyTasks(taskToUpdate);
         mapWaitingFiles.clear();
     }
 
