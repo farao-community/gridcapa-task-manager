@@ -182,6 +182,7 @@ public class MinioHandler {
                 setTaskWithStatusUpdate.add(taskWithStatusUpdate);
             }
         }
+
         return setTaskWithStatusUpdate;
     }
 
