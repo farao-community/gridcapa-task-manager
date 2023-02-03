@@ -50,17 +50,20 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
+    private final Logger businessLogger;
 
-    private final Map<ProcessFile, List<TaskWithStatusUpdate>> mapFiles = new HashMap<>();
+    private final Map<ProcessFile, List<TaskWithStatusUpdate>> mapWaitingFiles = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository,
                         TaskManagerConfigurationProperties taskManagerConfigurationProperties,
                         TaskRepository taskRepository,
-                        TaskUpdateNotifier taskUpdateNotifier) {
+                        TaskUpdateNotifier taskUpdateNotifier,
+                        Logger businessLogger) {
         this.processFileRepository = processFileRepository;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
+        this.businessLogger = businessLogger;
     }
 
     @Bean
@@ -168,8 +171,7 @@ public class MinioHandler {
         List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
 
         if (isInput && oneTaskHasRunningStatus(listTaskWithStatusUpdate)) {
-            mapFiles.put(processFile, listTaskWithStatusUpdate);
-            LOGGER.info("return empty");
+            mapWaitingFiles.put(processFile, listTaskWithStatusUpdate);
             return Collections.emptySet();
         } else {
             for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
@@ -203,16 +205,13 @@ public class MinioHandler {
         return false;
     }
 
-    public void emptyTasksWaitingList() {
-        LOGGER.info("EMPTY WAITING tasks");
-        for (Map.Entry<ProcessFile, List<TaskWithStatusUpdate>> entry : mapFiles.entrySet()) {
-            ProcessFile processFile = entry.getKey();
-            processFileRepository.save(processFile);
-            for (TaskWithStatusUpdate taskWithStatusUpdate : entry.getValue()) {
-                taskWithStatusUpdate.getTask().addProcessFile(processFile);
-            }
+    private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+        if (!taskWithStatusUpdateSet.isEmpty()) {
+            LOGGER.debug("Saving related tasks");
+            taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
+            LOGGER.debug("Notifying on web-sockets");
+            taskUpdateNotifier.notify(taskWithStatusUpdateSet);
         }
-        mapFiles.clear();
     }
 
     private boolean isStatusUpdateDueToFileArrival(boolean checkStatusChange, Task task) {
@@ -223,13 +222,18 @@ public class MinioHandler {
         return statusUpdateDueToFileArrival;
     }
 
-    private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        if (!taskWithStatusUpdateSet.isEmpty()) {
-            LOGGER.debug("Saving related tasks");
-            taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
-            LOGGER.debug("Notifying on web-sockets");
-            taskUpdateNotifier.notify(taskWithStatusUpdateSet);
+    public void emptyTasksWaitingList() {
+        Set<TaskWithStatusUpdate> taskToUpdate = new HashSet<>();
+        for (Map.Entry<ProcessFile, List<TaskWithStatusUpdate>> entry : mapWaitingFiles.entrySet()) {
+            ProcessFile processFile = entry.getKey();
+            processFileRepository.save(processFile);
+            for (TaskWithStatusUpdate taskWithStatusUpdate : entry.getValue()) {
+                taskWithStatusUpdate.getTask().addProcessFile(processFile);
+                taskToUpdate.add(taskWithStatusUpdate);
+            }
         }
+        saveAndNotifyTasks(taskToUpdate);
+        mapWaitingFiles.clear();
     }
 
     /**
