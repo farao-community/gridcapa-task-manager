@@ -223,7 +223,6 @@ public class MinioHandler {
     }
 
     private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        LOGGER.info("ON UPDATE COMBIEN ? " + taskWithStatusUpdateSet.size());
         if (!taskWithStatusUpdateSet.isEmpty()) {
             LOGGER.debug("Saving related tasks");
             taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
