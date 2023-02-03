@@ -113,6 +113,7 @@ public class TaskManagerController {
         allFiles.addAll(task.getOutputs());
         Optional<ProcessFileDto> myFile = allFiles.stream().filter(f -> f.getFileType().equals(fileType)).findFirst();
         if (myFile.isPresent()) {
+            System.out.println("URL " + myFile.get().getFileUrl());
             BufferedInputStream in = new BufferedInputStream(this.fileManager.openUrlStream(fileManager.generatePresignedUrl(myFile.get().getFileUrl())));
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)

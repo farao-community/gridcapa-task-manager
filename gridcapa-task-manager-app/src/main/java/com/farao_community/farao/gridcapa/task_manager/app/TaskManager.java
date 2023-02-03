@@ -11,6 +11,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -34,11 +35,14 @@ public class TaskManager {
 
     private final TaskUpdateNotifier taskUpdateNotifier;
     private final TaskRepository taskRepository;
+    private final MinioHandler minioHandler;
 
     public TaskManager(TaskUpdateNotifier taskUpdateNotifier,
-                       TaskRepository taskRepository) {
+                       TaskRepository taskRepository,
+                       MinioHandler minioHandler) {
         this.taskUpdateNotifier = taskUpdateNotifier;
         this.taskRepository = taskRepository;
+        this.minioHandler = minioHandler;
     }
 
     @Bean
@@ -91,6 +95,7 @@ public class TaskManager {
         task.setStatus(taskStatus);
         taskRepository.saveAndFlush(task);
         taskUpdateNotifier.notify(task, true);
+        minioHandler.emptyTasksWaitingList();
         LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
     }
 

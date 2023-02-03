@@ -28,10 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +50,8 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
+
+    private final Map<ProcessFile, List<TaskWithStatusUpdate>> mapFiles = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository,
                         TaskManagerConfigurationProperties taskManagerConfigurationProperties,
@@ -104,10 +103,14 @@ public class MinioHandler {
             if (!event.userMetadata().isEmpty() && processProperties.getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
-                    final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.processFile);
-                    boolean checkStatusChange = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(event.userMetadata().get(FILE_GROUP_METADATA_KEY));
-                    saveAndNotifyTasks(addProcessFileToTasks(savedProcessFile, processFileMinio.fileEventType, checkStatusChange));
-                    LOGGER.info("Process file {} has been added properly", processFileMinio.processFile.getFilename());
+                    boolean isInput = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(event.userMetadata().get(FILE_GROUP_METADATA_KEY));
+                    Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(processFileMinio.processFile, processFileMinio.fileEventType, isInput);
+                    if (!taskWithStatusUpdates.isEmpty()) {
+                        saveAndNotifyTasks(taskWithStatusUpdates);
+                        LOGGER.info("Process file {} has been added properly", processFileMinio.processFile.getFilename());
+                    } else {
+                        LOGGER.info("Process file {} has been added on waiting list to be added later", processFileMinio.processFile.getFilename());
+                    }
                 } else {
                     String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
                     LOGGER.warn("Minio object {} has not been added ", objectKey);
@@ -155,38 +158,78 @@ public class MinioHandler {
         }
     }
 
-    private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType, boolean checkStatusChange) {
+    private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType, boolean isInput) {
         Set<TaskWithStatusUpdate> setTaskWithStatusUpdate = new HashSet<>();
 
         List<OffsetDateTime> listTimestamps = Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
                 .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate()))
                 .collect(Collectors.toList());
 
-        for (OffsetDateTime timestamp : listTimestamps) {
-            TaskWithStatusUpdate taskWithStatusUpdate = taskRepository.findByTimestamp(timestamp)
-                    .map(task -> new TaskWithStatusUpdate(task, false))
-                    .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(timestamp)), true));
-            Task task = taskWithStatusUpdate.getTask();
-            addFileEventToTask(task, fileEventType, processFile);
-            task.addProcessFile(processFile);
-            // If the task is created the status will be set as updated whatever the check gives as output
-            // and in case the task was not created here, it will depend on the output of the check.
-            boolean statusUpdateDueToFileArrival = false;
-            if (checkStatusChange) {
-                statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task);
-            }
-            taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival || taskWithStatusUpdate.isStatusUpdated());
-            setTaskWithStatusUpdate.add(taskWithStatusUpdate);
-        }
+        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
 
+        if (isInput && oneTaskHasRunningStatus(listTaskWithStatusUpdate)) {
+            mapFiles.put(processFile, listTaskWithStatusUpdate);
+            LOGGER.info("return empty");
+            return Collections.emptySet();
+        } else {
+            for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+                Task task = taskWithStatusUpdate.getTask();
+                processFileRepository.save(processFile);
+                task.addProcessFile(processFile);
+                addFileEventToTask(task, fileEventType, processFile);
+                boolean statusUpdateDueToFileArrival = isStatusUpdateDueToFileArrival(isInput, task);
+                taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival || taskWithStatusUpdate.isStatusUpdated());
+                setTaskWithStatusUpdate.add(taskWithStatusUpdate);
+            }
+        }
         return setTaskWithStatusUpdate;
     }
 
+    private List<TaskWithStatusUpdate> findAllTaskByTimestamp(List<OffsetDateTime> listTimestamps) {
+        return listTimestamps.stream().map(ts -> taskRepository.findByTimestamp(ts)
+                        .map(task -> new TaskWithStatusUpdate(task, false))
+                        .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(ts)), true)))
+                .collect(Collectors.toList());
+    }
+
+    private boolean oneTaskHasRunningStatus(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+        for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+            Task task = taskWithStatusUpdate.getTask();
+            if (task.getStatus() == TaskStatus.RUNNING) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void emptyTasksWaitingList() {
+        LOGGER.info("EMPTY WAITING tasks");
+        for (Map.Entry<ProcessFile, List<TaskWithStatusUpdate>> entry : mapFiles.entrySet()) {
+            ProcessFile processFile = entry.getKey();
+            processFileRepository.save(processFile);
+            for (TaskWithStatusUpdate taskWithStatusUpdate : entry.getValue()) {
+                taskWithStatusUpdate.getTask().addProcessFile(processFile);
+            }
+        }
+        mapFiles.clear();
+    }
+
+    private boolean isStatusUpdateDueToFileArrival(boolean checkStatusChange, Task task) {
+        boolean statusUpdateDueToFileArrival = false;
+        if (checkStatusChange) {
+            statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task);
+        }
+        return statusUpdateDueToFileArrival;
+    }
+
     private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        LOGGER.debug("Saving related tasks");
-        taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
-        LOGGER.debug("Notifying on web-sockets");
-        taskUpdateNotifier.notify(taskWithStatusUpdateSet);
+        LOGGER.info("ON UPDATE COMBIEN ? " + taskWithStatusUpdateSet.size());
+        if (!taskWithStatusUpdateSet.isEmpty()) {
+            LOGGER.debug("Saving related tasks");
+            taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
+            LOGGER.debug("Notifying on web-sockets");
+            taskUpdateNotifier.notify(taskWithStatusUpdateSet);
+        }
     }
 
     /**
