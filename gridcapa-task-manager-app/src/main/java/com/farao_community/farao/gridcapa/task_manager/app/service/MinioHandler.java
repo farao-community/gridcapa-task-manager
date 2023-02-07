@@ -51,7 +51,7 @@ public class MinioHandler {
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
-    private final Map<ProcessFile, List<TaskWithStatusUpdate>> mapWaitingFiles = new HashMap<>();
+    private final List<WaitingFile> listWaitingFiles = new ArrayList<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository,
                         TaskManagerConfigurationProperties taskManagerConfigurationProperties,
@@ -168,20 +168,19 @@ public class MinioHandler {
         List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
 
         if (isInput && oneTaskHasRunningStatus(listTaskWithStatusUpdate)) {
-            mapWaitingFiles.put(processFile, listTaskWithStatusUpdate);
+            listWaitingFiles.add(new WaitingFile(processFile, listTaskWithStatusUpdate));
             return Collections.emptySet();
         } else {
             for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
                 Task task = taskWithStatusUpdate.getTask();
-                processFileRepository.save(processFile);
-                task.addProcessFile(processFile);
-                addFileEventToTask(task, fileEventType, processFile);
+                ProcessFile savedProcessFile = processFileRepository.save(processFile);
+                task.addProcessFile(savedProcessFile);
+                addFileEventToTask(task, fileEventType, savedProcessFile);
                 boolean statusUpdateDueToFileArrival = isStatusUpdateDueToFileArrival(isInput, task);
                 taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival || taskWithStatusUpdate.isStatusUpdated());
                 setTaskWithStatusUpdate.add(taskWithStatusUpdate);
             }
         }
-
         return setTaskWithStatusUpdate;
     }
 
@@ -220,14 +219,30 @@ public class MinioHandler {
     }
 
     public void emptyTasksWaitingList() {
-        for (Map.Entry<ProcessFile, List<TaskWithStatusUpdate>> entry : mapWaitingFiles.entrySet()) {
-            ProcessFile processFile = entry.getKey();
-            processFileRepository.save(processFile);
-            for (TaskWithStatusUpdate taskWithStatusUpdate : entry.getValue()) {
+        LOGGER.info("TASK SIZE " + listWaitingFiles.size());
+        Set<TaskWithStatusUpdate> setTaskWithStatusUpdate = new HashSet<>();
+        for (WaitingFile waitingFile : listWaitingFiles) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            LOGGER.info("ONE " + waitingFile.processFile.getFilename());
+            ProcessFile processFile = waitingFile.getProcessFile();
+            for (TaskWithStatusUpdate taskWithStatusUpdate : waitingFile.getListTaskWithStatusUpdate()) {
                 taskWithStatusUpdate.getTask().addProcessFile(processFile);
+                addFileEventToTask(taskWithStatusUpdate.getTask(), FileEventType.UPDATED, processFile);
+                setTaskWithStatusUpdate.add(new TaskWithStatusUpdate(taskWithStatusUpdate.getTask(), true));
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                saveAndNotifyTasks(setTaskWithStatusUpdate);
+                processFileRepository.save(processFile);
             }
         }
-        mapWaitingFiles.clear();
+        listWaitingFiles.clear();
     }
 
     /**
@@ -306,6 +321,24 @@ public class MinioHandler {
                     return new TaskWithStatusUpdate(task, statusUpdated);
                 })
                 .collect(Collectors.toSet());
+    }
+
+    private static final class WaitingFile {
+        private final ProcessFile processFile;
+        private final List<TaskWithStatusUpdate> listTaskWithStatusUpdate;
+
+        public WaitingFile(ProcessFile processFile, List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+            this.processFile = processFile;
+            this.listTaskWithStatusUpdate = listTaskWithStatusUpdate;
+        }
+
+        public ProcessFile getProcessFile() {
+            return processFile;
+        }
+
+        public List<TaskWithStatusUpdate> getListTaskWithStatusUpdate() {
+            return listTaskWithStatusUpdate;
+        }
     }
 
     private static final class ProcessFileMinio {
