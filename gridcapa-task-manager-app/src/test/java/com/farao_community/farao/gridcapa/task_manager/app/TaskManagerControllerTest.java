@@ -134,7 +134,7 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, fakeUrl, taskTimestamp);
+        task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");

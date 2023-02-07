@@ -107,9 +107,8 @@ public class Task {
                                String fileType,
                                OffsetDateTime startingAvailabilityDate,
                                OffsetDateTime endingAvailabilityDate,
-                               String fileUrl,
                                OffsetDateTime lastModificationDate) {
-        addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, fileUrl, lastModificationDate));
+        addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, lastModificationDate));
     }
 
     public void addProcessFile(ProcessFile processFile) {

@@ -47,9 +47,6 @@ public class ProcessFile implements Comparable<ProcessFile> {
     @Column(name = "ending_availability_date")
     private OffsetDateTime endingAvailabilityDate;
 
-    @Column(name = "file_url", columnDefinition = "TEXT")
-    private String fileUrl;
-
     @Column(name = "last_modification_date")
     private OffsetDateTime lastModificationDate;
 
@@ -62,7 +59,6 @@ public class ProcessFile implements Comparable<ProcessFile> {
                        String fileType,
                        OffsetDateTime startingAvailabilityDate,
                        OffsetDateTime endingAvailabilityDate,
-                       String fileUrl,
                        OffsetDateTime lastModificationDate) {
         this.id = UUID.randomUUID();
         this.fileObjectKey = fileObjectKey;
@@ -70,7 +66,6 @@ public class ProcessFile implements Comparable<ProcessFile> {
         this.fileType = fileType;
         this.startingAvailabilityDate = startingAvailabilityDate;
         this.endingAvailabilityDate = endingAvailabilityDate;
-        this.fileUrl = fileUrl;
         this.lastModificationDate = lastModificationDate;
     }
 
@@ -104,14 +99,6 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public void setLastModificationDate(OffsetDateTime lastModificationDate) {
         this.lastModificationDate = lastModificationDate;
-    }
-
-    public String getFileUrl() {
-        return fileUrl;
-    }
-
-    public void setFileUrl(String fileUrl) {
-        this.fileUrl = fileUrl;
     }
 
     public String getFileObjectKey() {

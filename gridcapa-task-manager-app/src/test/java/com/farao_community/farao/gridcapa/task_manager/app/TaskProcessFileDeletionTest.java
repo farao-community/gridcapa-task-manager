@@ -60,7 +60,6 @@ class TaskProcessFileDeletionTest {
             "CGM",
             offsetDateTime0,
             offsetDateTime0.plusHours(1),
-            "http://CGM",
             OffsetDateTime.now());
         processFileRepository.save(cgmFile1);
 
@@ -70,7 +69,6 @@ class TaskProcessFileDeletionTest {
             "CGM",
             offsetDateTime1,
             offsetDateTime1.plusHours(1),
-            "http://CGM2",
             OffsetDateTime.now());
         processFileRepository.save(cgmFile2);
 
@@ -80,7 +78,6 @@ class TaskProcessFileDeletionTest {
             "CGM",
             offsetDateTime2,
             offsetDateTime2.plusHours(1),
-            "http://CGM3",
             OffsetDateTime.now());
         processFileRepository.save(cgmFile3);
 
@@ -90,7 +87,6 @@ class TaskProcessFileDeletionTest {
             "REFPROG",
             offsetDateTime0,
             offsetDateTime0.plusHours(4),
-            "http://REFPROG",
             OffsetDateTime.now());
         processFileRepository.save(refprogFile);
 

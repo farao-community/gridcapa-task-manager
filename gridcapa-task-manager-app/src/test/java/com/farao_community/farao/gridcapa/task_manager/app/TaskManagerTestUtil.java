@@ -20,7 +20,7 @@ public final class TaskManagerTestUtil {
     private TaskManagerTestUtil() {
     }
 
-    public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval, String fileUrl) {
+    public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
         Event event = Mockito.mock(Event.class);
         Map<String, String> metadata = Map.of(
             TaskManager.FILE_GROUP_METADATA_KEY, fileGroup,
@@ -31,7 +31,6 @@ public final class TaskManagerTestUtil {
         //The following mock is not use in all test that call this methods. With the "lenient" add you avoid an exception
         Mockito.lenient().when(event.userMetadata()).thenReturn(metadata);
         Mockito.when(event.objectName()).thenReturn(fileKey);
-        Mockito.when(minioAdapter.generatePreSignedUrl(event.objectName())).thenReturn(fileUrl);
         return event;
     }
 }

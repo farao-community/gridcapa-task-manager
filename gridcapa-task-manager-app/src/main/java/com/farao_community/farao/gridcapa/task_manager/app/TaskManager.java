@@ -215,13 +215,12 @@ public class TaskManager {
         if (optProcessFile.isPresent()) {
             LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, startTime);
             ProcessFile processFile = optProcessFile.get();
-            processFile.setFileUrl(objectKey);
             processFile.setFileObjectKey(objectKey);
             processFile.setLastModificationDate(getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.UPDATED);
         } else {
             LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
-            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, objectKey, getProcessNow());
+            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, getProcessNow());
             return new ProcessFileArrival(processFile, FileEventType.AVAILABLE);
         }
     }

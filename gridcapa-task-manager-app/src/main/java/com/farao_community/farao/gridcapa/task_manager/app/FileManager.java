@@ -126,7 +126,7 @@ public class FileManager {
     }
 
     private void writeZipEntry(ZipOutputStream zos, ProcessFile processFile) throws IOException {
-        try (InputStream is = openUrlStream(processFile.getFileUrl())) {
+        try (InputStream is = openUrlStream(minioAdapter.generatePreSignedUrl(processFile.getFileObjectKey()))) {
             zos.putNextEntry(new ZipEntry(processFile.getFilename()));
             writeToZipOutputStream(zos, is);
         }
