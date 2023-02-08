@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,10 +8,10 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -113,7 +113,7 @@ public class TaskManagerController {
         allFiles.addAll(task.getOutputs());
         Optional<ProcessFileDto> myFile = allFiles.stream().filter(f -> f.getFileType().equals(fileType)).findFirst();
         if (myFile.isPresent()) {
-            BufferedInputStream in = new BufferedInputStream(this.fileManager.openUrlStream(myFile.get().getFileUrl()));
+            BufferedInputStream in = new BufferedInputStream(this.fileManager.openUrlStream(fileManager.generatePresignedUrl(myFile.get().getFilePath())));
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header(CONTENT_DISPOSITION, "attachment;filename=\"" + myFile.get().getFilename() + "\"")

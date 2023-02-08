@@ -9,6 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -43,6 +45,9 @@ class TaskManagerControllerTest {
 
     @Autowired
     private TaskManagerController taskManagerController;
+
+    @Autowired
+    private MinioAdapter minioAdapter;
 
     @Test
     void testGetTaskOk() {
@@ -129,9 +134,10 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, fakeUrl, taskTimestamp);
+        task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
-        Mockito.when(fileManager.openUrlStream(fakeUrl)).thenReturn(InputStream.nullInputStream());
+        Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
+        Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
         ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
     }

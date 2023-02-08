@@ -91,16 +91,16 @@ public class TaskDtoBuilder {
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
-            processFile.getFileType(),
-            ProcessFileStatus.VALIDATED,
-            processFile.getFilename(),
-            processFile.getLastModificationDate(),
-            processFile.getFileUrl());
+                processFile.getFileObjectKey(),
+                processFile.getFileType(),
+                ProcessFileStatus.VALIDATED,
+                processFile.getFilename(),
+                processFile.getLastModificationDate());
     }
 
     public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-            processEvent.getLevel(),
-            processEvent.getMessage());
+                processEvent.getLevel(),
+                processEvent.getMessage());
     }
 }

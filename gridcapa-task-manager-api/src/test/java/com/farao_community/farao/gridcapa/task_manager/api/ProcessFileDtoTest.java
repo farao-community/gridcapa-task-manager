@@ -20,7 +20,7 @@ class ProcessFileDtoTest {
     void testConstructorEmptyProcessFile() {
         ProcessFileDto processFileDto = ProcessFileDto.emptyProcessFile("CGM");
         assertEquals("CGM", processFileDto.getFileType());
-        assertNull(processFileDto.getFileUrl());
+        assertNull(processFileDto.getFilePath());
         assertNull(processFileDto.getFilename());
         assertNull(processFileDto.getLastModificationDate());
         assertEquals(ProcessFileStatus.NOT_PRESENT, processFileDto.getProcessFileStatus());

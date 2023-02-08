@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -12,6 +12,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskMan
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -47,11 +48,13 @@ public class FileManager {
     private final TaskRepository taskRepository;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final Logger businessLogger;
+    private final MinioAdapter minioAdapter;
 
-    public FileManager(TaskRepository taskRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger) {
+    public FileManager(TaskRepository taskRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, MinioAdapter minioAdapter) {
         this.taskRepository = taskRepository;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.businessLogger = businessLogger;
+        this.minioAdapter = minioAdapter;
     }
 
     public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
@@ -123,7 +126,7 @@ public class FileManager {
     }
 
     private void writeZipEntry(ZipOutputStream zos, ProcessFile processFile) throws IOException {
-        try (InputStream is = openUrlStream(processFile.getFileUrl())) {
+        try (InputStream is = openUrlStream(minioAdapter.generatePreSignedUrl(processFile.getFileObjectKey()))) {
             zos.putNextEntry(new ZipEntry(processFile.getFilename()));
             writeToZipOutputStream(zos, is);
         }
@@ -166,5 +169,9 @@ public class FileManager {
         } catch (IOException e) {
             throw new TaskManagerException(String.format("Exception occurred while retrieving file name from : %s Cause: %s ", stringUrl, e.getMessage()));
         }
+    }
+
+    public String generatePresignedUrl(String minioUrl) {
+        return minioAdapter.generatePreSignedUrlFromFullMinioPath(minioUrl, 1);
     }
 }
