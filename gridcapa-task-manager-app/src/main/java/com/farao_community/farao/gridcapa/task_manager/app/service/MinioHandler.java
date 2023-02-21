@@ -52,7 +52,7 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private final List<ProcessFileMinio> listWaitingFile = new ArrayList();
+    private final List<ProcessFileMinio> listWaitingFile = new ArrayList<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -97,11 +97,9 @@ public class MinioHandler {
 
     public void emptyWaitingList() {
         for (ProcessFileMinio processFileMinio : listWaitingFile) {
-            final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
-            Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), true);
-            saveAndNotifyTasks(taskWithStatusUpdates);
-            LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
+            saveProcessFile(processFileMinio, true);
         }
+        listWaitingFile.clear();
     }
 
     public void updateTasks(Event event) {
@@ -111,11 +109,12 @@ public class MinioHandler {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
                     boolean isInput = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(event.userMetadata().get(FILE_GROUP_METADATA_KEY));
-                    if (!isRunning(processFileMinio, isInput)) {
-                        final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
-                        Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), isInput);
-                        saveAndNotifyTasks(taskWithStatusUpdates);
-                        LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
+                    if (!isInput) {
+                        saveProcessFile(processFileMinio, false);
+                    } else {
+                        if (!isRunning(processFileMinio)) {
+                            saveProcessFile(processFileMinio, true);
+                        }
                     }
                 } else {
                     String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
@@ -125,7 +124,14 @@ public class MinioHandler {
         }
     }
 
-    private boolean isRunning(ProcessFileMinio processFileMinio, boolean isInput) {
+    private void saveProcessFile(ProcessFileMinio processFileMinio, boolean isInput) {
+        final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
+        Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), isInput);
+        saveAndNotifyTasks(taskWithStatusUpdates);
+        LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
+    }
+
+    private boolean isRunning(ProcessFileMinio processFileMinio) {
         ProcessFile processFile = processFileMinio.getProcessFile();
 
         List<OffsetDateTime> listTimestamps = Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
@@ -135,7 +141,7 @@ public class MinioHandler {
 
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             Task task = taskWithStatusUpdate.getTask();
-            if (task.getStatus() == TaskStatus.RUNNING && isInput) {
+            if (task.getStatus() == TaskStatus.RUNNING) {
                 listWaitingFile.add(processFileMinio);
                 return true;
             }
