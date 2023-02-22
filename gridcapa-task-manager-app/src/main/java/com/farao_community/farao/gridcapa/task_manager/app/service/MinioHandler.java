@@ -95,13 +95,6 @@ public class MinioHandler {
         });
     }
 
-    public void emptyWaitingList() {
-        for (ProcessFileMinio processFileMinio : listWaitingFile) {
-            saveProcessFile(processFileMinio, true);
-        }
-        listWaitingFile.clear();
-    }
-
     public void updateTasks(Event event) {
         synchronized (LOCK) {
             TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
@@ -142,6 +135,7 @@ public class MinioHandler {
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             Task task = taskWithStatusUpdate.getTask();
             if (task.getStatus() == TaskStatus.RUNNING) {
+                addFileEventToTask(task, FileEventType.AVAILABLE, processFileMinio.getProcessFile());
                 listWaitingFile.add(processFileMinio);
                 return true;
             }
@@ -236,6 +230,13 @@ public class MinioHandler {
         } else {
             return String.format("A new version of %s is available : '%s'", fileType, fileName);
         }
+    }
+
+    public void emptyWaitingList() {
+        for (ProcessFileMinio processFileMinio : listWaitingFile) {
+            saveProcessFile(processFileMinio, true);
+        }
+        listWaitingFile.clear();
     }
 
     /**

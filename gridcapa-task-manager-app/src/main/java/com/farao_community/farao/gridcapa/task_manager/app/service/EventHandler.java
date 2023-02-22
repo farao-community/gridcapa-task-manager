@@ -4,13 +4,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.app;
+package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -25,64 +24,19 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
+ * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @Service
-public class TaskManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TaskManager.class);
+public class EventHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventHandler.class);
     private static final Object LOCK = new Object();
 
-    private final TaskUpdateNotifier taskUpdateNotifier;
     private final TaskRepository taskRepository;
-    private final MinioHandler minioHandler;
+    private final TaskUpdateNotifier taskUpdateNotifier;
 
-    public TaskManager(TaskUpdateNotifier taskUpdateNotifier, TaskRepository taskRepository, MinioHandler minioHandler) {
-        this.taskUpdateNotifier = taskUpdateNotifier;
+    public EventHandler(TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.taskRepository = taskRepository;
-        this.minioHandler = minioHandler;
-    }
-
-    @Bean
-    public Consumer<Flux<TaskStatusUpdate>> consumeTaskStatusUpdate() {
-        return f -> f.subscribe(taskStatusUpdate -> {
-            try {
-                handleTaskStatusUpdate(taskStatusUpdate);
-            } catch (Exception e) {
-                LOGGER.error(String.format("Unable to handle task status update properly %s", taskStatusUpdate), e);
-            }
-        });
-    }
-
-    public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        synchronized (LOCK) {
-            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
-            if (optionalTask.isPresent()) {
-                updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
-            } else {
-                LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
-            }
-        }
-    }
-
-    public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
-        synchronized (LOCK) {
-            Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
-            if (optionalTask.isPresent()) {
-                updateTaskStatus(optionalTask.get(), taskStatus);
-                return optionalTask;
-            } else {
-                LOGGER.warn("Task at {} does not exist. Impossible to update status", timestamp);
-                return Optional.empty();
-            }
-        }
-    }
-
-    private void updateTaskStatus(Task task, TaskStatus taskStatus) {
-        minioHandler.emptyWaitingList();
-        task.setStatus(taskStatus);
-        taskRepository.saveAndFlush(task);
-        taskUpdateNotifier.notify(task, true);
-        LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
+        this.taskUpdateNotifier = taskUpdateNotifier;
     }
 
     @Bean

@@ -6,9 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.Test;
@@ -21,11 +22,12 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 
 /**
@@ -38,7 +40,7 @@ class TaskManagerControllerTest {
     private TaskRepository taskRepository;
 
     @MockBean
-    private TaskManager taskManager;
+    private StatusHandler statusHandler;
 
     @MockBean
     private FileManager fileManager;
@@ -90,7 +92,7 @@ class TaskManagerControllerTest {
         Mockito.doAnswer(answer -> {
             task.setStatus(TaskStatus.RUNNING);
             return Optional.of(task);
-        }).when(taskManager).handleTaskStatusUpdate(taskTimestamp, TaskStatus.RUNNING);
+        }).when(statusHandler).handleTaskStatusUpdate(taskTimestamp, TaskStatus.RUNNING);
         ResponseEntity<TaskDto> taskResponse = taskManagerController.updateStatus(timestamp, "RUNNING");
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
         assertEquals(TaskStatus.RUNNING, taskResponse.getBody().getStatus());
@@ -134,7 +136,7 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType,  taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
