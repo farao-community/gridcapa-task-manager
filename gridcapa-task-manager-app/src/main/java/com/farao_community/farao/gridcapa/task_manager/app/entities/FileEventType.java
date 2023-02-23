@@ -12,5 +12,6 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 public enum FileEventType {
     AVAILABLE,
     UPDATED,
-    DELETED
+    DELETED,
+    WAITING
 }

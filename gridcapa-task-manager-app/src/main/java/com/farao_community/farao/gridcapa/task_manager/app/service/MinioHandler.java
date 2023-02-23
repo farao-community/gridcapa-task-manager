@@ -102,6 +102,7 @@ public class MinioHandler {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
                     boolean isInput = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(event.userMetadata().get(FILE_GROUP_METADATA_KEY));
+                    // If the file coming is an input and one of the concerned timestamp is running, the file is not saved
                     if (!isInput) {
                         saveProcessFile(processFileMinio, false);
                     } else {
@@ -172,8 +173,9 @@ public class MinioHandler {
 
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             Task task = taskWithStatusUpdate.getTask();
-            if (task.getStatus() == TaskStatus.RUNNING) {
-                addFileEventToTask(task, FileEventType.AVAILABLE, processFileMinio.getProcessFile());
+            if (task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING) {
+                addFileEventToTask(task, FileEventType.WAITING, processFileMinio.getProcessFile());
+                saveAndNotifyTasks(Collections.singleton(new TaskWithStatusUpdate(task, true)));
                 listWaitingFile.add(processFileMinio);
                 return true;
             }
@@ -225,10 +227,12 @@ public class MinioHandler {
     }
 
     private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName) {
-        if (!fileEventType.equals(FileEventType.UPDATED)) {
-            return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
-        } else {
+        if (fileEventType.equals(FileEventType.WAITING)) {
+            return String.format("A new version of %s is waiting for process to end to be available : '%s'", fileType, fileName);
+        } else if (fileEventType.equals(FileEventType.UPDATED)) {
             return String.format("A new version of %s is available : '%s'", fileType, fileName);
+        } else {
+            return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
         }
     }
 
