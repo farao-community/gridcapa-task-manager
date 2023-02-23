@@ -58,7 +58,8 @@ class FileManagerTest {
 
     @Test
     void checkThrowsExceptionWhenNoTaskAtGivenDateById() {
-        assertThrows(TaskNotFoundException.class, () -> fileManager.getZippedGroupById(UUID.randomUUID().toString(), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
+        String uuid = UUID.randomUUID().toString();
+        assertThrows(TaskNotFoundException.class, () -> fileManager.getZippedGroupById(uuid, MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
 
     @Test
