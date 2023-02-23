@@ -54,6 +54,7 @@ public class StatusHandler {
         synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
+                minioHandler.emptyWaitingList();
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
@@ -65,6 +66,7 @@ public class StatusHandler {
         synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
+                minioHandler.emptyWaitingList();
                 updateTaskStatus(optionalTask.get(), taskStatus);
                 return optionalTask;
             } else {
@@ -75,7 +77,6 @@ public class StatusHandler {
     }
 
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
-        minioHandler.emptyWaitingList();
         task.setStatus(taskStatus);
         taskRepository.saveAndFlush(task);
         taskUpdateNotifier.notify(task, true);
