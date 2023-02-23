@@ -84,7 +84,6 @@ public class TaskDtoBuilder {
             task.getTimestamp(),
             task.getStatus(),
             inputs,
-            inputs,
             outputs,
             task.getProcessEvents().stream().map(this::createDtoFromEntity).collect(Collectors.toList()));
     }
