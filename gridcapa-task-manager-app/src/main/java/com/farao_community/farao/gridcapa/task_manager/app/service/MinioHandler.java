@@ -117,33 +117,6 @@ public class MinioHandler {
         }
     }
 
-    private void saveProcessFile(ProcessFileMinio processFileMinio, boolean isInput) {
-        final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
-        Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), isInput);
-        saveAndNotifyTasks(taskWithStatusUpdates);
-        LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
-    }
-
-    private boolean isRunning(ProcessFileMinio processFileMinio) {
-        ProcessFile processFile = processFileMinio.getProcessFile();
-
-        List<OffsetDateTime> listTimestamps = Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
-                .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())).collect(Collectors.toList());
-
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
-
-        for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
-            Task task = taskWithStatusUpdate.getTask();
-            if (task.getStatus() == TaskStatus.RUNNING) {
-                addFileEventToTask(task, FileEventType.AVAILABLE, processFileMinio.getProcessFile());
-                listWaitingFile.add(processFileMinio);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private ProcessFileMinio buildProcessFileMinioFromEvent(Event event) {
         String validityInterval = event.userMetadata().get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
         String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
@@ -180,6 +153,33 @@ public class MinioHandler {
             ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, getProcessNow());
             return new ProcessFileMinio(processFile, FileEventType.AVAILABLE);
         }
+    }
+
+    private void saveProcessFile(ProcessFileMinio processFileMinio, boolean isInput) {
+        final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
+        Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), isInput);
+        saveAndNotifyTasks(taskWithStatusUpdates);
+        LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
+    }
+
+    private boolean isRunning(ProcessFileMinio processFileMinio) {
+        ProcessFile processFile = processFileMinio.getProcessFile();
+
+        List<OffsetDateTime> listTimestamps = Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
+                .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())).collect(Collectors.toList());
+
+        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
+
+        for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+            Task task = taskWithStatusUpdate.getTask();
+            if (task.getStatus() == TaskStatus.RUNNING) {
+                addFileEventToTask(task, FileEventType.AVAILABLE, processFileMinio.getProcessFile());
+                listWaitingFile.add(processFileMinio);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private OffsetDateTime getProcessNow() {
