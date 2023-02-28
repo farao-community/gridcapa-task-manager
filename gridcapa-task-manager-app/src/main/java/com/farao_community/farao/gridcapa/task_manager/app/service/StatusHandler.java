@@ -54,8 +54,10 @@ public class StatusHandler {
         synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
-                minioHandler.emptyWaitingList();
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
+                if (isTaskOver(taskStatusUpdate.getTaskStatus())) {
+                    minioHandler.emptyWaitingList(optionalTask.get().getTimestamp());
+                }
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
             }
@@ -66,8 +68,10 @@ public class StatusHandler {
         synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
-                minioHandler.emptyWaitingList();
                 updateTaskStatus(optionalTask.get(), taskStatus);
+                if (isTaskOver(taskStatus)) {
+                    minioHandler.emptyWaitingList(timestamp);
+                }
                 return optionalTask;
             } else {
                 LOGGER.warn("Task at {} does not exist. Impossible to update status", timestamp);
@@ -81,5 +85,11 @@ public class StatusHandler {
         taskRepository.saveAndFlush(task);
         taskUpdateNotifier.notify(task, true);
         LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
+    }
+
+    private boolean isTaskOver(TaskStatus taskStatus) {
+        return taskStatus.equals(TaskStatus.SUCCESS) ||
+                taskStatus.equals(TaskStatus.INTERRUPTED) ||
+                taskStatus.equals(TaskStatus.ERROR);
     }
 }
