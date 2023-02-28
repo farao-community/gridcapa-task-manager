@@ -258,7 +258,7 @@ public class MinioHandler {
                 Task task = taskWithStatusUpdate.getTask();
                 checkAndUpdateTaskStatus(task);
                 if (!done && task.getStatus().equals(TaskStatus.READY)) {
-                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Outputs files might be outdated.");
+                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
                     done = true;
                 }
                 saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
