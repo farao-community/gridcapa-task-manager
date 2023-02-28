@@ -118,28 +118,26 @@ public class TaskManager {
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
-        synchronized (LOCK) {
-            try {
-                TaskLogEventUpdate loggerEvent = new ObjectMapper().readValue(loggerEventString, TaskLogEventUpdate.class);
-                Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
-                if (optionalTask.isPresent()) {
-                    Task task = optionalTask.get();
-                    OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-                    String message = loggerEvent.getMessage();
-                    Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
-                    if (optionalEventPrefix.isPresent()) {
-                        message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
-                    }
-                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message);
-                    taskRepository.save(task);
-                    taskUpdateNotifier.notify(task, false);
-                    LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
-                } else {
-                    LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
+        try {
+            TaskLogEventUpdate loggerEvent = new ObjectMapper().readValue(loggerEventString, TaskLogEventUpdate.class);
+            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
+            if (optionalTask.isPresent()) {
+                Task task = optionalTask.get();
+                OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
+                String message = loggerEvent.getMessage();
+                Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
+                if (optionalEventPrefix.isPresent()) {
+                    message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
                 }
-            } catch (JsonProcessingException e) {
-                LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
+                task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message);
+                task = taskRepository.save(task);
+                taskUpdateNotifier.notify(task, false);
+                LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());
+            } else {
+                LOGGER.warn("Task {} does not exist. Impossible to update task with log event", loggerEvent.getId());
             }
+        } catch (JsonProcessingException e) {
+            LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
         }
     }
 
