@@ -188,7 +188,6 @@ public class MinioHandler {
             }
             return true;
         }
-
         return false;
     }
 
