@@ -249,23 +249,25 @@ public class MinioHandler {
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
         boolean done = false;
-        for (ProcessFileMinio processFileMinio : mapWaitingFiles.get(timestamp)) {
-            List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
-                    .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
+        if (mapWaitingFiles.containsKey(timestamp)) {
+            for (ProcessFileMinio processFileMinio : mapWaitingFiles.get(timestamp)) {
+                List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
+                        .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
 
-            List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
-            for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
-                Task task = taskWithStatusUpdate.getTask();
-                checkAndUpdateTaskStatus(task);
-                if (!done && task.getStatus().equals(TaskStatus.READY)) {
-                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
-                    done = true;
+                List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
+                for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+                    Task task = taskWithStatusUpdate.getTask();
+                    checkAndUpdateTaskStatus(task);
+                    if (!done && task.getStatus().equals(TaskStatus.READY)) {
+                        task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
+                        done = true;
+                    }
+                    saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
                 }
-                saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
+                saveProcessFile(processFileMinio, true);
             }
-            saveProcessFile(processFileMinio, true);
+            mapWaitingFiles.get(timestamp).clear();
         }
-        mapWaitingFiles.get(timestamp).clear();
     }
 
     /**
