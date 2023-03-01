@@ -12,6 +12,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,15 +38,14 @@ import java.util.Optional;
 public class TaskManagerController {
 
     public static final String CONTENT_DISPOSITION = "Content-Disposition";
+    private final StatusHandler statusHandler;
     private final TaskDtoBuilder builder;
-    private final TaskManager taskManager;
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
 
-    public TaskManagerController(TaskDtoBuilder builder, TaskManager taskManager, FileManager fileManager,
-                                 TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
+        this.statusHandler = statusHandler;
         this.builder = builder;
-        this.taskManager = taskManager;
         this.fileManager = fileManager;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
     }
@@ -63,9 +63,9 @@ public class TaskManagerController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-        Optional<Task> optTask = taskManager.handleTaskStatusUpdate(OffsetDateTime.parse(timestamp), taskStatus);
+        Optional<Task> optTask = statusHandler.handleTaskStatusUpdate(OffsetDateTime.parse(timestamp), taskStatus);
         return optTask.map(task -> ResponseEntity.ok(builder.createDtoFromEntity(task)))
-            .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")
@@ -83,9 +83,9 @@ public class TaskManagerController {
             ByteArrayOutputStream zip = fileManager.getZippedGroup(timestamp, fileGroup);
             String zipName = fileManager.getZipName(timestamp, fileGroup);
             return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(CONTENT_DISPOSITION, "attachment;filename=\"" + zipName + "\"")
-                .body(zip.toByteArray());
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(CONTENT_DISPOSITION, "attachment;filename=\"" + zipName + "\"")
+                    .body(zip.toByteArray());
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
         } catch (TaskNotFoundException e) {

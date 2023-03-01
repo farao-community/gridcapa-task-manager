@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.app;
+package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.*;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -14,8 +14,7 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -24,18 +23,17 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Iterator;
-import java.util.UUID;
+import java.util.Map;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
+ * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @SpringBootTest
-@ExtendWith(MockitoExtension.class)
-class TaskManagerTest {
+class MinioHandlerTest {
     private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 
     @Autowired
@@ -43,17 +41,18 @@ class TaskManagerTest {
 
     @MockBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
+
     @MockBean
     private MinioAdapter minioAdapter;
-
-    @Autowired
-    private TaskRepository taskRepository;
 
     @Autowired
     private ProcessFileRepository processFileRepository;
 
     @Autowired
-    private TaskManager taskManager;
+    private TaskRepository taskRepository;
+
+    @Autowired
+    private MinioHandler minioHandler;
 
     @AfterEach
     void cleanDatabase() {
@@ -66,7 +65,7 @@ class TaskManagerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         Event event = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        taskManager.updateTasks(event);
+        minioHandler.updateTasks(event);
 
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
@@ -81,8 +80,8 @@ class TaskManagerTest {
 
         Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        taskManager.updateTasks(eventCgm);
-        taskManager.updateTasks(eventCrac);
+        minioHandler.updateTasks(eventCgm);
+        minioHandler.updateTasks(eventCrac);
 
         assertEquals(1, taskRepository.findAll().size());
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
@@ -106,7 +105,7 @@ class TaskManagerTest {
     private void testTimeInterval(String process, String interval, int expectedFileNumber) {
         Event event = TaskManagerTestUtil.createEvent(minioAdapter, process, INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval);
 
-        taskManager.updateTasks(event);
+        minioHandler.updateTasks(event);
 
         assertEquals(expectedFileNumber, taskRepository.findAll().size());
     }
@@ -118,9 +117,9 @@ class TaskManagerTest {
 
         Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        taskManager.updateTasks(eventCgm);
+        minioHandler.updateTasks(eventCgm);
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
-        taskManager.updateTasks(eventCrac);
+        minioHandler.updateTasks(eventCrac);
         assertEquals(READY, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
     }
 
@@ -130,9 +129,9 @@ class TaskManagerTest {
         Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        taskManager.updateTasks(eventCgm);
-        taskManager.updateTasks(eventCrac);
-        taskManager.removeProcessFile(eventCrac);
+        minioHandler.updateTasks(eventCgm);
+        minioHandler.updateTasks(eventCrac);
+        minioHandler.removeProcessFile(eventCrac);
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
     }
 
@@ -142,8 +141,8 @@ class TaskManagerTest {
         Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        taskManager.updateTasks(eventCgm);
-        taskManager.updateTasks(eventCrac);
+        minioHandler.updateTasks(eventCgm);
+        minioHandler.updateTasks(eventCrac);
 
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(2, task.getProcessEvents().size());
@@ -162,8 +161,8 @@ class TaskManagerTest {
         Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         Event eventCgmNew = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        taskManager.updateTasks(eventCgm);
-        taskManager.updateTasks(eventCgmNew);
+        minioHandler.updateTasks(eventCgm);
+        minioHandler.updateTasks(eventCgmNew);
 
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(2, task.getProcessEvents().size());
@@ -203,7 +202,7 @@ class TaskManagerTest {
         taskRepository.save(task);
 
         Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
-        taskManager.removeProcessFile(eventCracDeletion);
+        minioHandler.removeProcessFile(eventCracDeletion);
 
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(3, updatedTask.getProcessEvents().size());
@@ -229,77 +228,22 @@ class TaskManagerTest {
         taskRepository.save(task);
 
         Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
-        taskManager.removeProcessFile(eventCracDeletion);
+        minioHandler.removeProcessFile(eventCracDeletion);
 
         assertEquals(NOT_CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
     }
 
-    @Test
-    void handleTaskLogEventUpdateTest() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
-        taskRepository.save(task);
-        String logEvent = "{\n" +
-                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
-                "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
-                "  \"level\": \"INFO\",\n" +
-                "  \"message\": \"Hello from backend\",\n" +
-                "  \"serviceName\": \"GRIDCAPA\" \n" +
-                "}";
-        taskManager.handleTaskEventUpdate(logEvent);
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(1, updatedTask.getProcessEvents().size());
-        ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
-        assertEquals("INFO", event.getLevel());
-        assertEquals("Hello from backend", event.getMessage());
-    }
-
-    @Test
-    void handleTaskLogEventUpdateWithPrefixTest() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
-        taskRepository.save(task);
-        String logEvent = "{\n" +
-                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
-                "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
-                "  \"level\": \"INFO\",\n" +
-                "  \"message\": \"Hello from backend\",\n" +
-                "  \"serviceName\": \"GRIDCAPA\" ,\n" +
-                "  \"eventPrefix\": \"STEP-1\" \n" +
-                "}";
-        taskManager.handleTaskEventUpdate(logEvent);
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(1, updatedTask.getProcessEvents().size());
-        ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
-        assertEquals("INFO", event.getLevel());
-        assertEquals("[STEP-1] : Hello from backend", event.getMessage());
-    }
-
-    @Test
-    void handleTaskStatusUpdateFromMessagesTest() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        taskRepository.save(task);
-
-        taskManager.handleTaskStatusUpdate(new TaskStatusUpdate(task.getId(), RUNNING));
-
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(RUNNING, updatedTask.getStatus());
-    }
-
-    @Test
-    void handleTaskStatusUpdateFromApiTest() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        taskRepository.save(task);
-
-        taskManager.handleTaskStatusUpdate(taskTimestamp, RUNNING);
-
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(RUNNING, updatedTask.getStatus());
+    public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
+        Event event = Mockito.mock(Event.class);
+        Map<String, String> metadata = Map.of(
+                MinioHandler.FILE_GROUP_METADATA_KEY, fileGroup,
+                MinioHandler.FILE_TARGET_PROCESS_METADATA_KEY, processTag,
+                MinioHandler.FILE_TYPE_METADATA_KEY, fileType,
+                MinioHandler.FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval
+        );
+        //The following mock is not use in all test that call this methods. With the "lenient" add you avoid an exception
+        Mockito.lenient().when(event.userMetadata()).thenReturn(metadata);
+        Mockito.when(event.objectName()).thenReturn(fileKey);
+        return event;
     }
 }

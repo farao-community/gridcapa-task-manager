@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
@@ -19,7 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Mohamed Ben Rejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
@@ -37,7 +38,7 @@ class TaskWithOverlappingProcessFilesTest {
     private TaskRepository taskRepository;
 
     @Autowired
-    private TaskManager taskManager;
+    private MinioHandler minioHandler;
 
     @Autowired
     private ProcessFileRepository processFileRepository;
@@ -55,15 +56,15 @@ class TaskWithOverlappingProcessFilesTest {
     @Test
     void checkCorrectFileIsUsedWhenIntervalsOverlap() {
         Event eventFileInterval1 = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "File", "File-1",
-            "2020-01-01T22:30Z/2020-12-31T22:30Z");
+                "File", "File-1",
+                "2020-01-01T22:30Z/2020-12-31T22:30Z");
 
         Event eventFileInterval2 = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "File", "File-2",
-            "2020-06-01T22:30Z/2021-06-30T22:30Z");
+                "File", "File-2",
+                "2020-06-01T22:30Z/2021-06-30T22:30Z");
 
-        taskManager.updateTasks(eventFileInterval1);
-        taskManager.updateTasks(eventFileInterval2);
+        minioHandler.updateTasks(eventFileInterval1);
+        minioHandler.updateTasks(eventFileInterval2);
 
         Task taskInterval1 = taskRepository.findByTimestamp(taskTimeStampInInterval1).orElseThrow();
         Task taskInterval2 = taskRepository.findByTimestamp(taskTimeStampInInterval2).orElseThrow();
@@ -74,8 +75,8 @@ class TaskWithOverlappingProcessFilesTest {
         assertEquals("File-2", taskHavingFileWithOverlappingIntervals.getInput("File").get().getFilename());
 
         Event eventFile2Deletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "File", "File-2", "2020-06-01T22:30Z/2021-06-30T22:30Z");
-        taskManager.removeProcessFile(eventFile2Deletion);
+                "File", "File-2", "2020-06-01T22:30Z/2021-06-30T22:30Z");
+        minioHandler.removeProcessFile(eventFile2Deletion);
         taskHavingFileWithOverlappingIntervals = taskRepository.findByTimestamp(taskTimeStampInBothIntervals).orElseThrow();
 
         assertEquals("File-1", taskHavingFileWithOverlappingIntervals.getInput("File").get().getFilename());
