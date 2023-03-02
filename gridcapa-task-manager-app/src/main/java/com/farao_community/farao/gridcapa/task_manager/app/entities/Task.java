@@ -45,8 +45,8 @@ public class Task {
     private TaskStatus status;
 
     @OneToMany(
+        mappedBy = "task",
         cascade = {CascadeType.MERGE, CascadeType.PERSIST},
-        fetch = FetchType.EAGER,
         orphanRemoval = true
     )
     @SortComparator(ReverseEventComparator.class)
@@ -95,7 +95,7 @@ public class Task {
     }
 
     public void addProcessEvent(OffsetDateTime timestamp, String level, String message) {
-        processEvents.add(new ProcessEvent(timestamp, level, message));
+        processEvents.add(new ProcessEvent(this, timestamp, level, message));
     }
 
     public SortedSet<ProcessFile> getProcessFiles() {
