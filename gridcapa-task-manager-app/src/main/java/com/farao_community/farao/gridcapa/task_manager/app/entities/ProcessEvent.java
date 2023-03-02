@@ -30,10 +30,14 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Task task;
+
     public ProcessEvent() {
     }
 
-    public ProcessEvent(OffsetDateTime timestamp, String level, String message) {
+    public ProcessEvent(Task task, OffsetDateTime timestamp, String level, String message) {
+        this.task = task;
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         this.level = level;
@@ -50,6 +54,10 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     public String getMessage() {
         return message;
+    }
+
+    public Task getTask() {
+        return task;
     }
 
     @Override
@@ -69,12 +77,12 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
             return false;
         }
         ProcessEvent that = (ProcessEvent) o;
-        return this.id.equals(that.id) && this.level.equals(that.level) && this.timestamp.equals(that.timestamp) && this.message.equals(that.message);
+        return this.id.equals(that.id) && this.level.equals(that.level) && this.timestamp.equals(that.timestamp) && this.message.equals(that.message) && this.task.equals(that.task);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.level, this.timestamp, this.message);
+        return Objects.hash(this.id, this.level, this.timestamp, this.message, this.task);
     }
 
     public String toString() {

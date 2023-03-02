@@ -23,19 +23,25 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
-    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles WHERE task.id = :id")
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles " +
+            "LEFT JOIN FETCH task.processEvents " +
+            "WHERE task.id = :id")
     Optional<Task> findByIdWithProcessFiles(@Param("id") UUID id);
 
-    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles WHERE task.timestamp = :timestamp")
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles " +
+            "LEFT JOIN FETCH task.processEvents " +
+            "WHERE task.timestamp = :timestamp")
     Optional<Task> findByTimestamp(@Param("timestamp") OffsetDateTime timestamp);
 
     @Query("SELECT task FROM Task task JOIN FETCH task.processFiles " +
+            "LEFT JOIN FETCH task.processEvents " +
         "WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
     Set<Task> findAllByTimestampBetween(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
 
-    @Query("SELECT task FROM Task task JOIN FETCH task.processFiles "
-            + "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING "
-            + "OR task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING")
+    @Query("SELECT task FROM Task task JOIN FETCH task.processFiles " +
+            "LEFT JOIN FETCH task.processEvents " +
+            "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING " +
+            "OR task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING")
     Set<Task> findAllRunningAndPending();
 }
