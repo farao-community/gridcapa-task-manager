@@ -248,26 +248,39 @@ public class MinioHandler {
     }
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
-        boolean done = false;
+        boolean processEventAdded = false;
         if (mapWaitingFiles.containsKey(timestamp)) {
             for (ProcessFileMinio processFileMinio : mapWaitingFiles.get(timestamp)) {
                 List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
                         .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
 
                 List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
+                if (atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate)) {
+                    continue;
+                }
                 for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
                     Task task = taskWithStatusUpdate.getTask();
                     checkAndUpdateTaskStatus(task);
-                    if (!done && task.getStatus().equals(TaskStatus.READY)) {
+                    if (!processEventAdded && task.getStatus().equals(TaskStatus.READY)) {
                         task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
-                        done = true;
+                        processEventAdded = true;
                     }
                     saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
                 }
                 saveProcessFile(processFileMinio, true);
+                mapWaitingFiles.get(timestamp).clear();
             }
-            mapWaitingFiles.get(timestamp).clear();
         }
+    }
+
+    private boolean atLeastOneTaskIsRunningOrPending(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+        for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+            TaskStatus taskStatus = taskWithStatusUpdate.getTask().getStatus();
+            if (taskStatus.equals(TaskStatus.READY) || taskStatus.equals(TaskStatus.PENDING)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
