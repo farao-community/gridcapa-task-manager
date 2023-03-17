@@ -248,13 +248,7 @@ public class MinioHandler {
     }
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
-        List<ProcessFileMinio> processFileToProcess = new ArrayList<>();
-        for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> entry : mapWaitingFilesNew.entrySet()) {
-            List<OffsetDateTime> listTimestamps = entry.getValue();
-            if (listTimestamps.contains(timestamp)) {
-                processFileToProcess.add(entry.getKey());
-            }
-        }
+        List<ProcessFileMinio> processFileToProcess = getProcessFileMinios(timestamp);
 
         boolean processEventAdded = false;
         for (ProcessFileMinio processFileMinio : processFileToProcess) {
@@ -278,6 +272,17 @@ public class MinioHandler {
             mapWaitingFilesNew.get(processFileMinio).clear();
         }
 
+    }
+
+    private List<ProcessFileMinio> getProcessFileMinios(OffsetDateTime timestamp) {
+        List<ProcessFileMinio> processFileToProcess = new ArrayList<>();
+        for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> entry : mapWaitingFilesNew.entrySet()) {
+            List<OffsetDateTime> listTimestamps = entry.getValue();
+            if (listTimestamps.contains(timestamp)) {
+                processFileToProcess.add(entry.getKey());
+            }
+        }
+        return processFileToProcess;
     }
 
     private boolean atLeastOneTaskIsRunningOrPending(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
