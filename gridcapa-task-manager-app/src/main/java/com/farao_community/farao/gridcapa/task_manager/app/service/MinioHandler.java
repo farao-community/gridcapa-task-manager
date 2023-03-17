@@ -52,7 +52,7 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private final HashMap<OffsetDateTime, List<ProcessFileMinio>> mapWaitingFiles = new HashMap<>();
+    private final HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -174,7 +174,7 @@ public class MinioHandler {
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             Task task = taskWithStatusUpdate.getTask();
             if (task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING) {
-                mapWaitingFiles.computeIfAbsent(task.getTimestamp(), k -> new ArrayList<>()).add(processFileMinio);
+                mapWaitingFilesNew.put(processFileMinio, listTaskWithStatusUpdate.stream().map(t -> t.getTask().getTimestamp()).collect(Collectors.toList()));
                 toNotify = true;
                 break;
             }
@@ -248,35 +248,42 @@ public class MinioHandler {
     }
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
-        boolean processEventAdded = false;
-        if (mapWaitingFiles.containsKey(timestamp)) {
-            for (ProcessFileMinio processFileMinio : mapWaitingFiles.get(timestamp)) {
-                List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
-                        .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
-
-                List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
-                if (atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate)) {
-                    continue;
-                }
-                for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
-                    Task task = taskWithStatusUpdate.getTask();
-                    checkAndUpdateTaskStatus(task);
-                    if (!processEventAdded && task.getStatus().equals(TaskStatus.READY)) {
-                        task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
-                        processEventAdded = true;
-                    }
-                    saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
-                }
-                saveProcessFile(processFileMinio, true);
-                mapWaitingFiles.get(timestamp).clear();
+        List<ProcessFileMinio> processFileToProcess = new ArrayList<>();
+        for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> entry : mapWaitingFilesNew.entrySet()) {
+            List<OffsetDateTime> listTimestamps = entry.getValue();
+            if (listTimestamps.contains(timestamp)) {
+                processFileToProcess.add(entry.getKey());
             }
         }
+
+        boolean processEventAdded = false;
+        for (ProcessFileMinio processFileMinio : processFileToProcess) {
+            List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
+                    .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
+
+            List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
+            if (atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate)) {
+                continue;
+            }
+            for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+                Task task = taskWithStatusUpdate.getTask();
+                checkAndUpdateTaskStatus(task);
+                if (!processEventAdded && task.getStatus().equals(TaskStatus.READY)) {
+                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
+                    processEventAdded = true;
+                }
+                saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
+            }
+            saveProcessFile(processFileMinio, true);
+            mapWaitingFilesNew.get(processFileMinio).clear();
+        }
+
     }
 
     private boolean atLeastOneTaskIsRunningOrPending(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             TaskStatus taskStatus = taskWithStatusUpdate.getTask().getStatus();
-            if (taskStatus.equals(TaskStatus.READY) || taskStatus.equals(TaskStatus.PENDING)) {
+            if (taskStatus.equals(TaskStatus.RUNNING) || taskStatus.equals(TaskStatus.PENDING)) {
                 return true;
             }
         }
