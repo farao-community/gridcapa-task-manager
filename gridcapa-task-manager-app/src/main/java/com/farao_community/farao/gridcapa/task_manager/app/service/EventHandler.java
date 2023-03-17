@@ -53,22 +53,22 @@ public class EventHandler {
         if (messages instanceof String) {
             return Arrays.asList(mapMessageToEvent(messages));
         } else if (messages instanceof Collection) {
-            List<TaskLogEventUpdate> listEvents = new ArrayList<> ();
-            for (Object message : (Collection)messages ) {
+            List<TaskLogEventUpdate> listEvents = new ArrayList<>();
+            for (Object message : (Collection) messages) {
                 TaskLogEventUpdate task = mapMessageToEvent(message);
-                if(task != null) {
+                if (task != null) {
                     listEvents.add(task);
                 }
             }
             return listEvents;
         } else {
-            return new ArrayList<> ();
+            return new ArrayList<>();
         }
     }
 
-    TaskLogEventUpdate mapMessageToEvent(Object messages ) {
+    TaskLogEventUpdate mapMessageToEvent(Object messages) {
         try {
-            return new ObjectMapper().readValue((String)messages, TaskLogEventUpdate.class);
+            return new ObjectMapper().readValue((String) messages, TaskLogEventUpdate.class);
         } catch (JsonProcessingException e) {
             LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
             return null;
@@ -77,9 +77,9 @@ public class EventHandler {
 
     void handleTaskEventBatchUpdate(List<TaskLogEventUpdate> events) {
         synchronized (LOCK) {
-            Map<UUID,Task> storedTasks = new HashMap<>();
-            List<Task> tasksToSave = new ArrayList<> ();
-            for(TaskLogEventUpdate event : events) {
+            Map<UUID, Task> storedTasks = new HashMap<>();
+            List<Task> tasksToSave = new ArrayList<>();
+            for (TaskLogEventUpdate event : events) {
                 UUID taskUUID = UUID.fromString(event.getId());
                 Task task = storedTasks.get(taskUUID);
                 if (task == null) {
@@ -96,7 +96,7 @@ public class EventHandler {
                 }
             }
             taskRepository.saveAll(tasksToSave);
-            for(Task task : tasksToSave) {
+            for (Task task : tasksToSave) {
                 taskUpdateNotifier.notify(task, false);
                 LOGGER.debug("Task events has been added on {}", task.getTimestamp());
             }
@@ -111,7 +111,7 @@ public class EventHandler {
             message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
         }
         task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message);
-        if(!tasksToSave.contains(task)) {
+        if (!tasksToSave.contains(task)) {
             tasksToSave.add(task);
         }
     }
