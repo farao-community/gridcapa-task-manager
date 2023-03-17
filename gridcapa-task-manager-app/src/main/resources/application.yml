@@ -23,6 +23,8 @@ spring:
           destination: task-status-updated
         consumeTaskEventUpdate-in-0:
           destination: task-manager-logs-exchange
+          consumer:
+            batch-mode: true
         task-updated:
           destination: task-updated
         task-status-updated:
