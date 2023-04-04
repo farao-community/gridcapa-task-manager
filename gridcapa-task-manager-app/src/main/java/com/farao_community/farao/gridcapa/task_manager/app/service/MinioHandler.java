@@ -285,7 +285,7 @@ public class MinioHandler {
         return processFileToProcess;
     }
 
-    private boolean atLeastOneTaskIsRunningOrPending(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+    boolean atLeastOneTaskIsRunningOrPending(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             TaskStatus taskStatus = taskWithStatusUpdate.getTask().getStatus();
             if (taskStatus.equals(TaskStatus.RUNNING) || taskStatus.equals(TaskStatus.PENDING)) {

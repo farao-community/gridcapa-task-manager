@@ -22,12 +22,13 @@ import org.springframework.cloud.stream.function.StreamBridge;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -231,6 +232,41 @@ class MinioHandlerTest {
         minioHandler.removeProcessFile(eventCracDeletion);
 
         assertEquals(NOT_CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
+    }
+
+    @Test
+    void testAtLeastOneTaskIsRunningOrPendingNoTasks() {
+        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = List.of();
+        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+    }
+
+    @Test
+    void testAtLeastOneTaskIsRunningOrPendingAllTasksCompleted() {
+        Task taskSuccess = new Task(OffsetDateTime.now());
+        taskSuccess.setStatus(SUCCESS);
+        Task taskError = new Task(OffsetDateTime.now());
+        taskSuccess.setStatus(ERROR);
+        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
+                new TaskWithStatusUpdate(taskSuccess, false),
+                new TaskWithStatusUpdate(taskError, false)
+        );
+        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+    }
+
+    @Test
+    void testAtLeastOneTaskIsRunningOrPendingSomeTasksRunningOrPending() {
+        Task taskSuccess = new Task(OffsetDateTime.now());
+        taskSuccess.setStatus(SUCCESS);
+        Task taskError = new Task(OffsetDateTime.now());
+        taskSuccess.setStatus(ERROR);
+        Task taskRunning = new Task(OffsetDateTime.now());
+        taskSuccess.setStatus(RUNNING);
+        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
+                new TaskWithStatusUpdate(taskSuccess, false),
+                new TaskWithStatusUpdate(taskError, false),
+                new TaskWithStatusUpdate(taskRunning, false)
+        );
+        assertTrue(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
     }
 
     public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
