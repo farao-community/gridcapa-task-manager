@@ -52,7 +52,7 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private final HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
+    private HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -274,7 +274,7 @@ public class MinioHandler {
 
     }
 
-    private List<ProcessFileMinio> getProcessFileMinios(OffsetDateTime timestamp) {
+    List<ProcessFileMinio> getProcessFileMinios(OffsetDateTime timestamp) {
         List<ProcessFileMinio> processFileToProcess = new ArrayList<>();
         for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> entry : mapWaitingFilesNew.entrySet()) {
             List<OffsetDateTime> listTimestamps = entry.getValue();
@@ -359,5 +359,9 @@ public class MinioHandler {
                     return new TaskWithStatusUpdate(task, statusUpdated);
                 })
                 .collect(Collectors.toSet());
+    }
+
+    void setMapWaitingFilesNew(Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew) {
+        this.mapWaitingFilesNew = (HashMap<ProcessFileMinio, List<OffsetDateTime>>) mapWaitingFilesNew;
     }
 }
