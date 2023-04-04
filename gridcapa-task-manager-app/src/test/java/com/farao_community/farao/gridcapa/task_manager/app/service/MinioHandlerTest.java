@@ -307,8 +307,6 @@ class MinioHandlerTest {
         assertTrue(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
     }
 
-
-
     public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
         Event event = Mockito.mock(Event.class);
         Map<String, String> metadata = Map.of(
