@@ -234,7 +234,7 @@ class MinioHandlerTest {
     }
 
     @Test
-    void testGetProcessFileMinios_noMatchingTimestamps() {
+    void testGetProcessFileMiniosNoMatchingTimestamps() {
         Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
         ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
         ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
@@ -252,7 +252,7 @@ class MinioHandlerTest {
     }
 
     @Test
-    void testGetProcessFileMinios_someMatchingTimestamps() {
+    void testGetProcessFileMiniosSomeMatchingTimestamps() {
         Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
         ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
         ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
