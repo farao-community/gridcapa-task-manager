@@ -121,11 +121,13 @@ public class TaskManagerController {
         } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS", fileType)) {
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + timestamp + ".zip\"")
+                    .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
                     .body(fileManager.getLogs(offsetDateTime).toByteArray());
         }
-
         return result;
+    }
 
+    private String removeIllegalUrlCharacter(String s) {
+        return s.replace(":", "");
     }
 }
