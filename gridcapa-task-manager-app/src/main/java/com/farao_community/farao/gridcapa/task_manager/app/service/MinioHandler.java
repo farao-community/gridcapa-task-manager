@@ -52,7 +52,7 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private final HashMap<OffsetDateTime, List<ProcessFileMinio>> mapWaitingFiles = new HashMap<>();
+    private HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -174,7 +174,7 @@ public class MinioHandler {
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             Task task = taskWithStatusUpdate.getTask();
             if (task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING) {
-                mapWaitingFiles.computeIfAbsent(task.getTimestamp(), k -> new ArrayList<>()).add(processFileMinio);
+                mapWaitingFilesNew.put(processFileMinio, listTaskWithStatusUpdate.stream().map(t -> t.getTask().getTimestamp()).collect(Collectors.toList()));
                 toNotify = true;
                 break;
             }
@@ -223,7 +223,7 @@ public class MinioHandler {
 
     private List<TaskWithStatusUpdate> findAllTaskByTimestamp(List<OffsetDateTime> listTimestamps) {
         return listTimestamps.stream().map(ts -> taskRepository.findByTimestamp(ts)
-                        .map(task -> new TaskWithStatusUpdate(task, false))
+                        .map(task -> new TaskWithStatusUpdate(task, true))
                         .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(ts)), true)))
                 .collect(Collectors.toList());
     }
@@ -248,26 +248,51 @@ public class MinioHandler {
     }
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
-        boolean done = false;
-        if (mapWaitingFiles.containsKey(timestamp)) {
-            for (ProcessFileMinio processFileMinio : mapWaitingFiles.get(timestamp)) {
-                List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
-                        .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
+        List<ProcessFileMinio> processFileToProcess = getProcessFileMinios(timestamp);
 
-                List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
-                for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
-                    Task task = taskWithStatusUpdate.getTask();
-                    checkAndUpdateTaskStatus(task);
-                    if (!done && task.getStatus().equals(TaskStatus.READY)) {
-                        task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
-                        done = true;
-                    }
-                    saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
-                }
-                saveProcessFile(processFileMinio, true);
+        boolean processEventAdded = false;
+        for (ProcessFileMinio processFileMinio : processFileToProcess) {
+            List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
+                    .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
+
+            List<TaskWithStatusUpdate> listTaskWithStatusUpdate = findAllTaskByTimestamp(listTimestamps);
+            if (atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate)) {
+                continue;
             }
-            mapWaitingFiles.get(timestamp).clear();
+            for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+                Task task = taskWithStatusUpdate.getTask();
+                checkAndUpdateTaskStatus(task);
+                if (!processEventAdded && task.getStatus().equals(TaskStatus.READY)) {
+                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
+                    processEventAdded = true;
+                }
+                saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
+            }
+            saveProcessFile(processFileMinio, true);
+            mapWaitingFilesNew.get(processFileMinio).clear();
         }
+
+    }
+
+    List<ProcessFileMinio> getProcessFileMinios(OffsetDateTime timestamp) {
+        List<ProcessFileMinio> processFileToProcess = new ArrayList<>();
+        for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> entry : mapWaitingFilesNew.entrySet()) {
+            List<OffsetDateTime> listTimestamps = entry.getValue();
+            if (listTimestamps.contains(timestamp)) {
+                processFileToProcess.add(entry.getKey());
+            }
+        }
+        return processFileToProcess;
+    }
+
+    boolean atLeastOneTaskIsRunningOrPending(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+        for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
+            TaskStatus taskStatus = taskWithStatusUpdate.getTask().getStatus();
+            if (taskStatus.equals(TaskStatus.RUNNING) || taskStatus.equals(TaskStatus.PENDING)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -334,5 +359,9 @@ public class MinioHandler {
                     return new TaskWithStatusUpdate(task, statusUpdated);
                 })
                 .collect(Collectors.toSet());
+    }
+
+    void setMapWaitingFilesNew(Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew) {
+        this.mapWaitingFilesNew = (HashMap<ProcessFileMinio, List<OffsetDateTime>>) mapWaitingFilesNew;
     }
 }
