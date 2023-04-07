@@ -223,7 +223,7 @@ public class MinioHandler {
 
     private List<TaskWithStatusUpdate> findAllTaskByTimestamp(List<OffsetDateTime> listTimestamps) {
         return listTimestamps.stream().map(ts -> taskRepository.findByTimestamp(ts)
-                        .map(task -> new TaskWithStatusUpdate(task, false))
+                        .map(task -> new TaskWithStatusUpdate(task, true))
                         .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(ts)), true)))
                 .collect(Collectors.toList());
     }
@@ -265,7 +265,6 @@ public class MinioHandler {
                 if (!processEventAdded && task.getStatus().equals(TaskStatus.READY)) {
                     task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
                     processEventAdded = true;
-                    taskUpdateNotifier.notify(task, true);
                 }
                 saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
             }
