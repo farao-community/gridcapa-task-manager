@@ -38,4 +38,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             + "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING "
             + "OR task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING")
     Set<Task> findAllRunningAndPending();
+
+    @Query("SELECT task FROM Task task INNER JOIN task.processEvents")
+    Set<Task> findAllWithSomeProcessEvent();
 }
