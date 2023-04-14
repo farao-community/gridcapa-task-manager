@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
-@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
+@SpringBootTest
 class TaskManagerControllerTest {
 
     @MockBean

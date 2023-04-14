@@ -23,3 +23,7 @@ stomp:
   starting-ws-endpoint: /web/notify
   notify: /task
   receive-request: /app
+
+purge-task-events:
+  cron: 0 0 12 * * *
+  nb-days: 7
