@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
-@SpringBootTest
+@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
 class FileManagerTest {
 
     @MockBean

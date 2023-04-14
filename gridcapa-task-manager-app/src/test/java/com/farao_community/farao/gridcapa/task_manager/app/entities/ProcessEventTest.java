@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
-@SpringBootTest
+@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
 class ProcessEventTest {
 
     @Autowired

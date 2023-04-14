@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Mohamed Ben Rejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
-@SpringBootTest
+@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
 class TaskWithOverlappingProcessFilesTest {
 
     @MockBean

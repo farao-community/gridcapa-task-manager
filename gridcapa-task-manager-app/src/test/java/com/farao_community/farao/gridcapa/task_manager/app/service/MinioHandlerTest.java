@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
-@SpringBootTest
+@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
 class MinioHandlerTest {
     private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 

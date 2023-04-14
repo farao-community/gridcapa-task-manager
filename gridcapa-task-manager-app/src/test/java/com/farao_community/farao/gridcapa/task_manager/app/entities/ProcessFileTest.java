@@ -15,12 +15,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.OffsetDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
-@SpringBootTest
+@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
 class ProcessFileTest {
 
     @Autowired
