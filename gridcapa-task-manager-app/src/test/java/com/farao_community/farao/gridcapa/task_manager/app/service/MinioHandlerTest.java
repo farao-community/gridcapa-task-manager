@@ -6,10 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
+import com.farao_community.farao.gridcapa.task_manager.app.*;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
@@ -35,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
-@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
+@SpringBootTest
 class MinioHandlerTest {
     private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 
