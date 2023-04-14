@@ -23,12 +23,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
-@SpringBootTest
+@SpringBootTest(properties = {"purge-task-events.nb-days=7", "purge-task-events.cron=0 0 12 * * *"})
 class TaskProcessFileDeletionTest {
 
     @MockBean
@@ -56,39 +57,39 @@ class TaskProcessFileDeletionTest {
         Task task4 = new Task(offsetDateTime3);
 
         ProcessFile cgmFile1 = new ProcessFile(
-            "/CGM",
-            MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "CGM",
-            offsetDateTime0,
-            offsetDateTime0.plusHours(1),
-            OffsetDateTime.now());
+                "/CGM",
+                MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+                "CGM",
+                offsetDateTime0,
+                offsetDateTime0.plusHours(1),
+                OffsetDateTime.now());
         processFileRepository.save(cgmFile1);
 
         ProcessFile cgmFile2 = new ProcessFile(
-            "/CGM2",
-            MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "CGM",
-            offsetDateTime1,
-            offsetDateTime1.plusHours(1),
-            OffsetDateTime.now());
+                "/CGM2",
+                MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+                "CGM",
+                offsetDateTime1,
+                offsetDateTime1.plusHours(1),
+                OffsetDateTime.now());
         processFileRepository.save(cgmFile2);
 
         ProcessFile cgmFile3 = new ProcessFile(
-            "/CGM3",
-            MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "CGM",
-            offsetDateTime2,
-            offsetDateTime2.plusHours(1),
-            OffsetDateTime.now());
+                "/CGM3",
+                MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+                "CGM",
+                offsetDateTime2,
+                offsetDateTime2.plusHours(1),
+                OffsetDateTime.now());
         processFileRepository.save(cgmFile3);
 
         ProcessFile refprogFile = new ProcessFile(
-            "/REFPROG",
-            MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
-            "REFPROG",
-            offsetDateTime0,
-            offsetDateTime0.plusHours(4),
-            OffsetDateTime.now());
+                "/REFPROG",
+                MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+                "REFPROG",
+                offsetDateTime0,
+                offsetDateTime0.plusHours(4),
+                OffsetDateTime.now());
         processFileRepository.save(refprogFile);
 
         task1.addProcessFile(cgmFile1);
