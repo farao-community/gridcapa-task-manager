@@ -37,8 +37,7 @@ public class DatabasePurgeServiceTest {
 
     @Autowired
     private EventHandler eventHandler;
-
-
+    
     @Test
     void scheduledDatabaseTaskEventsPurgeTest() {
         OffsetDateTime offsetDateTimeNow = OffsetDateTime.now(ZoneId.of("UTC"));

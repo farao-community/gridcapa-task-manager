@@ -73,5 +73,5 @@ logback:
     exchange: task-manager-logs-exchange
 
 purge-task-events:
-  cron: 0 0 0 * * *
+  cron: 0 0 12 * * *
   nb-days: 7
