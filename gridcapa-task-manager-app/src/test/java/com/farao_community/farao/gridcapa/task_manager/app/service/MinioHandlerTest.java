@@ -326,7 +326,7 @@ class MinioHandlerTest {
         TaskWithStatusUpdate taskWithStatusUpdate2 = new TaskWithStatusUpdate(task2, true);
 
         List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(taskWithStatusUpdate1, taskWithStatusUpdate2);
-
+        minioHandler.checkIfAFileWithSameTypeAlreadyExist(listTaskWithStatusUpdate);
         ProcessFileMinio processFileMinio = new ProcessFileMinio(new ProcessFile(), null);
         mapWaitingFiles.put(processFileMinio, timestamps);
         minioHandler.checkIfAFileWithSameTypeAlreadyExist(listTaskWithStatusUpdate);
