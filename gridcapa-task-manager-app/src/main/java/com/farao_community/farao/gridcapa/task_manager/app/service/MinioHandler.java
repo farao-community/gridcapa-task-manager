@@ -192,7 +192,7 @@ public class MinioHandler {
         return false;
     }
 
-    private void checkIfAFileWithSameTypeAlreadyExist(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+    void checkIfAFileWithSameTypeAlreadyExist(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
         List<OffsetDateTime> listTimestamps = listTaskWithStatusUpdate.stream().map(t -> t.getTask().getTimestamp()).collect(Collectors.toList());
 
         for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> pair : mapWaitingFiles.entrySet()) {
