@@ -333,7 +333,6 @@ class MinioHandlerTest {
         assertTrue(mapWaitingFiles.isEmpty());
     }
 
-
     public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
         Event event = mock(Event.class);
         Map<String, String> metadata = Map.of(
@@ -347,6 +346,4 @@ class MinioHandlerTest {
         when(event.objectName()).thenReturn(fileKey);
         return event;
     }
-
-
 }
