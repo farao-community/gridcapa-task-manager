@@ -174,7 +174,7 @@ public class MinioHandler {
         for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
             Task task = taskWithStatusUpdate.getTask();
             if (task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING) {
-                checkIfAFileWithSameTypeAlreadyExist(listTaskWithStatusUpdate);
+                checkIfAFileWithSameTypeAlreadyExist(processFile, listTaskWithStatusUpdate);
                 mapWaitingFiles.put(processFileMinio, listTaskWithStatusUpdate.stream().map(t -> t.getTask().getTimestamp()).collect(Collectors.toList()));
                 toNotify = true;
                 break;
@@ -192,11 +192,11 @@ public class MinioHandler {
         return false;
     }
 
-    void checkIfAFileWithSameTypeAlreadyExist(List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
+    void checkIfAFileWithSameTypeAlreadyExist(ProcessFile processFile, List<TaskWithStatusUpdate> listTaskWithStatusUpdate) {
         List<OffsetDateTime> listTimestamps = listTaskWithStatusUpdate.stream().map(t -> t.getTask().getTimestamp()).collect(Collectors.toList());
 
         for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> pair : mapWaitingFiles.entrySet()) {
-            if (pair.getValue().equals(listTimestamps)) {
+            if (pair.getValue().equals(listTimestamps) && processFile.getFileType().equals(pair.getKey().getProcessFile().getFileType())) {
                 mapWaitingFiles.remove(pair.getKey());
                 return;
             }
