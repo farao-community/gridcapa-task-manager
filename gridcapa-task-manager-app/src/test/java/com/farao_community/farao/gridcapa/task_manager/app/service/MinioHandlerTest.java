@@ -327,10 +327,10 @@ class MinioHandlerTest {
 
         List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(taskWithStatusUpdate1, taskWithStatusUpdate2);
         ProcessFile processFile = new ProcessFile("", "", "type", null, null, null);
-        minioHandler.checkIfAFileWithSameTypeAlreadyExist(processFile, listTaskWithStatusUpdate);
+        minioHandler.removeFileWithSameTypeAndTimestampsFromWaitingFiles(processFile, timestamps);
         ProcessFileMinio processFileMinio = new ProcessFileMinio(new ProcessFile("", "", "type", null, null, null), null);
         mapWaitingFiles.put(processFileMinio, timestamps);
-        minioHandler.checkIfAFileWithSameTypeAlreadyExist(processFile, listTaskWithStatusUpdate);
+        minioHandler.removeFileWithSameTypeAndTimestampsFromWaitingFiles(processFile, timestamps);
         assertTrue(mapWaitingFiles.isEmpty());
     }
 
