@@ -98,6 +98,14 @@ public class TaskManagerController {
         return ResponseEntity.ok().body(builder.getListTasksDto(LocalDate.parse(businessDate)));
     }
 
+    @GetMapping(value = "/tasks/businessdate/{businessDate}/allOver")
+    public ResponseEntity<Boolean> areAllTasksFromBusinessDateOver(@PathVariable String businessDate) {
+        return ResponseEntity.ok().body(
+            builder.getListTasksDto(LocalDate.parse(businessDate))
+                .stream().map(TaskDto::getStatus)
+                .allMatch(TaskStatus::isOver));
+    }
+
     @GetMapping(value = "/tasks/runningtasks")
     public ResponseEntity<List<TaskDto>> getListRunningTasks() {
         return ResponseEntity.ok().body(builder.getListRunningTasksDto());
