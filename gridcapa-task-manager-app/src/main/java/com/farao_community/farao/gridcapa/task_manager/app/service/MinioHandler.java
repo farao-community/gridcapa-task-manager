@@ -158,7 +158,7 @@ public class MinioHandler {
     private void saveProcessFile(ProcessFileMinio processFileMinio, boolean isInput) {
         final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
         Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), isInput);
-        saveAndNotifyTasks(taskWithStatusUpdates);
+        saveAndNotifyTasks(new ArrayList<>(taskWithStatusUpdates));
         LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
     }
 
@@ -185,7 +185,7 @@ public class MinioHandler {
             for (TaskWithStatusUpdate taskWithStatusUpdate : listTaskWithStatusUpdate) {
                 Task task = taskWithStatusUpdate.getTask();
                 addFileEventToTask(task, FileEventType.WAITING, processFileMinio.getProcessFile(), "WARN");
-                saveAndNotifyTasks(Collections.singleton(new TaskWithStatusUpdate(task, true)));
+                saveAndNotifyTasks(new ArrayList<>(Collections.singleton(new TaskWithStatusUpdate(task, true))));
             }
             return true;
         }
@@ -259,7 +259,7 @@ public class MinioHandler {
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
         List<ProcessFileMinio> processFileToProcess = getProcessFileMinios(timestamp);
-
+        List<TaskWithStatusUpdate> setTaskToNotify = new ArrayList<>();
         boolean processEventAdded = false;
         for (ProcessFileMinio processFileMinio : processFileToProcess) {
             List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
@@ -276,12 +276,13 @@ public class MinioHandler {
                     task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
                     processEventAdded = true;
                 }
-                saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
             }
-            saveProcessFile(processFileMinio, true);
+            final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
+            setTaskToNotify.addAll(addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), true));
+            LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
             mapWaitingFiles.get(processFileMinio).clear();
         }
-
+        saveAndNotifyTasks(setTaskToNotify);
     }
 
     List<ProcessFileMinio> getProcessFileMinios(OffsetDateTime timestamp) {
@@ -328,11 +329,17 @@ public class MinioHandler {
         return initialTaskStatus != task.getStatus();
     }
 
-    private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+    private void saveAndNotifyTasks(List<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+        Set<TaskWithStatusUpdate> setTaskToNotify = removeDuplicateTasks(taskWithStatusUpdateSet);
         LOGGER.debug("Saving related tasks");
-        taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toSet()));
+        taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
         LOGGER.debug("Notifying on web-sockets");
-        taskUpdateNotifier.notify(taskWithStatusUpdateSet);
+        taskUpdateNotifier.notify(setTaskToNotify);
+    }
+
+    private static Set<TaskWithStatusUpdate> removeDuplicateTasks(List<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+        Set<OffsetDateTime> set = new HashSet<>(taskWithStatusUpdateSet.size());
+        return taskWithStatusUpdateSet.stream().filter(p -> set.add(p.getTask().getTimestamp())).collect(Collectors.toSet());
     }
 
     public void removeProcessFile(Event event) {
@@ -343,7 +350,7 @@ public class MinioHandler {
             if (optionalProcessFile.isPresent()) {
                 ProcessFile processFile = optionalProcessFile.get();
                 LOGGER.debug("Finding tasks related to {}", processFile.getFilename());
-                saveAndNotifyTasks(removeProcessFileFromTasks(processFile));
+                saveAndNotifyTasks(new ArrayList<>(removeProcessFileFromTasks(processFile)));
                 processFileRepository.delete(processFile);
                 LOGGER.info("Process file {} has been removed properly", processFile.getFilename());
             } else {
