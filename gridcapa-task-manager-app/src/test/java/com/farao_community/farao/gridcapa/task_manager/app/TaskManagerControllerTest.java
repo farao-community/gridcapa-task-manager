@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -24,6 +25,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +50,9 @@ class TaskManagerControllerTest {
 
     @Autowired
     private TaskManagerController taskManagerController;
+
+    @Autowired
+    private TaskManagerConfigurationProperties taskManagerConfigurationProperties;
 
     @Autowired
     private MinioAdapter minioAdapter;
@@ -142,5 +148,43 @@ class TaskManagerControllerTest {
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
         ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testGetRaoLogFileWithLocalDateTimeSummerTime() throws Exception {
+        String timestamp = "2021-07-01T23:30Z";
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
+        String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
+        String fileType = "LOGS";
+        String fakeUrl = "http://fakeUrl";
+        Task task = new Task(taskTimestamp);
+        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
+        Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
+        Mockito.when(fileManager.getLogs(Mockito.any(OffsetDateTime.class))).thenReturn(new ByteArrayOutputStream(0));
+        ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+        String expected = "[attachment;filename=\"rao_logs_" + fileNameLocalDateTime + ".zip\"]";
+        assertEquals(expected, taskResponse.getHeaders().get("Content-Disposition").toString());
+    }
+
+    @Test
+    void testGetRaoLogFileWithLocalDateTimeWinterTime() throws Exception {
+        String timestamp = "2021-12-01T23:30Z";
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
+        String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
+        String fileType = "LOGS";
+        String fakeUrl = "http://fakeUrl";
+        Task task = new Task(taskTimestamp);
+        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
+        Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
+        Mockito.when(fileManager.getLogs(Mockito.any(OffsetDateTime.class))).thenReturn(new ByteArrayOutputStream(0));
+        ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+        String expected = "[attachment;filename=\"rao_logs_" + fileNameLocalDateTime + ".zip\"]";
+        assertEquals(expected, taskResponse.getHeaders().get("Content-Disposition").toString());
     }
 }
