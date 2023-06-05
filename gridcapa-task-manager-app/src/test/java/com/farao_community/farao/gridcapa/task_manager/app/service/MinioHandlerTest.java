@@ -6,14 +6,8 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.*;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.*;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
@@ -31,8 +25,7 @@ import java.util.*;
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -257,5 +250,18 @@ class MinioHandlerTest {
         mapWaitingFiles.put(processFileMinio, timestamps);
         minioHandler.removeFileWithSameTypeAndTimestampsFromWaitingFiles(processFile, timestamps);
         assertTrue(mapWaitingFiles.isEmpty());
+    }
+
+    @Test
+    void testEmptyWaitingList() {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        Map<ProcessFileMinio, List<OffsetDateTime>> mapFiles = new HashMap<>();
+
+        ProcessFile processFile = new ProcessFile("", "", "type", timestamp.minusHours(1), timestamp.plusHours(1), null);
+        ProcessFileMinio processFileMinio = new ProcessFileMinio(processFile, FileEventType.AVAILABLE);
+        mapFiles.put(processFileMinio, Collections.singletonList(timestamp));
+
+        minioHandler.setMapWaitingFiles(mapFiles);
+        minioHandler.emptyWaitingList(timestamp);
     }
 }

@@ -52,7 +52,7 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFiles = new HashMap<>();
+    private Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFiles = new HashMap<>();
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -119,7 +119,7 @@ public class MinioHandler {
         }
     }
 
-    private void notifyTasksThatAFileIsWaiting(ProcessFile processFile) {
+    void notifyTasksThatAFileIsWaiting(ProcessFile processFile) {
         Set<TaskWithStatusUpdate> taskToNotify = new HashSet<>();
 
         List<TaskWithStatusUpdate> listTaskWithStatusUpdate = getListTasks(processFile);
@@ -185,7 +185,7 @@ public class MinioHandler {
         saveAndNotifyTasks(removeDuplicateTasks(taskWithStatusUpdates));
     }
 
-    private boolean isRunning(ProcessFileMinio processFileMinio) {
+    boolean isRunning(ProcessFileMinio processFileMinio) {
         List<OffsetDateTime> listTimestamps = Stream.iterate(processFileMinio.getProcessFile().getStartingAvailabilityDate(), time -> time.plusHours(1))
                 .limit(ChronoUnit.HOURS.between(processFileMinio.getProcessFile().getStartingAvailabilityDate(), processFileMinio.getProcessFile().getEndingAvailabilityDate())).collect(Collectors.toList());
 
@@ -202,7 +202,7 @@ public class MinioHandler {
         return false;
     }
 
-    private List<TaskWithStatusUpdate> getListTasks(ProcessFile processFile) {
+    List<TaskWithStatusUpdate> getListTasks(ProcessFile processFile) {
         return findAllTaskByTimestamp(Stream.iterate(processFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
                 .limit(ChronoUnit.HOURS.between(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())).collect(Collectors.toList()));
     }
@@ -291,7 +291,7 @@ public class MinioHandler {
                 Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), true);
                 setTaskToNotify.addAll(taskWithStatusUpdates);
                 LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
-                mapWaitingFiles.get(processFileMinio).clear();
+                mapWaitingFiles.remove(processFileMinio);
                 taskRepository.saveAll(taskWithStatusUpdates.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
             }
         }
@@ -371,6 +371,6 @@ public class MinioHandler {
     }
 
     void setMapWaitingFiles(Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFiles) {
-        this.mapWaitingFiles = (HashMap<ProcessFileMinio, List<OffsetDateTime>>) mapWaitingFiles;
+        this.mapWaitingFiles = mapWaitingFiles;
     }
 }
