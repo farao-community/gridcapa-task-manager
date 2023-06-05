@@ -120,6 +120,8 @@ class TaskTest {
         OffsetDateTime timestamp1 = OffsetDateTime.of(2023, 6, 1, 10, 0, 0, 0, ZoneOffset.UTC);
         Task task1 = new Task(timestamp1);
 
+        assertEquals(task1, task1);
+
         OffsetDateTime timestamp2 = OffsetDateTime.of(2023, 6, 1, 10, 0, 0, 0, ZoneOffset.UTC);
         Task task2 = new Task(timestamp2);
 
