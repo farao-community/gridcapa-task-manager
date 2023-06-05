@@ -6,7 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.*;
+import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.*;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
@@ -34,7 +37,7 @@ import static org.mockito.Mockito.*;
 class MinioHandlerTest {
     private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 
-    @Autowired
+    @MockBean
     private TaskUpdateNotifier taskUpdateNotifier;
 
     @MockBean
@@ -263,5 +266,7 @@ class MinioHandlerTest {
 
         minioHandler.setMapWaitingFiles(mapFiles);
         minioHandler.emptyWaitingList(timestamp);
+
+        verify(taskUpdateNotifier, times(1)).notify(any());
     }
 }
