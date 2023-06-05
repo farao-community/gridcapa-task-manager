@@ -156,7 +156,6 @@ class TaskManagerControllerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
-        String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
         task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
@@ -175,7 +174,6 @@ class TaskManagerControllerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
-        String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
         task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
