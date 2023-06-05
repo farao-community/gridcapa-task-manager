@@ -16,11 +16,12 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -112,4 +113,39 @@ class TaskTest {
         assertEquals(TaskStatus.CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getInputs().size());
     }
+
+    @Test
+    void testEquals() {
+
+        // Créer deux objets Task avec des horodatages identiques
+        OffsetDateTime timestamp1 = OffsetDateTime.of(2023, 6, 1, 10, 0, 0, 0, ZoneOffset.UTC);
+        Task task1 = new Task(timestamp1);
+
+        OffsetDateTime timestamp2 = OffsetDateTime.of(2023, 6, 1, 10, 0, 0, 0, ZoneOffset.UTC);
+        Task task2 = new Task(timestamp2);
+
+        // Vérifier que les deux objets sont égaux
+        assertEquals(task1, task2);
+        assertEquals(task2, task1);
+
+        // Modifier l'horodatage de task2
+        OffsetDateTime timestamp3 = OffsetDateTime.of(2023, 6, 1, 12, 0, 0, 0, ZoneOffset.UTC);
+        Task task3 = new Task(timestamp3);
+
+        // Vérifier que les objets ne sont plus égaux
+        assertNotEquals(task1, task3);
+        assertNotEquals(task3, task1);
+
+        // Créer un autre objet Task avec un horodatage différent
+        OffsetDateTime timestamp4 = OffsetDateTime.of(2023, 6, 2, 10, 0, 0, 0, ZoneOffset.UTC);
+        Task task4 = new Task(timestamp4);
+
+        // Vérifier que les objets ne sont pas égaux
+        assertNotEquals(task1, task4);
+        assertNotEquals(task4, task1);
+
+        // Vérifier qu'un objet Task n'est pas égal à null
+        assertNotEquals(null, task1);
+    }
 }
+
