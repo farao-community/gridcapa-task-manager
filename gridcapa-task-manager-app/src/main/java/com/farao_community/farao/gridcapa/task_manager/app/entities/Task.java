@@ -132,4 +132,21 @@ public class Task {
             .filter(file -> fileType.equals(file.getFileType()))
             .findFirst();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Task task = (Task) o;
+        return Objects.equals(timestamp, task.timestamp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(timestamp);
+    }
 }

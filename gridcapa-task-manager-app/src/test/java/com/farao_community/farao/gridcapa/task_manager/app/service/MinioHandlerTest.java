@@ -6,7 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.*;
+import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
@@ -16,7 +19,6 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,7 +29,8 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -236,80 +239,6 @@ class MinioHandlerTest {
     }
 
     @Test
-    void testGetProcessFileMiniosNoMatchingTimestamps() {
-        Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
-        ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
-        OffsetDateTime timestamp1 = OffsetDateTime.now().minusHours(1);
-        OffsetDateTime timestamp2 = OffsetDateTime.now().minusHours(2);
-        OffsetDateTime searchTimestamp = OffsetDateTime.now();
-
-        mapWaitingFilesNew.put(file1, List.of(timestamp1));
-        mapWaitingFilesNew.put(file2, List.of(timestamp2));
-
-        minioHandler.setMapWaitingFiles(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getProcessFileMinios(searchTimestamp);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void testGetProcessFileMiniosSomeMatchingTimestamps() {
-        Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
-        ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file3 = new ProcessFileMinio(new ProcessFile(), null);
-        OffsetDateTime timestamp1 = OffsetDateTime.now().minusHours(1);
-        OffsetDateTime timestamp2 = OffsetDateTime.now().minusHours(2);
-
-        mapWaitingFilesNew.put(file1, List.of(timestamp1));
-        mapWaitingFilesNew.put(file2, Arrays.asList(timestamp1, timestamp2));
-        mapWaitingFilesNew.put(file3, List.of(timestamp2));
-
-        minioHandler.setMapWaitingFiles(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getProcessFileMinios(timestamp1);
-
-        assertEquals(2, result.size());
-        assertTrue(result.contains(file1));
-        assertTrue(result.contains(file2));
-    }
-
-    @Test
-    void testAtLeastOneTaskIsRunningOrPendingNoTasks() {
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = List.of();
-        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
-    }
-
-    @Test
-    void testAtLeastOneTaskIsRunningOrPendingAllTasksCompleted() {
-        Task taskSuccess = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(SUCCESS);
-        Task taskError = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(ERROR);
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
-                new TaskWithStatusUpdate(taskSuccess, false),
-                new TaskWithStatusUpdate(taskError, false)
-        );
-        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
-    }
-
-    @Test
-    void testAtLeastOneTaskIsRunningOrPendingSomeTasksRunningOrPending() {
-        Task taskSuccess = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(SUCCESS);
-        Task taskError = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(ERROR);
-        Task taskRunning = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(RUNNING);
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
-                new TaskWithStatusUpdate(taskSuccess, false),
-                new TaskWithStatusUpdate(taskError, false),
-                new TaskWithStatusUpdate(taskRunning, false)
-        );
-        assertTrue(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
-    }
-
-    @Test
     void testCheckIfAFileWithSameTypeAlreadyExist() {
         Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFiles = new HashMap<>();
         minioHandler.setMapWaitingFiles(mapWaitingFiles);
@@ -322,29 +251,11 @@ class MinioHandlerTest {
         when(task1.getTimestamp()).thenReturn(timestamp1);
         when(task2.getTimestamp()).thenReturn(timestamp2);
 
-        TaskWithStatusUpdate taskWithStatusUpdate1 = new TaskWithStatusUpdate(task1, true);
-        TaskWithStatusUpdate taskWithStatusUpdate2 = new TaskWithStatusUpdate(task2, true);
-
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(taskWithStatusUpdate1, taskWithStatusUpdate2);
         ProcessFile processFile = new ProcessFile("", "", "type", null, null, null);
         minioHandler.removeFileWithSameTypeAndTimestampsFromWaitingFiles(processFile, timestamps);
         ProcessFileMinio processFileMinio = new ProcessFileMinio(new ProcessFile("", "", "type", null, null, null), null);
         mapWaitingFiles.put(processFileMinio, timestamps);
         minioHandler.removeFileWithSameTypeAndTimestampsFromWaitingFiles(processFile, timestamps);
         assertTrue(mapWaitingFiles.isEmpty());
-    }
-
-    public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
-        Event event = mock(Event.class);
-        Map<String, String> metadata = Map.of(
-                MinioHandler.FILE_GROUP_METADATA_KEY, fileGroup,
-                MinioHandler.FILE_TARGET_PROCESS_METADATA_KEY, processTag,
-                MinioHandler.FILE_TYPE_METADATA_KEY, fileType,
-                MinioHandler.FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval
-        );
-        //The following mock is not use in all test that call this methods. With the "lenient" add you avoid an exception
-        Mockito.lenient().when(event.userMetadata()).thenReturn(metadata);
-        when(event.objectName()).thenReturn(fileKey);
-        return event;
     }
 }
