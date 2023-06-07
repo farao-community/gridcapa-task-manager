@@ -178,7 +178,7 @@ public class MinioHandler {
     private void saveProcessFile(List<ProcessFileMinio> listProcessFileMinio, boolean isInput) {
         Set<TaskWithStatusUpdate> taskWithStatusUpdates = new HashSet<>();
         for (ProcessFileMinio processFileMinio : listProcessFileMinio) {
-            final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
+            final ProcessFile savedProcessFile = processFileRepository.saveAndFlush(processFileMinio.getProcessFile());
             LOGGER.info("Process file {} has been added properly", processFileMinio.getProcessFile().getFilename());
             taskWithStatusUpdates.addAll(addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), isInput));
         }
@@ -248,7 +248,7 @@ public class MinioHandler {
     private List<TaskWithStatusUpdate> findAllTaskByTimestamp(List<OffsetDateTime> listTimestamps) {
         return listTimestamps.stream().map(ts -> taskRepository.findByTimestamp(ts)
                         .map(task -> new TaskWithStatusUpdate(task, true))
-                        .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(ts)), true)))
+                        .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.saveAndFlush(new Task(ts)), true)))
                 .collect(Collectors.toList());
     }
 
@@ -272,7 +272,6 @@ public class MinioHandler {
     }
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
-        Set<TaskWithStatusUpdate> listTasks = new HashSet<>();
         Set<TaskWithStatusUpdate> setTaskToNotify = new HashSet<>();
         Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingProcessFiles = mapWaitingFiles.entrySet().stream()
                 .filter(p -> p.getValue().contains(timestamp))
@@ -288,7 +287,7 @@ public class MinioHandler {
                     Task task = taskWithStatusUpdate.getTask();
                     task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
                 }
-                final ProcessFile savedProcessFile = processFileRepository.save(processFileMinio.getProcessFile());
+                final ProcessFile savedProcessFile = processFileRepository.saveAndFlush(processFileMinio.getProcessFile());
                 Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(savedProcessFile, processFileMinio.getFileEventType(), true);
                 for (TaskWithStatusUpdate taskWithStatusUpdate : taskWithStatusUpdates) {
                     if (!setTaskToNotify.add(taskWithStatusUpdate)) {
@@ -300,7 +299,7 @@ public class MinioHandler {
                 mapWaitingFiles.remove(processFileMinio);
             }
         }
-        taskRepository.saveAll(setTaskToNotify.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
+        taskRepository.saveAllAndFlush(setTaskToNotify.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
         taskUpdateNotifier.notify(removeDuplicateTasks(setTaskToNotify));
     }
 
@@ -339,7 +338,7 @@ public class MinioHandler {
 
     private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
         LOGGER.debug("Saving related tasks");
-        taskRepository.saveAll(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
+        taskRepository.saveAllAndFlush(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
         LOGGER.debug("Notifying on web-sockets");
         taskUpdateNotifier.notify(taskWithStatusUpdateSet);
     }
