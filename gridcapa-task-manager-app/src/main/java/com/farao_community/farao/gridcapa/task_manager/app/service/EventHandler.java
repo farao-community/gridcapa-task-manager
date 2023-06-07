@@ -19,8 +19,15 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -39,7 +46,7 @@ public class EventHandler {
     }
 
     @Bean
-    public Consumer<Flux<String>> consumeTaskEventUpdate() {
+    public Consumer<Flux<List<byte[]>>> consumeTaskEventUpdate() {
         return f -> f.subscribe(messages -> {
             try {
                 handleTaskEventBatchUpdate(mapMessagesToListEvents(messages));
@@ -49,26 +56,17 @@ public class EventHandler {
         });
     }
 
-    List<TaskLogEventUpdate> mapMessagesToListEvents(Object messages) {
-        if (messages instanceof String) {
-            return Arrays.asList(mapMessageToEvent(messages));
-        } else if (messages instanceof Collection) {
-            List<TaskLogEventUpdate> listEvents = new ArrayList<>();
-            for (Object message : (Collection) messages) {
-                TaskLogEventUpdate task = mapMessageToEvent(message);
-                if (task != null) {
-                    listEvents.add(task);
-                }
-            }
-            return listEvents;
-        } else {
-            return new ArrayList<>();
-        }
+    List<TaskLogEventUpdate> mapMessagesToListEvents(List<byte[]> messages) {
+        return messages.stream()
+            .map(String::new)
+            .map(this::mapMessageToEvent)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     }
 
-    TaskLogEventUpdate mapMessageToEvent(Object messages) {
+    TaskLogEventUpdate mapMessageToEvent(String messages) {
         try {
-            return new ObjectMapper().readValue((String) messages, TaskLogEventUpdate.class);
+            return new ObjectMapper().readValue(messages, TaskLogEventUpdate.class);
         } catch (JsonProcessingException e) {
             LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
             return null;

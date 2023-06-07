@@ -19,7 +19,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -62,7 +61,7 @@ class EventHandlerTest {
                 "  \"message\": \"Hello from backend\",\n" +
                 "  \"serviceName\": \"GRIDCAPA\" \n" +
                 "}";
-        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(logEvent);
+        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(1, updatedTask.getProcessEvents().size());
@@ -86,7 +85,7 @@ class EventHandlerTest {
                 "  \"serviceName\": \"GRIDCAPA\" ,\n" +
                 "  \"eventPrefix\": \"STEP-1\" \n" +
                 "}";
-        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(logEvent);
+        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(1, updatedTask.getProcessEvents().size());
@@ -117,8 +116,7 @@ class EventHandlerTest {
                 "  \"message\": \"Hello from backend2\",\n" +
                 "  \"serviceName\": \"GRIDCAPA\" \n" +
                 "}";
-        List<String> logEvents = Arrays.asList(logEvent1, logEvent2);
-        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(logEvents);
+        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent1.getBytes(), logEvent2.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals(2, updatedTask.getProcessEvents().size());
