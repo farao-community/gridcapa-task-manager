@@ -24,11 +24,11 @@ class TaskWithStatusUpdateTest {
         TaskWithStatusUpdate obj3 = Mockito.mock(TaskWithStatusUpdate.class);
 
         // Testing equals()
-        assertEquals(obj1, obj1);    // Test reflexive property
-        assertEquals(obj1, obj1Copy); // Test symmetric property
-        assertEquals(obj1Copy, obj1); // Test symmetric property
-        assertNotEquals(obj1, obj2);    // Test objects with different state
-        assertNotEquals(null, obj1);    // Test against null
-        assertNotEquals(obj1, obj3);    // Test against different class
+        assertEquals(obj1, obj1);
+        assertEquals(obj1, obj1Copy);
+        assertEquals(obj1Copy, obj1);
+        assertNotEquals(obj1, obj2);
+        assertNotEquals(null, obj1);
+        assertNotEquals(obj1, obj3);
     }
 }
