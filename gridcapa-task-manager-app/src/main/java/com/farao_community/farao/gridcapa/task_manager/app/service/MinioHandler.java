@@ -300,13 +300,6 @@ public class MinioHandler {
                 mapWaitingFiles.remove(processFileMinio);
             }
         }
-        try {
-            System.out.println("WAIT WAIT");
-            Thread.sleep(60000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println("Goooo");
         taskRepository.saveAll(setTaskToNotify.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
         taskUpdateNotifier.notify(removeDuplicateTasks(setTaskToNotify));
     }
