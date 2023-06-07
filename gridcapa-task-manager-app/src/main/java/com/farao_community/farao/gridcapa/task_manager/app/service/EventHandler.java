@@ -101,7 +101,7 @@ public class EventHandler {
         }
     }
 
-    void updateTaskEvent(TaskLogEventUpdate loggerEvent, Task task, List<Task> tasksToSave) {
+    private void updateTaskEvent(TaskLogEventUpdate loggerEvent, Task task, List<Task> tasksToSave) {
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
         String message = loggerEvent.getMessage();
         Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
