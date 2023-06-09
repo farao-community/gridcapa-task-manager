@@ -47,6 +47,6 @@ public class TaskUpdateNotifier {
     }
 
     public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
+        taskWithStatusUpdateSet.parallelStream().distinct().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
     }
 }
