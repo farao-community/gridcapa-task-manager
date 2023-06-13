@@ -13,13 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
-import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -27,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author Jean-Pierre Arnould {@literal <jean-pierre.arnould at rte-france.com>}
  */
 @SpringBootTest
-class DatabasePurgeServiceTest {
+public class DatabasePurgeServiceTest {
 
     @Autowired
     private TaskRepository taskRepository;
@@ -60,35 +57,36 @@ class DatabasePurgeServiceTest {
 
         String logEvent11 = "{\n" +
                 "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f1\",\n" +
-                "  \"timestamp\": \"" + offsetDateTimeEvent11 + "\",\n" +
+                "  \"timestamp\": \"" + offsetDateTimeEvent11.toString() + "\",\n" +
                 "  \"level\": \"INFO\",\n" +
                 "  \"message\": \"Hello from backend11\",\n" +
                 "  \"serviceName\": \"GRIDCAPA\" \n" +
                 "}";
+        eventHandler.handleTaskEventUpdate(logEvent11);
         String logEvent12 = "{\n" +
                 "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f1\",\n" +
-                "  \"timestamp\": \"" + offsetDateTimeEvent12 + "\",\n" +
+                "  \"timestamp\": \"" + offsetDateTimeEvent12.toString() + "\",\n" +
                 "  \"level\": \"INFO\",\n" +
                 "  \"message\": \"Hello from backend12\",\n" +
                 "  \"serviceName\": \"GRIDCAPA\" \n" +
                 "}";
+        eventHandler.handleTaskEventUpdate(logEvent12);
         String logEvent21 = "{\n" +
                 "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f2\",\n" +
-                "  \"timestamp\": \"" + offsetDateTimeEvent21 + "\",\n" +
+                "  \"timestamp\": \"" + offsetDateTimeEvent21.toString() + "\",\n" +
                 "  \"level\": \"INFO\",\n" +
                 "  \"message\": \"Hello from backend21\",\n" +
                 "  \"serviceName\": \"GRIDCAPA\" \n" +
                 "}";
+        eventHandler.handleTaskEventUpdate(logEvent21);
         String logEvent22 = "{\n" +
                 "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f2\",\n" +
-                "  \"timestamp\": \"" + offsetDateTimeEvent22 + "\",\n" +
+                "  \"timestamp\": \"" + offsetDateTimeEvent22.toString() + "\",\n" +
                 "  \"level\": \"INFO\",\n" +
                 "  \"message\": \"Hello from backend22\",\n" +
                 "  \"serviceName\": \"GRIDCAPA\" \n" +
                 "}";
-        List<byte[]> logEventBytes = List.of(logEvent11.getBytes(), logEvent12.getBytes(), logEvent21.getBytes(), logEvent22.getBytes());
-        Flux<List<byte[]>> logEventBytesFlux = Flux.fromStream(Stream.of(logEventBytes));
-        eventHandler.consumeTaskEventUpdate().accept(logEventBytesFlux);
+        eventHandler.handleTaskEventUpdate(logEvent22);
 
         assertEquals(2, taskRepository.findByTimestamp(offsetDateTimeTask1).orElseThrow().getProcessEvents().size());
         assertEquals(2, taskRepository.findByTimestamp(offsetDateTimeTask2).orElseThrow().getProcessEvents().size());
