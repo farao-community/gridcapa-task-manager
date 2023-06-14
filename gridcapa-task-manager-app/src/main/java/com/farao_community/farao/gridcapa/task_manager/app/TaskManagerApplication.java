@@ -21,6 +21,9 @@ import java.util.TimeZone;
 @SpringBootApplication
 @EnableConfigurationProperties(TaskManagerConfigurationProperties.class)
 public class TaskManagerApplication {
+
+    public final static Object LOCK = new Object();
+
     @PostConstruct
     void started() {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

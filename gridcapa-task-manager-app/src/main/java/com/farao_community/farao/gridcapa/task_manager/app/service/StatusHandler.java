@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerApplication;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
@@ -27,7 +28,6 @@ import java.util.function.Consumer;
 @Service
 public class StatusHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusHandler.class);
-    private static final Object LOCK = new Object();
 
     private final MinioHandler minioHandler;
     private final TaskRepository taskRepository;
@@ -51,7 +51,9 @@ public class StatusHandler {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        synchronized (LOCK) {
+        LOGGER.warn("updating status for task {} to {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
+        synchronized (TaskManagerApplication.LOCK) {
+            LOGGER.warn("actually updating status for task {} to {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
@@ -65,7 +67,7 @@ public class StatusHandler {
     }
 
     public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
-        synchronized (LOCK) {
+        synchronized (TaskManagerApplication.LOCK) {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatus);

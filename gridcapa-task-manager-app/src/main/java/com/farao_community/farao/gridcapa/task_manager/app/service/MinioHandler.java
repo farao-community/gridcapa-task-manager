@@ -7,10 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.*;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -42,7 +39,6 @@ import java.util.stream.Stream;
 @Service
 public class MinioHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(MinioHandler.class);
-    private static final Object LOCK = new Object();
     public static final String FILE_GROUP_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
     public static final String FILE_TARGET_PROCESS_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
     public static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
@@ -99,7 +95,7 @@ public class MinioHandler {
     }
 
     public void updateTasks(Event event) {
-        synchronized (LOCK) {
+        synchronized (TaskManagerApplication.LOCK) {
             if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
@@ -329,7 +325,7 @@ public class MinioHandler {
     }
 
     public void removeProcessFile(Event event) {
-        synchronized (LOCK) {
+        synchronized (TaskManagerApplication.LOCK) {
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
             LOGGER.info("Removing MinIO object {}", objectKey);
             Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
