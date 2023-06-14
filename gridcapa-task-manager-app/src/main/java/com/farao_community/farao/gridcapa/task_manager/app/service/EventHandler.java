@@ -63,7 +63,7 @@ public class EventHandler {
                     if (optionalEventPrefix.isPresent()) {
                         message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
                     }
-                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message);
+                    task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
                     taskRepository.save(task);
                     taskUpdateNotifier.notify(task, false);
                     LOGGER.debug("Task event has been added on {} provided by {}", task.getTimestamp(), loggerEvent.getServiceName());

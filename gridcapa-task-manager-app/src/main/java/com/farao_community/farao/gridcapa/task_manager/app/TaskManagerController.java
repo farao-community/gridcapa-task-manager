@@ -135,6 +135,15 @@ public class TaskManagerController {
         return result;
     }
 
+    // TODO : configure with taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() ?
+    @GetMapping(value = "/tasks/{timestamp}/log", produces = "application/octet-stream")
+    public ResponseEntity<byte[]> getLog(@PathVariable String timestamp) throws IOException {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
+                .body(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp)).toByteArray());
+    }
+
     private String removeIllegalUrlCharacter(String s) {
         return s.replace(":", "");
     }

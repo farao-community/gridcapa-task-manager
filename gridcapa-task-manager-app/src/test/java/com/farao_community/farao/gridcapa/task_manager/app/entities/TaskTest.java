@@ -99,7 +99,7 @@ class TaskTest {
     @Test
     void getProcessEventsTest() {
         assertTrue(task.getProcessEvents().isEmpty());
-        task.addProcessEvent(OffsetDateTime.now(), "WARN", "test");
+        task.addProcessEvent(OffsetDateTime.now(), "WARN", "test", "serviceName");
         assertEquals("WARN", task.getProcessEvents().iterator().next().getLevel());
     }
 

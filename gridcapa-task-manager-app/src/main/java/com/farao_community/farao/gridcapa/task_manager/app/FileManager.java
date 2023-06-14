@@ -27,10 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -91,6 +88,27 @@ public class FileManager {
         }
     }
 
+    public ByteArrayOutputStream getRaoRunnerAppLogs(OffsetDateTime timestamp) throws IOException {
+        Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        if (optTask.isPresent()) {
+            Task task = optTask.get();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 ZipOutputStream zos = new ZipOutputStream(baos)) {
+                zos.putNextEntry(new ZipEntry(generateLogFileName(timestamp)));
+                writeToZipOutputStream(zos, getRaoRunnerAppLogsFile(task));
+                return baos;
+            }
+        } else {
+            throw new TaskNotFoundException();
+        }
+    }
+
+    private String generateLogFileName(OffsetDateTime timestamp) {
+        return DateTimeFormatter.ofPattern("yyyyMMdd'_'HH'30_RAO-LOGS-0V.txt'").withZone(ZoneId.of("Europe/Brussels"))
+            .format(timestamp)
+            .replace("0V", String.format("%02d", 1));
+    }
+
     String getZipName(OffsetDateTime timestamp, String fileGroup) {
         return timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(ZIP_DATE_TIME_FORMATTER) + "_" + fileGroup + ZIP_EXTENSION;
     }
@@ -111,7 +129,7 @@ public class FileManager {
 
     boolean isExportLogsEnabledAndFileGroupIsGridcapaOutput(String fileGroup) {
         return taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() &&
-                fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
+            fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
     private Set<ProcessFile> getProcessFiles(Task task, String fileGroup) {
@@ -145,6 +163,18 @@ public class FileManager {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (ProcessEvent event : events) {
             baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        return new ByteArrayInputStream(baos.toByteArray());
+    }
+
+    private InputStream getRaoRunnerAppLogsFile(Task task) {
+        SortedSet<ProcessEvent> events = task.getProcessEvents();
+        TreeSet<ProcessEvent> treeSet =  new TreeSet<ProcessEvent>(events);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for (ProcessEvent event :  treeSet.descendingSet()) {
+            if (event.getServiceName().equals("rao-runner-app")) {
+                baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
+            }
         }
         return new ByteArrayInputStream(baos.toByteArray());
     }

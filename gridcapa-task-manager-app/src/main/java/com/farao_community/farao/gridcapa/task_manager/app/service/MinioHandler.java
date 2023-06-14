@@ -21,6 +21,7 @@ import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -53,6 +54,8 @@ public class MinioHandler {
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
     private HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
+    @Value("${spring.application.name}")
+    private String serviceName;
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -234,7 +237,7 @@ public class MinioHandler {
 
     private void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile, String logLevel) {
         String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename());
-        task.addProcessEvent(getProcessNow(), logLevel, message);
+        task.addProcessEvent(getProcessNow(), logLevel, message, serviceName);
     }
 
     private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName) {
@@ -263,7 +266,7 @@ public class MinioHandler {
                 Task task = taskWithStatusUpdate.getTask();
                 checkAndUpdateTaskStatus(task);
                 if (!processEventAdded && task.getStatus().equals(TaskStatus.READY)) {
-                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.");
+                    task.addProcessEvent(getProcessNow(), "WARN", "Task has been set to ready again because new inputs have been uploaded. Output files might be outdated.", serviceName);
                     processEventAdded = true;
                 }
                 saveAndNotifyTasks(Collections.singleton(taskWithStatusUpdate));
