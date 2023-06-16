@@ -246,7 +246,7 @@ class MinioHandlerTest {
         mapWaitingFilesNew.put(file2, List.of(timestamp2));
 
         minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getProcessFileMinios(searchTimestamp);
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFileForTimestampWithFinishedTasks(searchTimestamp);
 
         assertTrue(result.isEmpty());
     }
@@ -265,7 +265,7 @@ class MinioHandlerTest {
         mapWaitingFilesNew.put(file3, List.of(timestamp2));
 
         minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getProcessFileMinios(timestamp1);
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFileForTimestampWithFinishedTasks(timestamp1);
 
         assertEquals(2, result.size());
         assertTrue(result.contains(file1));

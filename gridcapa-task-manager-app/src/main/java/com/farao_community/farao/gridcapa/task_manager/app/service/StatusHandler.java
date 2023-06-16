@@ -21,13 +21,15 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler.LOCK;
+
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @Service
 public class StatusHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusHandler.class);
-    private static final Object LOCK = new Object();
+    //private static final Object LOCK = new Object(); use same lock to avoid parallel handling between status update and minioHandler
 
     private final MinioHandler minioHandler;
     private final TaskRepository taskRepository;
@@ -54,9 +56,13 @@ public class StatusHandler {
         synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
+                System.out.println("Test 4 status from db : " + optionalTask.get().getStatus());
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
+                LOGGER.info("Receiving task status update for task id {} with status {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
                 if (isTaskOver(taskStatusUpdate.getTaskStatus())) {
                     minioHandler.emptyWaitingList(optionalTask.get().getTimestamp());
+                    System.out.println("Test 5 after empty waiting list status from db : " + optionalTask.get().getStatus());
+
                 }
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
@@ -81,10 +87,11 @@ public class StatusHandler {
     }
 
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
+        System.out.println("intital status of task " + task.getStatus() +  "task status to update " + taskStatus);
         task.setStatus(taskStatus);
-        taskRepository.saveAndFlush(task);
-        taskUpdateNotifier.notify(task, true);
-        LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
+        Task savedTask = taskRepository.saveAndFlush(task);
+        taskUpdateNotifier.notify(savedTask, true);
+        LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
     }
 
     private boolean isTaskOver(TaskStatus taskStatus) {

@@ -40,6 +40,9 @@ public class TaskUpdateNotifier {
     public void notify(Task task, boolean withStatusUpdate) {
         String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
         TaskDto taskdto = taskDtoBuilder.createDtoFromEntity(task);
+        if (withStatusUpdate) {
+            System.out.println("notifying task status " + taskdto.getStatus());
+        }
         streamBridge.send(bindingName, taskdto);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskdto);
