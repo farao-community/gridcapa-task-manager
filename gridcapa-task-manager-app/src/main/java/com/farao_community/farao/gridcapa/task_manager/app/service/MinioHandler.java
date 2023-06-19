@@ -277,7 +277,6 @@ public class MinioHandler {
         return processFilesWithFinishedTasks;
     }
 
-
     /**
      * We compare the size of inputs list from process files of the task and the size of inputs from configuration.
      * If its equal task is ready otherwise it is created. When it is null it is not created.
