@@ -6,8 +6,6 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
-import org.springframework.context.annotation.Bean;
-
 /**
  * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  */
