@@ -11,6 +11,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository
 import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerLock;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -37,11 +38,11 @@ import java.util.stream.Stream;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  */
 @Service
 public class MinioHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(MinioHandler.class);
-    public static final Object LOCK_MINIO_AND_STATUS_HANDLER = new Object();
     public static final String FILE_GROUP_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
     public static final String FILE_TARGET_PROCESS_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
     public static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
@@ -52,13 +53,15 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private HashMap<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>(); //todo it's better to use linkedMap , check if we need the list of offset date time because already having interval
+    private final TaskManagerLock taskManagerLock;
+    private final List<ProcessFileMinio> waitingFilesList = new ArrayList<>();
 
-    public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
+    public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier, TaskManagerLock taskManagerLock) {
         this.processFileRepository = processFileRepository;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
+        this.taskManagerLock = taskManagerLock;
     }
 
     @Bean
@@ -96,7 +99,7 @@ public class MinioHandler {
     }
 
     public void updateTasks(Event event) {
-        synchronized (LOCK_MINIO_AND_STATUS_HANDLER) {
+        synchronized (taskManagerLock) {
             if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
@@ -110,7 +113,7 @@ public class MinioHandler {
                         // If the file coming is an input while one of the concerned timestamp is running, the file put in a waiting list until the process ends
                         Set<Task> tasksForProcessFile = taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
                         if (isTasksRunningOrPending(tasksForProcessFile)) {
-                            addWaintingFileAndNotifyTasks(processFileMinio, tasksForProcessFile);
+                            addWaitingFileAndNotifyTasks(processFileMinio, tasksForProcessFile);
                         } else {
                             Set<TaskWithStatusUpdate> taskWithStatusUpdates = addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), true, true);
                             saveAndNotifyTasks(taskWithStatusUpdates);
@@ -167,12 +170,12 @@ public class MinioHandler {
         }
     }
 
-    private void addWaintingFileAndNotifyTasks(ProcessFileMinio processFileMinio, Set<Task> tasks) {
+    private void addWaitingFileAndNotifyTasks(ProcessFileMinio processFileMinio, Set<Task> tasks) {
         for (Task task : tasks) {
             if (task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING) {
                 removeWaitingFileWithSameTypeAndValidity(processFileMinio);
                 LOGGER.info("process file " + processFileMinio.getProcessFile().getFilename() + " is added to waiting map");
-                mapWaitingFilesNew.put(processFileMinio, tasks.stream().map(Task::getTimestamp).collect(Collectors.toList()));
+                waitingFilesList.add(processFileMinio);
                 addFileEventToTask(task, FileEventType.WAITING, processFileMinio.getProcessFile(), "WARN");
                 saveAndNotifyTasks(Collections.singleton(new TaskWithStatusUpdate(task, false))); //No need to update status when the file is waiting
             }
@@ -180,9 +183,9 @@ public class MinioHandler {
     }
 
     private void removeWaitingFileWithSameTypeAndValidity(ProcessFileMinio newProcessFileMinio) {
-        Set<ProcessFileMinio> processFileMiniosWaiting = mapWaitingFilesNew.keySet().stream().filter(processFileMinio -> processFileMinio.hasSameTypeAndValidity(newProcessFileMinio)).collect(Collectors.toSet());
+        Set<ProcessFileMinio> processFileMiniosWaiting = waitingFilesList.stream().filter(processFileMinio -> processFileMinio.hasSameTypeAndValidity(newProcessFileMinio)).collect(Collectors.toSet());
         for (ProcessFileMinio processFileMinio : processFileMiniosWaiting) {
-            mapWaitingFilesNew.remove(processFileMinio);
+            waitingFilesList.remove(processFileMinio);
             LOGGER.info("processFile {} was removed from waiting list", processFileMinio.getProcessFile().getFilename());
         }
     }
@@ -251,26 +254,25 @@ public class MinioHandler {
                 // each process file is added to the task, but the status is updated only for the last file waiting
                 Set<TaskWithStatusUpdate> tasksWithStatusUpdate = addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), true, false);
                 saveAndNotifyTasks(tasksWithStatusUpdate);
-                mapWaitingFilesNew.remove(processFileMinio);
+                waitingFilesList.remove(processFileMinio);
                 LOGGER.info("processFile {} was removed from waiting list", processFile.getFilename());
             }
             ProcessFileMinio lastProcessFileMinio = waitingProcessFilesToAdd.get(processFilesSize - 1);
             Set<TaskWithStatusUpdate> tasksWithStatusUpdate = addProcessFileToTasks(lastProcessFileMinio.getProcessFile(), lastProcessFileMinio.getFileEventType(), true, true);
             saveAndNotifyTasks(tasksWithStatusUpdate);
-            mapWaitingFilesNew.remove(lastProcessFileMinio);
+            waitingFilesList.remove(lastProcessFileMinio);
             LOGGER.info("processFile {} was removed from waiting list", lastProcessFileMinio.getProcessFile().getFilename());
         }
     }
 
-    List<ProcessFileMinio> getWaitingProcessFilesForTimestamp(OffsetDateTime timestamp) { //todo refactor with processfile validity interval
+    List<ProcessFileMinio> getWaitingProcessFilesForTimestamp(OffsetDateTime timestamp) {
         List<ProcessFileMinio> processFilesWithFinishedTasks = new ArrayList<>();
-        for (Map.Entry<ProcessFileMinio, List<OffsetDateTime>> entry : mapWaitingFilesNew.entrySet()) {
-            List<OffsetDateTime> listTimestamps = entry.getValue();
-            ProcessFile processFile = entry.getKey().getProcessFile();
-            if (listTimestamps.contains(timestamp)) {
+        for (ProcessFileMinio processFileMinio : waitingFilesList) {
+            ProcessFile processFile = processFileMinio.getProcessFile();
+            if (timestamp.isAfter(processFile.getStartingAvailabilityDate()) && timestamp.isBefore(processFile.getEndingAvailabilityDate())) {
                 Set<Task> taskForProcessFile = taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
                 if (!isTasksRunningOrPending(taskForProcessFile)) {
-                    processFilesWithFinishedTasks.add(entry.getKey());
+                    processFilesWithFinishedTasks.add(processFileMinio);
                 }
             }
         }
@@ -308,7 +310,7 @@ public class MinioHandler {
     }
 
     public void removeProcessFile(Event event) {
-        synchronized (LOCK_MINIO_AND_STATUS_HANDLER) {
+        synchronized (taskManagerLock) {
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
             LOGGER.info("Removing MinIO object {}", objectKey);
             Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
@@ -343,7 +345,4 @@ public class MinioHandler {
                 .collect(Collectors.toSet());
     }
 
-    void setMapWaitingFilesNew(Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew) {
-        this.mapWaitingFilesNew = (HashMap<ProcessFileMinio, List<OffsetDateTime>>) mapWaitingFilesNew;
-    }
 }

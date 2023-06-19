@@ -10,6 +10,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerLock;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +22,6 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler.LOCK_MINIO_AND_STATUS_HANDLER;
-
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
@@ -33,11 +32,13 @@ public class StatusHandler {
     private final MinioHandler minioHandler;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
+    private final TaskManagerLock taskManagerLock;
 
-    public StatusHandler(MinioHandler minioHandler, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
+    public StatusHandler(MinioHandler minioHandler, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier, TaskManagerLock taskManagerLock) {
         this.minioHandler = minioHandler;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
+        this.taskManagerLock = taskManagerLock;
     }
 
     @Bean
@@ -52,7 +53,7 @@ public class StatusHandler {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        synchronized (LOCK_MINIO_AND_STATUS_HANDLER) { // use same lock to avoid parallel handling between status update and minioHandler
+        synchronized (taskManagerLock) { // use same lock to avoid parallel handling between status update and minioHandler
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
@@ -68,7 +69,7 @@ public class StatusHandler {
     }
 
     public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
-        synchronized (LOCK_MINIO_AND_STATUS_HANDLER) {
+        synchronized (taskManagerLock) {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatus);

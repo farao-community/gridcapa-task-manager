@@ -16,11 +16,11 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -235,17 +235,29 @@ class MinioHandlerTest {
 
     @Test
     void testGetProcessFileMiniosNoMatchingTimestamps() {
-        Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
-        ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
-        OffsetDateTime timestamp1 = OffsetDateTime.now().minusHours(1);
-        OffsetDateTime timestamp2 = OffsetDateTime.now().minusHours(2);
-        OffsetDateTime searchTimestamp = OffsetDateTime.now();
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
+        ProcessFileMinio file1 = new ProcessFileMinio(processFile1, null);
+        ProcessFileMinio file2 = new ProcessFileMinio(processFile2, null);
+        OffsetDateTime searchTimestamp = OffsetDateTime.parse("2021-10-13T10:18Z");
 
-        mapWaitingFilesNew.put(file1, List.of(timestamp1));
-        mapWaitingFilesNew.put(file2, List.of(timestamp2));
+        fileMinioList.add(file1);
+        fileMinioList.add(file2);
 
-        minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
         List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(searchTimestamp);
 
         assertTrue(result.isEmpty());
@@ -253,19 +265,36 @@ class MinioHandlerTest {
 
     @Test
     void testGetProcessFileMiniosSomeMatchingTimestamps() {
-        Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
-        ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file3 = new ProcessFileMinio(new ProcessFile(), null);
-        OffsetDateTime timestamp1 = OffsetDateTime.now().minusHours(1);
-        OffsetDateTime timestamp2 = OffsetDateTime.now().minusHours(2);
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+        ProcessFile processFile3 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-13T00:00Z"),
+                OffsetDateTime.parse("2021-10-13T10:30Z"));
+        ProcessFileMinio file1 = new ProcessFileMinio(processFile1, null);
+        ProcessFileMinio file2 = new ProcessFileMinio(processFile2, null);
+        ProcessFileMinio file3 = new ProcessFileMinio(processFile3, null);
 
-        mapWaitingFilesNew.put(file1, List.of(timestamp1));
-        mapWaitingFilesNew.put(file2, Arrays.asList(timestamp1, timestamp2));
-        mapWaitingFilesNew.put(file3, List.of(timestamp2));
+        List<ProcessFileMinio> fileMinioList = Arrays.asList(file1, file2, file3);
 
-        minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(timestamp1);
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:00Z");
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(timestamp);
 
         assertEquals(2, result.size());
         assertTrue(result.contains(file1));
@@ -302,17 +331,4 @@ class MinioHandlerTest {
         assertTrue(minioHandler.isTasksRunningOrPending(tasks));
     }
 
-    public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
-        Event event = Mockito.mock(Event.class);
-        Map<String, String> metadata = Map.of(
-                MinioHandler.FILE_GROUP_METADATA_KEY, fileGroup,
-                MinioHandler.FILE_TARGET_PROCESS_METADATA_KEY, processTag,
-                MinioHandler.FILE_TYPE_METADATA_KEY, fileType,
-                MinioHandler.FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval
-        );
-        //The following mock is not use in all test that call this methods. With the "lenient" add you avoid an exception
-        Mockito.lenient().when(event.userMetadata()).thenReturn(metadata);
-        Mockito.when(event.objectName()).thenReturn(fileKey);
-        return event;
-    }
 }
