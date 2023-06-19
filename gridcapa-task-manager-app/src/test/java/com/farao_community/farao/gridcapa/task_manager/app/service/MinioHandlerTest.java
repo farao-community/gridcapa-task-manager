@@ -246,7 +246,7 @@ class MinioHandlerTest {
         mapWaitingFilesNew.put(file2, List.of(timestamp2));
 
         minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFileForTimestampWithFinishedTasks(searchTimestamp);
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(searchTimestamp);
 
         assertTrue(result.isEmpty());
     }
@@ -265,7 +265,7 @@ class MinioHandlerTest {
         mapWaitingFilesNew.put(file3, List.of(timestamp2));
 
         minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFileForTimestampWithFinishedTasks(timestamp1);
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(timestamp1);
 
         assertEquals(2, result.size());
         assertTrue(result.contains(file1));
@@ -274,21 +274,20 @@ class MinioHandlerTest {
 
     @Test
     void testAtLeastOneTaskIsRunningOrPendingNoTasks() {
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = List.of();
-        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+        Set<Task> listTaskWithStatusUpdate = Set.of();
+        assertFalse(minioHandler.isTasksRunningOrPending(listTaskWithStatusUpdate));
     }
 
     @Test
     void testAtLeastOneTaskIsRunningOrPendingAllTasksCompleted() {
+        Set<Task> tasks = new HashSet<>();
         Task taskSuccess = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(SUCCESS);
         Task taskError = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(ERROR);
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
-                new TaskWithStatusUpdate(taskSuccess, false),
-                new TaskWithStatusUpdate(taskError, false)
-        );
-        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+        tasks.add(taskSuccess);
+        tasks.add(taskError);
+        assertFalse(minioHandler.isTasksRunningOrPending(tasks));
     }
 
     @Test
@@ -299,12 +298,8 @@ class MinioHandlerTest {
         taskSuccess.setStatus(ERROR);
         Task taskRunning = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(RUNNING);
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
-                new TaskWithStatusUpdate(taskSuccess, false),
-                new TaskWithStatusUpdate(taskError, false),
-                new TaskWithStatusUpdate(taskRunning, false)
-        );
-        assertTrue(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+        Set<Task> tasks = new HashSet<>(Arrays.asList(taskError, taskSuccess, taskRunning));
+        assertTrue(minioHandler.isTasksRunningOrPending(tasks));
     }
 
     public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {

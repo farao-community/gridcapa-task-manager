@@ -23,4 +23,10 @@ public class ProcessFileMinio {
     public FileEventType getFileEventType() {
         return fileEventType;
     }
+
+    public boolean hasSameTypeAndValidity(ProcessFileMinio newProcessFileMinio) { //todo use process file equals
+        return this.getProcessFile().getFileType().equals(newProcessFileMinio.getProcessFile().getFileType())
+                && this.getProcessFile().getStartingAvailabilityDate().equals(newProcessFileMinio.getProcessFile().getStartingAvailabilityDate())
+                && this.getProcessFile().getEndingAvailabilityDate().equals(newProcessFileMinio.getProcessFile().getEndingAvailabilityDate());
+    }
 }

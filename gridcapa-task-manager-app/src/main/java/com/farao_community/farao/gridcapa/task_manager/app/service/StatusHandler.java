@@ -21,7 +21,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler.LOCK;
+import static com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler.LOCK_MINIO_AND_STATUS_HANDLER;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -29,7 +29,6 @@ import static com.farao_community.farao.gridcapa.task_manager.app.service.MinioH
 @Service
 public class StatusHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatusHandler.class);
-    //private static final Object LOCK = new Object(); use same lock to avoid parallel handling between status update and minioHandler
 
     private final MinioHandler minioHandler;
     private final TaskRepository taskRepository;
@@ -53,15 +52,13 @@ public class StatusHandler {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        synchronized (LOCK) {
+        synchronized (LOCK_MINIO_AND_STATUS_HANDLER) { // use same lock to avoid parallel handling between status update and minioHandler
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
-                System.out.println("Test 4 status from db : " + optionalTask.get().getStatus());
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
                 LOGGER.info("Receiving task status update for task id {} with status {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
                 if (isTaskOver(taskStatusUpdate.getTaskStatus())) {
                     minioHandler.emptyWaitingList(optionalTask.get().getTimestamp());
-                    System.out.println("Test 5 after empty waiting list status from db : " + optionalTask.get().getStatus());
 
                 }
             } else {
@@ -71,7 +68,7 @@ public class StatusHandler {
     }
 
     public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
-        synchronized (LOCK) {
+        synchronized (LOCK_MINIO_AND_STATUS_HANDLER) {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatus);
@@ -87,7 +84,6 @@ public class StatusHandler {
     }
 
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
-        System.out.println("intital status of task " + task.getStatus() +  "task status to update " + taskStatus);
         task.setStatus(taskStatus);
         Task savedTask = taskRepository.saveAndFlush(task);
         taskUpdateNotifier.notify(savedTask, true);
