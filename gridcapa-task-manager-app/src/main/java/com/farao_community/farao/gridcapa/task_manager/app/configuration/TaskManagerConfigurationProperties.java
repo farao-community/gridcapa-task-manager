@@ -8,7 +8,6 @@ package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
-import org.springframework.context.annotation.Bean;
 
 import java.util.List;
 
@@ -21,11 +20,7 @@ public class TaskManagerConfigurationProperties {
 
     private final ProcessProperties process;
     private final List<String> whitelist;
-
-    @Bean
-    public TaskManagerLock getLock() {
-        return new TaskManagerLock();
-    }
+    public final static Object TASK_MANAGER_LOCK = new Object();
 
     public TaskManagerConfigurationProperties(ProcessProperties process, List<String> whitelist) {
         this.process = process;

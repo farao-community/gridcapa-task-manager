@@ -11,7 +11,6 @@ import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository
 import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskWithStatusUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerLock;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -36,6 +35,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
+
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
@@ -48,20 +49,19 @@ public class MinioHandler {
     public static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
     public static final String FILE_VALIDITY_INTERVAL_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY;
     private static final String FILE_EVENT_DEFAULT_LEVEL = "INFO";
+    public static final String PROCESS_FILE_REMOVED_MESSAGE = "process file {} was removed from waiting list";
 
     private final ProcessFileRepository processFileRepository;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
-    private final TaskManagerLock taskManagerLock;
     private final List<ProcessFileMinio> waitingFilesList = new ArrayList<>();
 
-    public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier, TaskManagerLock taskManagerLock) {
+    public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
-        this.taskManagerLock = taskManagerLock;
     }
 
     @Bean
@@ -99,7 +99,7 @@ public class MinioHandler {
     }
 
     public void updateTasks(Event event) {
-        synchronized (taskManagerLock) {
+        synchronized (TASK_MANAGER_LOCK) {
             if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
@@ -174,7 +174,7 @@ public class MinioHandler {
         for (Task task : tasks) {
             if (task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING) {
                 removeWaitingFileWithSameTypeAndValidity(processFileMinio);
-                LOGGER.info("process file " + processFileMinio.getProcessFile().getFilename() + " is added to waiting map");
+                LOGGER.info("process file {} is added to waiting files list", processFileMinio.getProcessFile().getFilename());
                 waitingFilesList.add(processFileMinio);
                 addFileEventToTask(task, FileEventType.WAITING, processFileMinio.getProcessFile(), "WARN");
                 saveAndNotifyTasks(Collections.singleton(new TaskWithStatusUpdate(task, false))); //No need to update status when the file is waiting
@@ -211,7 +211,7 @@ public class MinioHandler {
                 //if taskWithStatusUpdate is already false and the process file of type input, we need to check if the status should be updated
                 boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task);
                 taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
-                LOGGER.info("Update task status when processFile " + savedProcessFile.getFilename() + " arrived to status  " + task.getStatus());
+                LOGGER.info("Update task status when processFile {} arrived to status {}", savedProcessFile.getFilename(), task.getStatus());
             }
         }
         return taskWithStatusUpdateSet;
@@ -256,7 +256,7 @@ public class MinioHandler {
                 Set<TaskWithStatusUpdate> tasksWithStatusUpdate = addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), true, false);
                 saveAndNotifyTasks(tasksWithStatusUpdate);
                 waitingFilesList.remove(processFileMinio);
-                LOGGER.info("processFile {} was removed from waiting list", processFile.getFilename());
+                LOGGER.info(PROCESS_FILE_REMOVED_MESSAGE, processFile.getFilename());
             }
             ProcessFileMinio lastProcessFileMinio = waitingProcessFilesToAdd.get(processFilesSize - 1);
             Set<TaskWithStatusUpdate> tasksWithStatusUpdate = addProcessFileToTasks(lastProcessFileMinio.getProcessFile(), lastProcessFileMinio.getFileEventType(), true, true);
@@ -318,7 +318,7 @@ public class MinioHandler {
     }
 
     public void removeProcessFile(Event event) {
-        synchronized (taskManagerLock) {
+        synchronized (TASK_MANAGER_LOCK) {
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
             LOGGER.info("Removing MinIO object {}", objectKey);
             Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
