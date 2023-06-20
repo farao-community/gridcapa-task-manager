@@ -244,6 +244,7 @@ public class MinioHandler {
 
     public void emptyWaitingList(OffsetDateTime timestamp) {
         LOGGER.info("Empty waiting list..");
+        LOGGER.info("Waiting list contains {} files", waitingFilesList.size());
         List<ProcessFileMinio> waitingProcessFilesToAdd = getWaitingProcessFilesForTimestamp(timestamp);
         int processFilesSize = waitingProcessFilesToAdd.size();
 
@@ -269,14 +270,21 @@ public class MinioHandler {
         List<ProcessFileMinio> processFilesWithFinishedTasks = new ArrayList<>();
         for (ProcessFileMinio processFileMinio : waitingFilesList) {
             ProcessFile processFile = processFileMinio.getProcessFile();
-            if (timestamp.isAfter(processFile.getStartingAvailabilityDate()) && timestamp.isBefore(processFile.getEndingAvailabilityDate())) {
+            if (isFileValidForTimestamp(timestamp, processFile)) {
                 Set<Task> taskForProcessFile = taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate());
                 if (!isTasksRunningOrPending(taskForProcessFile)) {
                     processFilesWithFinishedTasks.add(processFileMinio);
+                    LOGGER.info("process file to add {} for timestamp {}", processFileMinio.getProcessFile().getFilename(), timestamp);
                 }
             }
         }
         return processFilesWithFinishedTasks;
+    }
+
+    private boolean isFileValidForTimestamp(OffsetDateTime timestamp, ProcessFile processFile) {
+        OffsetDateTime startingAvailabilityDate = processFile.getStartingAvailabilityDate();
+        OffsetDateTime endingAvailabilityDate = processFile.getEndingAvailabilityDate();
+        return (timestamp.equals(startingAvailabilityDate) || timestamp.isAfter(startingAvailabilityDate)) && timestamp.isBefore(endingAvailabilityDate);
     }
 
     /**
