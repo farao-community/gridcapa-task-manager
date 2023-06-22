@@ -20,7 +20,7 @@ public class TaskManagerConfigurationProperties {
 
     private final ProcessProperties process;
     private final List<String> whitelist;
-    public final static Object TASK_MANAGER_LOCK = new Object();
+    public static final Object TASK_MANAGER_LOCK = new Object();
 
     public TaskManagerConfigurationProperties(ProcessProperties process, List<String> whitelist) {
         this.process = process;

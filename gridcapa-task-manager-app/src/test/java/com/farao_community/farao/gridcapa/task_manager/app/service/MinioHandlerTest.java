@@ -7,10 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.app.*;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.*;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
@@ -331,4 +328,56 @@ class MinioHandlerTest {
         assertTrue(minioHandler.isTasksRunningOrPending(tasks));
     }
 
+    @Test
+    void emptyWaitingListTest() {
+
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CRAC",
+                OffsetDateTime.parse("2021-10-13T00:00Z"),
+                OffsetDateTime.parse("2021-10-14T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
+        ProcessFileMinio file1 = new ProcessFileMinio(processFile1, FileEventType.WAITING);
+        ProcessFileMinio file2 = new ProcessFileMinio(processFile2, FileEventType.WAITING);
+        OffsetDateTime searchTimestamp = OffsetDateTime.parse("2021-10-13T10:18Z");
+
+        fileMinioList.add(file1);
+        fileMinioList.add(file2);
+
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+
+        List before = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertEquals(2, before.size());
+        minioHandler.emptyWaitingList(searchTimestamp);
+
+        List after = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertEquals(1, after.size());
+        //file 2 is removed
+        assertEquals(file1, after.get(0));
+    }
+
+    @Test
+    void emptyWaitingListTestEmpty() {
+
+        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
+        OffsetDateTime searchTimestamp = OffsetDateTime.parse("2021-10-13T10:18Z");
+
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+
+        List before = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertTrue(before.isEmpty());
+        minioHandler.emptyWaitingList(searchTimestamp);
+
+        List after = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertTrue(after.isEmpty());
+    }
 }
