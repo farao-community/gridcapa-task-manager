@@ -301,7 +301,7 @@ class MinioHandlerTest {
     @Test
     void testAtLeastOneTaskIsRunningOrPendingNoTasks() {
         Set<Task> listTaskWithStatusUpdate = Set.of();
-        assertFalse(minioHandler.isTasksRunningOrPending(listTaskWithStatusUpdate));
+        assertFalse(minioHandler.isAnyTaskRunningOrPending(listTaskWithStatusUpdate));
     }
 
     @Test
@@ -313,7 +313,7 @@ class MinioHandlerTest {
         taskSuccess.setStatus(ERROR);
         tasks.add(taskSuccess);
         tasks.add(taskError);
-        assertFalse(minioHandler.isTasksRunningOrPending(tasks));
+        assertFalse(minioHandler.isAnyTaskRunningOrPending(tasks));
     }
 
     @Test
@@ -325,7 +325,7 @@ class MinioHandlerTest {
         Task taskRunning = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(RUNNING);
         Set<Task> tasks = new HashSet<>(Arrays.asList(taskError, taskSuccess, taskRunning));
-        assertTrue(minioHandler.isTasksRunningOrPending(tasks));
+        assertTrue(minioHandler.isAnyTaskRunningOrPending(tasks));
     }
 
     @Test
