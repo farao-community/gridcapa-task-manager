@@ -30,7 +30,6 @@ import java.util.function.Consumer;
 public class EventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventHandler.class);
     private static final Object LOCK = new Object();
-
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
