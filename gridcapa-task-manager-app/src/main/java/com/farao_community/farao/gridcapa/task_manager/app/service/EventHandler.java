@@ -23,15 +23,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
-
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @Service
 public class EventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventHandler.class);
-
+    private static final Object LOCK = new Object();
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
@@ -52,7 +50,7 @@ public class EventHandler {
     }
 
     void handleTaskEventUpdate(String loggerEventString) {
-        synchronized (TASK_MANAGER_LOCK) {
+        synchronized (LOCK) {
             try {
                 TaskLogEventUpdate loggerEvent = new ObjectMapper().readValue(loggerEventString, TaskLogEventUpdate.class);
                 Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(loggerEvent.getId()));
