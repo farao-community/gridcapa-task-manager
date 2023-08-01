@@ -6,6 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+/**
+ * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
+ */
 public class ProcessFileMinio {
 
     private final ProcessFile processFile;
@@ -22,5 +25,11 @@ public class ProcessFileMinio {
 
     public FileEventType getFileEventType() {
         return fileEventType;
+    }
+
+    public boolean hasSameTypeAndValidity(ProcessFileMinio newProcessFileMinio) {
+        return this.getProcessFile().getFileType().equals(newProcessFileMinio.getProcessFile().getFileType())
+                && this.getProcessFile().getStartingAvailabilityDate().equals(newProcessFileMinio.getProcessFile().getStartingAvailabilityDate())
+                && this.getProcessFile().getEndingAvailabilityDate().equals(newProcessFileMinio.getProcessFile().getEndingAvailabilityDate());
     }
 }

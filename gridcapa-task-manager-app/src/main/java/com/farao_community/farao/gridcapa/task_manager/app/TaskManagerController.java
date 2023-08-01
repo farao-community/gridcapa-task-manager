@@ -26,6 +26,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -127,9 +129,10 @@ public class TaskManagerController {
                     .header(CONTENT_DISPOSITION, "attachment;filename=\"" + myFile.get().getFilename() + "\"")
                     .body(IOUtils.toByteArray(in));
         } else if (taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() && StringUtils.equalsIgnoreCase("LOGS", fileType)) {
+            String fileNameLocalDateTime = offsetDateTime.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
             result = ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
+                    .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + fileNameLocalDateTime + ".zip\"")
                     .body(fileManager.getLogs(offsetDateTime).toByteArray());
         }
         return result;

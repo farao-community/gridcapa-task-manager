@@ -42,4 +42,32 @@ class ProcessFileTest {
         assertEquals("cgm-name", processFileDto.getFilename());
         assertEquals(ProcessFileStatus.VALIDATED, processFileDto.getProcessFileStatus());
     }
+
+    @Test
+    void compareToTest() {
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+
+        assertEquals(0, processFile1.compareTo(processFile2));
+        ProcessFile processFile3 = new ProcessFile(
+                "cgm-name3",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-13T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T11:18Z"));
+        assertEquals(-1, processFile1.compareTo(processFile3));
+    }
 }

@@ -8,7 +8,6 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerApplication;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
@@ -21,6 +20,8 @@ import reactor.core.publisher.Flux;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -51,14 +52,14 @@ public class StatusHandler {
     }
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
-        LOGGER.warn("updating status for task {} to {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
-        synchronized (TaskManagerApplication.LOCK) {
-            LOGGER.warn("actually updating status for task {} to {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
+        synchronized (TASK_MANAGER_LOCK) { // use same lock to avoid parallel handling between status update and minioHandler
             Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
-                if (taskStatusUpdate.getTaskStatus().isOver()) {
+                LOGGER.info("Receiving task status update for task id {} with status {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
+                if (isTaskOver(taskStatusUpdate.getTaskStatus())) {
                     minioHandler.emptyWaitingList(optionalTask.get().getTimestamp());
+
                 }
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
@@ -67,11 +68,11 @@ public class StatusHandler {
     }
 
     public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
-        synchronized (TaskManagerApplication.LOCK) {
+        synchronized (LOCK) {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatus);
-                if (taskStatus.isOver()) {
+                if (isTaskOver(taskStatus)) {
                     minioHandler.emptyWaitingList(timestamp);
                 }
                 return optionalTask;
@@ -84,8 +85,14 @@ public class StatusHandler {
 
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
         task.setStatus(taskStatus);
-        taskRepository.saveAndFlush(task);
-        taskUpdateNotifier.notify(task, true);
-        LOGGER.debug("Task status has been updated on {} to {}", task.getTimestamp(), taskStatus);
+        Task savedTask = taskRepository.saveAndFlush(task);
+        taskUpdateNotifier.notify(savedTask, true);
+        LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
+    }
+
+    private boolean isTaskOver(TaskStatus taskStatus) {
+        return taskStatus.equals(TaskStatus.SUCCESS) ||
+                taskStatus.equals(TaskStatus.INTERRUPTED) ||
+                taskStatus.equals(TaskStatus.ERROR);
     }
 }

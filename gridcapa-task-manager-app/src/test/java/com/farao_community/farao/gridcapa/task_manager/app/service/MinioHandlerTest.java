@@ -7,20 +7,17 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.app.*;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.*;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -235,37 +232,66 @@ class MinioHandlerTest {
 
     @Test
     void testGetProcessFileMiniosNoMatchingTimestamps() {
-        Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
-        ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
-        OffsetDateTime timestamp1 = OffsetDateTime.now().minusHours(1);
-        OffsetDateTime timestamp2 = OffsetDateTime.now().minusHours(2);
-        OffsetDateTime searchTimestamp = OffsetDateTime.now();
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
+        ProcessFileMinio file1 = new ProcessFileMinio(processFile1, null);
+        ProcessFileMinio file2 = new ProcessFileMinio(processFile2, null);
+        OffsetDateTime searchTimestamp = OffsetDateTime.parse("2021-10-13T10:18Z");
 
-        mapWaitingFilesNew.put(file1, List.of(timestamp1));
-        mapWaitingFilesNew.put(file2, List.of(timestamp2));
+        fileMinioList.add(file1);
+        fileMinioList.add(file2);
 
-        minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getProcessFileMinios(searchTimestamp);
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(searchTimestamp);
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     void testGetProcessFileMiniosSomeMatchingTimestamps() {
-        Map<ProcessFileMinio, List<OffsetDateTime>> mapWaitingFilesNew = new HashMap<>();
-        ProcessFileMinio file1 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file2 = new ProcessFileMinio(new ProcessFile(), null);
-        ProcessFileMinio file3 = new ProcessFileMinio(new ProcessFile(), null);
-        OffsetDateTime timestamp1 = OffsetDateTime.now().minusHours(1);
-        OffsetDateTime timestamp2 = OffsetDateTime.now().minusHours(2);
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+        ProcessFile processFile3 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-13T00:00Z"),
+                OffsetDateTime.parse("2021-10-13T10:30Z"));
+        ProcessFileMinio file1 = new ProcessFileMinio(processFile1, null);
+        ProcessFileMinio file2 = new ProcessFileMinio(processFile2, null);
+        ProcessFileMinio file3 = new ProcessFileMinio(processFile3, null);
 
-        mapWaitingFilesNew.put(file1, List.of(timestamp1));
-        mapWaitingFilesNew.put(file2, Arrays.asList(timestamp1, timestamp2));
-        mapWaitingFilesNew.put(file3, List.of(timestamp2));
+        List<ProcessFileMinio> fileMinioList = Arrays.asList(file1, file2, file3);
 
-        minioHandler.setMapWaitingFilesNew(mapWaitingFilesNew);
-        List<ProcessFileMinio> result = minioHandler.getProcessFileMinios(timestamp1);
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:00Z");
+        List<ProcessFileMinio> result = minioHandler.getWaitingProcessFilesForTimestamp(timestamp);
 
         assertEquals(2, result.size());
         assertTrue(result.contains(file1));
@@ -274,21 +300,20 @@ class MinioHandlerTest {
 
     @Test
     void testAtLeastOneTaskIsRunningOrPendingNoTasks() {
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = List.of();
-        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+        Set<Task> listTaskWithStatusUpdate = Set.of();
+        assertFalse(minioHandler.isAnyTaskRunningOrPending(listTaskWithStatusUpdate));
     }
 
     @Test
     void testAtLeastOneTaskIsRunningOrPendingAllTasksCompleted() {
+        Set<Task> tasks = new HashSet<>();
         Task taskSuccess = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(SUCCESS);
         Task taskError = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(ERROR);
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
-                new TaskWithStatusUpdate(taskSuccess, false),
-                new TaskWithStatusUpdate(taskError, false)
-        );
-        assertFalse(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+        tasks.add(taskSuccess);
+        tasks.add(taskError);
+        assertFalse(minioHandler.isAnyTaskRunningOrPending(tasks));
     }
 
     @Test
@@ -299,25 +324,60 @@ class MinioHandlerTest {
         taskSuccess.setStatus(ERROR);
         Task taskRunning = new Task(OffsetDateTime.now());
         taskSuccess.setStatus(RUNNING);
-        List<TaskWithStatusUpdate> listTaskWithStatusUpdate = Arrays.asList(
-                new TaskWithStatusUpdate(taskSuccess, false),
-                new TaskWithStatusUpdate(taskError, false),
-                new TaskWithStatusUpdate(taskRunning, false)
-        );
-        assertTrue(minioHandler.atLeastOneTaskIsRunningOrPending(listTaskWithStatusUpdate));
+        Set<Task> tasks = new HashSet<>(Arrays.asList(taskError, taskSuccess, taskRunning));
+        assertTrue(minioHandler.isAnyTaskRunningOrPending(tasks));
     }
 
-    public static Event createEvent(MinioAdapter minioAdapter, String processTag, String fileGroup, String fileType, String fileKey, String validityInterval) {
-        Event event = Mockito.mock(Event.class);
-        Map<String, String> metadata = Map.of(
-                MinioHandler.FILE_GROUP_METADATA_KEY, fileGroup,
-                MinioHandler.FILE_TARGET_PROCESS_METADATA_KEY, processTag,
-                MinioHandler.FILE_TYPE_METADATA_KEY, fileType,
-                MinioHandler.FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval
-        );
-        //The following mock is not use in all test that call this methods. With the "lenient" add you avoid an exception
-        Mockito.lenient().when(event.userMetadata()).thenReturn(metadata);
-        Mockito.when(event.objectName()).thenReturn(fileKey);
-        return event;
+    @Test
+    void emptyWaitingListTest() {
+
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CRAC",
+                OffsetDateTime.parse("2021-10-13T00:00Z"),
+                OffsetDateTime.parse("2021-10-14T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
+        ProcessFileMinio file1 = new ProcessFileMinio(processFile1, FileEventType.WAITING);
+        ProcessFileMinio file2 = new ProcessFileMinio(processFile2, FileEventType.WAITING);
+        OffsetDateTime searchTimestamp = OffsetDateTime.parse("2021-10-13T10:18Z");
+
+        fileMinioList.add(file1);
+        fileMinioList.add(file2);
+
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+
+        List before = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertEquals(2, before.size());
+        minioHandler.emptyWaitingList(searchTimestamp);
+
+        List after = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertEquals(1, after.size());
+        //file 2 is removed
+        assertEquals(file1, after.get(0));
+    }
+
+    @Test
+    void emptyWaitingListTestEmpty() {
+
+        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
+        OffsetDateTime searchTimestamp = OffsetDateTime.parse("2021-10-13T10:18Z");
+
+        ReflectionTestUtils.setField(minioHandler, "waitingFilesList", fileMinioList);
+
+        List before = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertTrue(before.isEmpty());
+        minioHandler.emptyWaitingList(searchTimestamp);
+
+        List after = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
+        assertTrue(after.isEmpty());
     }
 }
