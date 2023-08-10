@@ -192,9 +192,9 @@ class TaskManagerControllerTest {
         Task task = new Task();
         task.setStatus(TaskStatus.CREATED);
         Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
-        ResponseEntity<Boolean> test = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
-        assertEquals(HttpStatus.OK, test.getStatusCode());
-        assertEquals(false, test.getBody());
+        ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(false, response.getBody());
     }
 
     @Test
@@ -203,8 +203,8 @@ class TaskManagerControllerTest {
         Task task = new Task();
         task.setStatus(TaskStatus.ERROR);
         Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
-        ResponseEntity<Boolean> test = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
-        assertEquals(HttpStatus.OK, test.getStatusCode());
-        assertEquals(true, test.getBody());
+        ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(true, response.getBody());
     }
 }
