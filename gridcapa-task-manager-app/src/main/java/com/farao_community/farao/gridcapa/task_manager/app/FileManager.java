@@ -26,6 +26,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,7 +40,9 @@ import java.util.zip.ZipOutputStream;
 public class FileManager {
 
     private static final DateTimeFormatter ZIP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH30");
+    private static final DateTimeFormatter LOG_FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HH30");
     private static final String ZIP_EXTENSION = ".zip";
+    private static final String TXT_EXTENSION = ".txt";
     private static final String RAO_LOGS_FILENAME = "rao_logs.txt";
 
     private final TaskRepository taskRepository;
@@ -104,9 +107,9 @@ public class FileManager {
     }
 
     private String generateLogFileName(OffsetDateTime timestamp) {
-        return DateTimeFormatter.ofPattern("yyyyMMdd'_'HH'30_RAO-LOGS-0V.txt'").withZone(ZoneId.of("Europe/Brussels"))
-            .format(timestamp)
-            .replace("0V", String.format("%02d", 1));
+        ZonedDateTime timestampInEuropeZone = timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()));
+        String dateAndTime = timestampInEuropeZone.format(LOG_FILENAME_DATE_TIME_FORMATTER);
+        return dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
     }
 
     String getZipName(OffsetDateTime timestamp, String fileGroup) {
