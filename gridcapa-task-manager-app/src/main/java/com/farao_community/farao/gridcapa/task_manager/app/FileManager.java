@@ -172,7 +172,7 @@ public class FileManager {
 
     private InputStream getRaoRunnerAppLogsFile(Task task) {
         SortedSet<ProcessEvent> events = task.getProcessEvents();
-        TreeSet<ProcessEvent> treeSet =  new TreeSet<ProcessEvent>(events);
+        TreeSet<ProcessEvent> treeSet =  new TreeSet<>(events);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (ProcessEvent event :  treeSet.descendingSet()) {
             if (event.getServiceName().equals("rao-runner-app")) {
