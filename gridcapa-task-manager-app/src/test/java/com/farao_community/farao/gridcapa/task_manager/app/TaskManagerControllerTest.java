@@ -185,4 +185,26 @@ class TaskManagerControllerTest {
         String expected = "[attachment;filename=\"rao_logs_" + fileNameLocalDateTime + ".zip\"]";
         assertEquals(expected, taskResponse.getHeaders().get("Content-Disposition").toString());
     }
+
+    @Test
+    void testAreAllTasksFromBusinessDateOverShouldReturnFalse() {
+        LocalDate businessDate = LocalDate.parse("2021-01-01");
+        Task task = new Task();
+        task.setStatus(TaskStatus.CREATED);
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        ResponseEntity<Boolean> test = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
+        assertEquals(HttpStatus.OK, test.getStatusCode());
+        assertEquals(false, test.getBody());
+    }
+
+    @Test
+    void testAreAllTasksFromBusinessDateOverShouldReturnTrue() {
+        LocalDate businessDate = LocalDate.parse("2021-01-01");
+        Task task = new Task();
+        task.setStatus(TaskStatus.ERROR);
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        ResponseEntity<Boolean> test = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
+        assertEquals(HttpStatus.OK, test.getStatusCode());
+        assertEquals(true, test.getBody());
+    }
 }
