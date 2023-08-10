@@ -138,7 +138,6 @@ public class TaskManagerController {
         return result;
     }
 
-    // TODO : configure with taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() ?
     @GetMapping(value = "/tasks/{timestamp}/log", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getLog(@PathVariable String timestamp) throws IOException {
         return ResponseEntity.ok()
