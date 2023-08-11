@@ -107,9 +107,8 @@ class FileManagerTest {
     }
 
     @Test
-    void checkGetLogsThrowsExceptionWhenNoTaskFound() {
+    void checkGetRaoRunnerAppLogsThrowsExceptionWhenNoTaskFound() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         assertThrows(TaskNotFoundException.class, () -> fileManager.getRaoRunnerAppLogs(taskTimestamp));
     }
-
 }

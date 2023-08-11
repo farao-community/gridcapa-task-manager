@@ -207,4 +207,12 @@ class TaskManagerControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(true, response.getBody());
     }
+
+    @Test
+    void testGetLogOk() throws Exception {
+        String timestamp = "2021-09-02T22:30Z";
+        Mockito.when(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp))).thenReturn(new ByteArrayOutputStream(0));
+        ResponseEntity<byte[]> taskResponse = taskManagerController.getLog(timestamp);
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
 }
