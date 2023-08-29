@@ -49,7 +49,7 @@ public class TaskDtoBuilder {
         OffsetDateTime timestamp = businessDateStartTime.atOffset(zoneOffSet);
         while (timestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
             listTasks.add(getTaskDto(timestamp));
-            timestamp = timestamp.plusHours(1);
+            timestamp = timestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
         }
         return listTasks;
     }
