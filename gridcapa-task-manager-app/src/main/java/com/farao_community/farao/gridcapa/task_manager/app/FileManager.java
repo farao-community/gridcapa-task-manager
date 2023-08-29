@@ -24,10 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -109,7 +108,18 @@ public class FileManager {
     private String generateLogFileName(OffsetDateTime timestamp) {
         ZonedDateTime timestampInEuropeZone = timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()));
         String dateAndTime = timestampInEuropeZone.format(LOG_FILENAME_DATE_TIME_FORMATTER);
-        return dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
+        String output = dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
+        return handle25TimestampCase(output, timestamp);
+    }
+
+    private String handle25TimestampCase(String filename, OffsetDateTime timestamp) {
+        ZoneOffset previousOffset = OffsetDateTime.from(timestamp.toInstant().minus(1, ChronoUnit.HOURS).atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))).getOffset();
+        ZoneOffset currentOffset = OffsetDateTime.from(timestamp.toInstant().atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))).getOffset();
+        if (previousOffset == ZoneOffset.ofHours(2) && currentOffset == ZoneOffset.ofHours(1)) {
+            return filename.replace("_0", "_B");
+        } else {
+            return filename;
+        }
     }
 
     String getZipName(OffsetDateTime timestamp, String fileGroup) {
