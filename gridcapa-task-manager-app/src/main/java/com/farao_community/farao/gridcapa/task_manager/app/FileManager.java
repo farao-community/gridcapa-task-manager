@@ -24,13 +24,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.UUID;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -42,7 +39,9 @@ import java.util.zip.ZipOutputStream;
 public class FileManager {
 
     private static final DateTimeFormatter ZIP_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH30");
+    private static final DateTimeFormatter LOG_FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HH30");
     private static final String ZIP_EXTENSION = ".zip";
+    private static final String TXT_EXTENSION = ".txt";
     private static final String RAO_LOGS_FILENAME = "rao_logs.txt";
 
     private final TaskRepository taskRepository;
@@ -91,6 +90,38 @@ public class FileManager {
         }
     }
 
+    public ByteArrayOutputStream getRaoRunnerAppLogs(OffsetDateTime timestamp) throws IOException {
+        Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        if (optTask.isPresent()) {
+            Task task = optTask.get();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 ZipOutputStream zos = new ZipOutputStream(baos)) {
+                zos.putNextEntry(new ZipEntry(generateLogFileName(timestamp)));
+                writeToZipOutputStream(zos, getRaoRunnerAppLogsFile(task));
+                return baos;
+            }
+        } else {
+            throw new TaskNotFoundException();
+        }
+    }
+
+    private String generateLogFileName(OffsetDateTime timestamp) {
+        ZonedDateTime timestampInEuropeZone = timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()));
+        String dateAndTime = timestampInEuropeZone.format(LOG_FILENAME_DATE_TIME_FORMATTER);
+        String output = dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
+        return handle25TimestampCase(output, timestamp);
+    }
+
+    private String handle25TimestampCase(String filename, OffsetDateTime timestamp) {
+        ZoneOffset previousOffset = OffsetDateTime.from(timestamp.toInstant().minus(1, ChronoUnit.HOURS).atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))).getOffset();
+        ZoneOffset currentOffset = OffsetDateTime.from(timestamp.toInstant().atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))).getOffset();
+        if (previousOffset == ZoneOffset.ofHours(2) && currentOffset == ZoneOffset.ofHours(1)) {
+            return filename.replace("_0", "_B");
+        } else {
+            return filename;
+        }
+    }
+
     String getZipName(OffsetDateTime timestamp, String fileGroup) {
         return timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(ZIP_DATE_TIME_FORMATTER) + "_" + fileGroup + ZIP_EXTENSION;
     }
@@ -111,7 +142,7 @@ public class FileManager {
 
     boolean isExportLogsEnabledAndFileGroupIsGridcapaOutput(String fileGroup) {
         return taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() &&
-                fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
+            fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
     private Set<ProcessFile> getProcessFiles(Task task, String fileGroup) {
@@ -145,6 +176,18 @@ public class FileManager {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (ProcessEvent event : events) {
             baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        return new ByteArrayInputStream(baos.toByteArray());
+    }
+
+    private InputStream getRaoRunnerAppLogsFile(Task task) {
+        SortedSet<ProcessEvent> events = task.getProcessEvents();
+        TreeSet<ProcessEvent> treeSet =  new TreeSet<>(events);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for (ProcessEvent event :  treeSet.descendingSet()) {
+            if (event.getServiceName().equals("rao-runner-app")) {
+                baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
+            }
         }
         return new ByteArrayInputStream(baos.toByteArray());
     }

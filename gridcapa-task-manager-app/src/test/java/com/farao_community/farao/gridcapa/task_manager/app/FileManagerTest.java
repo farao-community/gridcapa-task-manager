@@ -93,4 +93,22 @@ class FileManagerTest {
             fail("GetLogs should not throw exception");
         }
     }
+
+    @Test
+    void testGetRaoRunnerAppLogs() {
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Task task = new Task(timestamp);
+        Mockito.when(taskRepository.findByTimestamp(timestamp)).thenReturn(Optional.of(task));
+        try {
+            assertNotNull(fileManager.getRaoRunnerAppLogs(timestamp));
+        } catch (IOException e) {
+            fail("GetRaoRunnerAppLogs should not throw exception");
+        }
+    }
+
+    @Test
+    void checkGetRaoRunnerAppLogsThrowsExceptionWhenNoTaskFound() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        assertThrows(TaskNotFoundException.class, () -> fileManager.getRaoRunnerAppLogs(taskTimestamp));
+    }
 }

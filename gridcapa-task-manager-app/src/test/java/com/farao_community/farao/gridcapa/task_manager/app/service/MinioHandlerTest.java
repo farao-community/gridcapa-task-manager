@@ -178,7 +178,7 @@ class MinioHandlerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z").withOffsetSameInstant(ZoneOffset.UTC);
         Task task = new Task(taskTimestamp);
 
-        task.addProcessEvent(OffsetDateTime.now(), "INFO", "CGM available");
+        task.addProcessEvent(OffsetDateTime.now(), "INFO", "CGM available", "task-manager");
         task.addProcessFile(
                 "CSE/D2CC/CGMs/cgm-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
@@ -187,7 +187,7 @@ class MinioHandlerTest {
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
 
-        task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available");
+        task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available", "task-manager");
         task.addProcessFile(
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
@@ -214,7 +214,7 @@ class MinioHandlerTest {
     void testDeletionEventsWithTaskDeletion() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp);
-        task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available");
+        task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available", "task-manager");
         task.addProcessFile(
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,

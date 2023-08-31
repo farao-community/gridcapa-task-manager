@@ -1,3 +1,6 @@
+spring:
+  application:
+    name: task-manager
 task-server:
   process:
     tag: CSE_D2CC

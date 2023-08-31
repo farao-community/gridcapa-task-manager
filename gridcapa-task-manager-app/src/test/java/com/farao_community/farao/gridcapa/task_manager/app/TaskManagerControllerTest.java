@@ -185,4 +185,34 @@ class TaskManagerControllerTest {
         String expected = "[attachment;filename=\"rao_logs_" + fileNameLocalDateTime + ".zip\"]";
         assertEquals(expected, taskResponse.getHeaders().get("Content-Disposition").toString());
     }
+
+    @Test
+    void testAreAllTasksFromBusinessDateOverShouldReturnFalse() {
+        LocalDate businessDate = LocalDate.parse("2021-01-01");
+        Task task = new Task();
+        task.setStatus(TaskStatus.CREATED);
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(false, response.getBody());
+    }
+
+    @Test
+    void testAreAllTasksFromBusinessDateOverShouldReturnTrue() {
+        LocalDate businessDate = LocalDate.parse("2021-01-01");
+        Task task = new Task();
+        task.setStatus(TaskStatus.ERROR);
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(true, response.getBody());
+    }
+
+    @Test
+    void testGetLogOk() throws Exception {
+        String timestamp = "2021-09-02T22:30Z";
+        Mockito.when(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp))).thenReturn(new ByteArrayOutputStream(0));
+        ResponseEntity<byte[]> taskResponse = taskManagerController.getLog(timestamp);
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
 }

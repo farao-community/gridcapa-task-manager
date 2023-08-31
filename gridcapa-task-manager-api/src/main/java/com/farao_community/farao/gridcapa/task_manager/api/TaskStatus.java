@@ -18,5 +18,9 @@ public enum TaskStatus {
     INTERRUPTED,
     SUCCESS,
     STOPPING,
-    ERROR
+    ERROR;
+
+    public boolean isOver() {
+        return this.equals(SUCCESS) || this.equals(ERROR) || this.equals(INTERRUPTED);
+    }
 }

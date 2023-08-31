@@ -57,7 +57,7 @@ public class StatusHandler {
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
                 LOGGER.info("Receiving task status update for task id {} with status {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
-                if (isTaskOver(taskStatusUpdate.getTaskStatus())) {
+                if (taskStatusUpdate.getTaskStatus().isOver()) {
                     minioHandler.emptyWaitingList(optionalTask.get().getTimestamp());
 
                 }
@@ -72,7 +72,7 @@ public class StatusHandler {
             Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatus);
-                if (isTaskOver(taskStatus)) {
+                if (taskStatus.isOver()) {
                     minioHandler.emptyWaitingList(timestamp);
                 }
                 return optionalTask;
@@ -90,9 +90,4 @@ public class StatusHandler {
         LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
     }
 
-    private boolean isTaskOver(TaskStatus taskStatus) {
-        return taskStatus.equals(TaskStatus.SUCCESS) ||
-                taskStatus.equals(TaskStatus.INTERRUPTED) ||
-                taskStatus.equals(TaskStatus.ERROR);
-    }
 }

@@ -7,10 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.*;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -21,6 +18,7 @@ import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -56,6 +54,8 @@ public class MinioHandler {
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
     private final List<ProcessFileMinio> waitingFilesList = new ArrayList<>();
+    @Value("${spring.application.name}")
+    private String serviceName;
 
     public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
@@ -229,7 +229,7 @@ public class MinioHandler {
 
     private void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile, String logLevel) {
         String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename());
-        task.addProcessEvent(getProcessNow(), logLevel, message);
+        task.addProcessEvent(getProcessNow(), logLevel, message, serviceName);
     }
 
     private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName) {

@@ -108,7 +108,7 @@ public class EventHandler {
         if (optionalEventPrefix.isPresent()) {
             message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
         }
-        task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message);
+        task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
         if (!tasksToSave.contains(task)) {
             tasksToSave.add(task);
         }

@@ -30,14 +30,18 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 
+    @Column(name = "serviceName")
+    private String serviceName;
+
     public ProcessEvent() {
     }
 
-    public ProcessEvent(OffsetDateTime timestamp, String level, String message) {
+    public ProcessEvent(OffsetDateTime timestamp, String level, String message, String serviceName) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
+        this.serviceName = serviceName;
     }
 
     public OffsetDateTime getTimestamp() {
@@ -50,6 +54,10 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     public String getMessage() {
         return message;
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
 
     @Override
@@ -74,7 +82,7 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.level, this.timestamp, this.message);
+        return Objects.hash(this.id, this.level, this.timestamp, this.message, this.serviceName);
     }
 
     public String toString() {

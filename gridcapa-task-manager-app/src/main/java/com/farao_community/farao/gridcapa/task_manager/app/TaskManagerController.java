@@ -100,6 +100,14 @@ public class TaskManagerController {
         return ResponseEntity.ok().body(builder.getListTasksDto(LocalDate.parse(businessDate)));
     }
 
+    @GetMapping(value = "/tasks/businessdate/{businessDate}/allOver")
+    public ResponseEntity<Boolean> areAllTasksFromBusinessDateOver(@PathVariable String businessDate) {
+        return ResponseEntity.ok().body(
+            builder.getListTasksDto(LocalDate.parse(businessDate))
+                .stream().map(TaskDto::getStatus)
+                .allMatch(TaskStatus::isOver));
+    }
+
     @GetMapping(value = "/tasks/runningtasks")
     public ResponseEntity<List<TaskDto>> getListRunningTasks() {
         return ResponseEntity.ok().body(builder.getListRunningTasksDto());
@@ -130,4 +138,15 @@ public class TaskManagerController {
         return result;
     }
 
+    @GetMapping(value = "/tasks/{timestamp}/log", produces = "application/octet-stream")
+    public ResponseEntity<byte[]> getLog(@PathVariable String timestamp) throws IOException {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
+                .body(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp)).toByteArray());
+    }
+
+    private String removeIllegalUrlCharacter(String s) {
+        return s.replace(":", "");
+    }
 }

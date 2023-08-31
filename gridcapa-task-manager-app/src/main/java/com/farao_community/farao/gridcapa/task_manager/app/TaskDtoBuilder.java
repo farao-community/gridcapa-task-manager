@@ -49,7 +49,7 @@ public class TaskDtoBuilder {
         OffsetDateTime timestamp = businessDateStartTime.atOffset(zoneOffSet);
         while (timestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
             listTasks.add(getTaskDto(timestamp));
-            timestamp = timestamp.plusHours(1);
+            timestamp = timestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
         }
         return listTasks;
     }
@@ -64,10 +64,10 @@ public class TaskDtoBuilder {
 
     public TaskDto createDtoFromEntity(Task task) {
         var inputs = properties.getProcess().getInputs().stream()
-                        .map(input -> task.getInput(input)
-                                .map(this::createDtoFromEntity)
-                                .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-                        .collect(Collectors.toList());
+            .map(input -> task.getInput(input)
+                .map(this::createDtoFromEntity)
+                .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+            .collect(Collectors.toList());
         var optionalInputs = properties.getProcess().getOptionalInputs().stream()
             .map(input -> task.getInput(input)
                 .map(this::createDtoFromEntity)
@@ -75,10 +75,10 @@ public class TaskDtoBuilder {
             .collect(Collectors.toList());
         inputs.addAll(optionalInputs);
         var outputs = properties.getProcess().getOutputs().stream()
-                .map(output -> task.getOutput(output)
-                        .map(this::createDtoFromEntity)
-                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
-                .collect(Collectors.toList());
+            .map(output -> task.getOutput(output)
+                .map(this::createDtoFromEntity)
+                .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
+            .collect(Collectors.toList());
         return new TaskDto(
             task.getId(),
             task.getTimestamp(),
@@ -90,16 +90,17 @@ public class TaskDtoBuilder {
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
-                processFile.getFileObjectKey(),
-                processFile.getFileType(),
-                ProcessFileStatus.VALIDATED,
-                processFile.getFilename(),
-                processFile.getLastModificationDate());
+            processFile.getFileObjectKey(),
+            processFile.getFileType(),
+            ProcessFileStatus.VALIDATED,
+            processFile.getFilename(),
+            processFile.getLastModificationDate());
     }
 
     public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-                processEvent.getLevel(),
-                processEvent.getMessage());
+            processEvent.getLevel(),
+            processEvent.getMessage(),
+            processEvent.getServiceName());
     }
 }

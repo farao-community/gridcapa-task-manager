@@ -15,18 +15,20 @@ import java.time.OffsetDateTime;
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
 public class ProcessEventDto {
-
     private String level;
     private OffsetDateTime timestamp;
     private String message;
+    private String serviceName;
 
     @JsonCreator
     public ProcessEventDto(@JsonProperty("timestamp") OffsetDateTime timestamp,
                            @JsonProperty("level") String level,
-                           @JsonProperty("message") String message) {
+                           @JsonProperty("message") String message,
+                           @JsonProperty("serviceName") String serviceName) {
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
+        this.serviceName = serviceName;
     }
 
     public OffsetDateTime getTimestamp() {
@@ -39,5 +41,9 @@ public class ProcessEventDto {
 
     public String getMessage() {
         return message;
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
 }
