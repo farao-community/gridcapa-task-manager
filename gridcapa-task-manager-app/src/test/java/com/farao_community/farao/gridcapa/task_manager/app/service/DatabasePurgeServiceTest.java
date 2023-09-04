@@ -44,6 +44,7 @@ class DatabasePurgeServiceTest {
     @Test
     void scheduledDatabaseTaskEventsPurgeTest() {
         OffsetDateTime offsetDateTimeNow = OffsetDateTime.now(ZoneId.of("UTC"));
+        offsetDateTimeNow = offsetDateTimeNow.withNano(0);
         OffsetDateTime offsetDateTimeTask1 = offsetDateTimeNow.minusDays(11);
         OffsetDateTime offsetDateTimeTask2 = offsetDateTimeNow.minusDays(9);
         OffsetDateTime offsetDateTimeEvent11 = offsetDateTimeNow.minusDays(10);
