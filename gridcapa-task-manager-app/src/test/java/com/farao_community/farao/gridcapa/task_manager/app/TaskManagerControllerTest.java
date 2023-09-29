@@ -29,6 +29,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -191,7 +192,7 @@ class TaskManagerControllerTest {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
         Task task = new Task();
         task.setStatus(TaskStatus.CREATED);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findAllByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(Set.of(task));
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(false, response.getBody());
@@ -202,7 +203,7 @@ class TaskManagerControllerTest {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
         Task task = new Task();
         task.setStatus(TaskStatus.ERROR);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findAllByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(Set.of(task));
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(true, response.getBody());

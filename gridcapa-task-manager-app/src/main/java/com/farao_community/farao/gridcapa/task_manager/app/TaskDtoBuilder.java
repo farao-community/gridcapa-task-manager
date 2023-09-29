@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -45,17 +46,27 @@ public class TaskDtoBuilder {
         List<TaskDto> listTasks = new ArrayList<>();
         ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
+        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
-        OffsetDateTime timestamp = businessDateStartTime.atOffset(zoneOffSet);
-        while (timestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
-            listTasks.add(getTaskDto(timestamp));
-            timestamp = timestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
+        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
+        // time change could be here in case of different offsets (summer time / winter time etc)
+        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
+
+        Set<Task> tasks = taskRepository.findAllByTimestampBetween(startTimestamp, endTimestamp);
+        if (tasks == null || tasks.isEmpty()) {
+            while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
+                listTasks.add(getEmptyTask(startTimestamp));
+                startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
+            }
+
+        } else {
+            listTasks = tasks.stream().map(this::createDtoFromEntity).toList();
         }
         return listTasks;
     }
 
     public List<TaskDto> getListRunningTasksDto() {
-        return taskRepository.findAllRunningAndPending().stream().map(this::createDtoFromEntity).collect(Collectors.toUnmodifiableList());
+        return taskRepository.findAllRunningAndPending().stream().map(this::createDtoFromEntity).toList();
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
@@ -69,23 +80,22 @@ public class TaskDtoBuilder {
                 .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
             .collect(Collectors.toList());
         var optionalInputs = properties.getProcess().getOptionalInputs().stream()
-            .map(input -> task.getInput(input)
-                .map(this::createDtoFromEntity)
-                .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-            .collect(Collectors.toList());
+                .map(input -> task.getInput(input)
+                        .map(this::createDtoFromEntity)
+                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(input))).toList();
         inputs.addAll(optionalInputs);
         var outputs = properties.getProcess().getOutputs().stream()
             .map(output -> task.getOutput(output)
                 .map(this::createDtoFromEntity)
                 .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
-            .collect(Collectors.toList());
+            .toList();
         return new TaskDto(
             task.getId(),
             task.getTimestamp(),
             task.getStatus(),
             inputs,
             outputs,
-            task.getProcessEvents().stream().map(this::createDtoFromEntity).collect(Collectors.toList()));
+            task.getProcessEvents().stream().map(this::createDtoFromEntity).toList());
     }
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
