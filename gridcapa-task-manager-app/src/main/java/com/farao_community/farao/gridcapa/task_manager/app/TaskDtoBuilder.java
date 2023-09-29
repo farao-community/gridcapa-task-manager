@@ -46,7 +46,7 @@ public class TaskDtoBuilder {
         List<TaskDto> listTasks = new ArrayList<>();
         ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
-        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
+        LocalDateTime businessDateEndTime = businessDate.atTime(23, 31);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
         // time change could be here in case of different offsets (summer time / winter time etc)
