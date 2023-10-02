@@ -23,13 +23,13 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
-    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles WHERE task.id = :id")
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processEvents LEFT JOIN FETCH task.processFiles WHERE task.id = :id")
     Optional<Task> findByIdWithProcessFiles(@Param("id") UUID id);
 
-    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles WHERE task.timestamp = :timestamp")
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processEvents LEFT JOIN FETCH task.processFiles WHERE task.timestamp = :timestamp")
     Optional<Task> findByTimestamp(@Param("timestamp") OffsetDateTime timestamp);
 
-    @Query("SELECT task FROM Task task JOIN FETCH task.processFiles " +
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processEvents JOIN FETCH task.processFiles " +
             "WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
     Set<Task> findAllByTimestampBetween(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
@@ -41,4 +41,10 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @Query("SELECT task FROM Task task INNER JOIN task.processEvents")
     Set<Task> findAllWithSomeProcessEvent();
+
+    @Query("SELECT task FROM Task task JOIN FETCH task.processFiles " +
+            "WHERE task.timestamp >= :startingTimestamp AND task.timestamp <= :endingTimestamp")
+    Set<Task> findAllByTimestampBetweenForBusinessDayView(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
+                                        @Param("endingTimestamp") OffsetDateTime endingTimestamp);
+
 }

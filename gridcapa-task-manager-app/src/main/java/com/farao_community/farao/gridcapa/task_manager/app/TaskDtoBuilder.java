@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,13 +47,13 @@ public class TaskDtoBuilder {
         List<TaskDto> listTasks = new ArrayList<>();
         ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
-        LocalDateTime businessDateEndTime = businessDate.atTime(23, 31);
+        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
         // time change could be here in case of different offsets (summer time / winter time etc)
         OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
 
-        Set<Task> tasks = taskRepository.findAllByTimestampBetween(startTimestamp, endTimestamp);
+        Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         if (tasks == null || tasks.isEmpty()) {
             while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
                 listTasks.add(getEmptyTask(startTimestamp));
@@ -60,7 +61,7 @@ public class TaskDtoBuilder {
             }
 
         } else {
-            listTasks = tasks.stream().map(this::createDtoFromEntity).toList();
+            listTasks = tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).toList();
         }
         return listTasks;
     }
@@ -74,28 +75,42 @@ public class TaskDtoBuilder {
     }
 
     public TaskDto createDtoFromEntity(Task task) {
+        return createDtoFromEntityWithOrWithoutEvents(task, true);
+    }
+
+    private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {
         var inputs = properties.getProcess().getInputs().stream()
-            .map(input -> task.getInput(input)
-                .map(this::createDtoFromEntity)
-                .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-            .collect(Collectors.toList());
+                .map(input -> task.getInput(input)
+                        .map(this::createDtoFromEntity)
+                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+                .collect(Collectors.toList());
         var optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input))).toList();
         inputs.addAll(optionalInputs);
         var outputs = properties.getProcess().getOutputs().stream()
-            .map(output -> task.getOutput(output)
-                .map(this::createDtoFromEntity)
-                .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
-            .toList();
-        return new TaskDto(
-            task.getId(),
-            task.getTimestamp(),
-            task.getStatus(),
-            inputs,
-            outputs,
-            task.getProcessEvents().stream().map(this::createDtoFromEntity).toList());
+                .map(output -> task.getOutput(output)
+                        .map(this::createDtoFromEntity)
+                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
+                .toList();
+        if (withEvents) {
+            return new TaskDto(
+                    task.getId(),
+                    task.getTimestamp(),
+                    task.getStatus(),
+                    inputs,
+                    outputs,
+                    task.getProcessEvents().stream().map(this::createDtoFromEntity).toList());
+        } else {
+            return new TaskDto(
+                    task.getId(),
+                    task.getTimestamp(),
+                    task.getStatus(),
+                    inputs,
+                    outputs,
+                    Collections.emptyList());
+        }
     }
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {

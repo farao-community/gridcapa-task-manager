@@ -15,6 +15,8 @@ import java.util.UUID;
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
 @Entity
+@Table(indexes = {
+        @Index(columnList = "task_id", name = "process_event_task_idx") })
 public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Id
@@ -33,15 +35,19 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
     @Column(name = "serviceName")
     private String serviceName;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Task task;
+
     public ProcessEvent() {
     }
 
-    public ProcessEvent(OffsetDateTime timestamp, String level, String message, String serviceName) {
+    public ProcessEvent(Task task, OffsetDateTime timestamp, String level, String message, String serviceName) {
         this.id = UUID.randomUUID();
         this.timestamp = timestamp;
         this.level = level;
         this.message = message;
         this.serviceName = serviceName;
+        this.task = task;
     }
 
     public OffsetDateTime getTimestamp() {
@@ -58,6 +64,14 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     public String getServiceName() {
         return serviceName;
+    }
+
+    public Task getTask() {
+        return task;
+    }
+
+    public void setTask(Task task) {
+        this.task = task;
     }
 
     @Override
