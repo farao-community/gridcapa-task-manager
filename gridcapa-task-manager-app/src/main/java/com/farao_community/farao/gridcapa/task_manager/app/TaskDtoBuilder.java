@@ -17,10 +17,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -44,26 +41,21 @@ public class TaskDtoBuilder {
     }
 
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
-        List<TaskDto> listTasks = new ArrayList<>();
         ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
-        // time change could be here in case of different offsets (summer time / winter time etc)
         OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
-
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
-        if (tasks == null || tasks.isEmpty()) {
-            while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
-                listTasks.add(getEmptyTask(startTimestamp));
-                startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
-            }
-
-        } else {
-            listTasks = tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).toList();
+        Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
+        while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
+            taskMap.put(startTimestamp, getEmptyTask(startTimestamp));
+            startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
         }
-        return listTasks;
+        tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
+
+        return taskMap.values().stream().toList();
     }
 
     public List<TaskDto> getListRunningTasksDto() {
