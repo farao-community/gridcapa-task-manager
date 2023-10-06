@@ -200,8 +200,6 @@ class TaskManagerControllerTest {
     @Test
     void testAreAllTasksFromBusinessDateOverShouldReturnTrue() {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
-        //
-
         ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);

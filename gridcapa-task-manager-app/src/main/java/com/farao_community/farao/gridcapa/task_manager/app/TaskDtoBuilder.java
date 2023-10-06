@@ -49,9 +49,11 @@ public class TaskDtoBuilder {
         OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
-        while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
-            taskMap.put(startTimestamp, getEmptyTask(startTimestamp));
-            startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
+        for (OffsetDateTime loopTimestamp = startTimestamp;
+             !loopTimestamp.isAfter(endTimestamp);
+             loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime()
+        ) {
+            taskMap.put(loopTimestamp, getEmptyTask(loopTimestamp));
         }
         tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
