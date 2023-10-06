@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -47,10 +46,11 @@ public class TaskDtoBuilder {
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
         OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
+
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
         for (OffsetDateTime loopTimestamp = startTimestamp;
-             !loopTimestamp.isAfter(endTimestamp);
+             endTimestamp.isBefore(loopTimestamp);
              loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime()
         ) {
             taskMap.put(loopTimestamp, getEmptyTask(loopTimestamp));
@@ -77,17 +77,19 @@ public class TaskDtoBuilder {
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-                .collect(Collectors.toList());
+                .toList();
         var optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
-                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(input))).toList();
+                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+                .toList();
         inputs.addAll(optionalInputs);
         var outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
                 .toList();
+
         if (withEvents) {
             return new TaskDto(
                     task.getId(),
