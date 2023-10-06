@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -50,7 +51,7 @@ public class TaskDtoBuilder {
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
         for (OffsetDateTime loopTimestamp = startTimestamp;
-             endTimestamp.isBefore(loopTimestamp);
+             !loopTimestamp.isAfter(endTimestamp);
              loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime()
         ) {
             taskMap.put(loopTimestamp, getEmptyTask(loopTimestamp));
@@ -77,7 +78,7 @@ public class TaskDtoBuilder {
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-                .toList();
+                .collect(Collectors.toList());
         var optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
