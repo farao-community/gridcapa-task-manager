@@ -54,8 +54,10 @@ public class TaskDtoBuilder {
              !loopTimestamp.isAfter(endTimestamp);
              loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime()
         ) {
-            taskMap.put(loopTimestamp, getEmptyTask(loopTimestamp));
+            OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(ZoneId.of("Z")).toOffsetDateTime();
+            taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
+
         tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
         return taskMap.values().stream().toList();

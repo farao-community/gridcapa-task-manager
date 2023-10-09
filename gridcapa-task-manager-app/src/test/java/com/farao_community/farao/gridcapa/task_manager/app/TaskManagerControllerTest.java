@@ -207,7 +207,7 @@ class TaskManagerControllerTest {
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
         Set<Task> tasks = new HashSet<>();
         while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
-            Task task = new Task(startTimestamp);
+            Task task = new Task(startTimestamp.atZoneSameInstant(ZoneId.of("Z")).toOffsetDateTime());
             task.setStatus(TaskStatus.ERROR);
             tasks.add(task);
             startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
