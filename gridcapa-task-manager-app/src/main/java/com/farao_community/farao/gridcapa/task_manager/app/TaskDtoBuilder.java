@@ -29,9 +29,12 @@ public class TaskDtoBuilder {
     private final TaskManagerConfigurationProperties properties;
     private final TaskRepository taskRepository;
 
+    private final ZoneId localZone;
+
     public TaskDtoBuilder(TaskManagerConfigurationProperties properties, TaskRepository taskRepository) {
         this.properties = properties;
         this.taskRepository = taskRepository;
+        this.localZone = ZoneId.of(this.properties.getProcess().getTimezone());
     }
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
@@ -41,20 +44,20 @@ public class TaskDtoBuilder {
     }
 
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
-        ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
-        ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
+        ZoneOffset zoneOffSet = localZone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
         OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
 
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
+        ZoneId utcZone = ZoneId.of("Z");
         for (OffsetDateTime loopTimestamp = startTimestamp;
              !loopTimestamp.isAfter(endTimestamp);
-             loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime()
+             loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(localZone).toOffsetDateTime()
         ) {
-            OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(ZoneId.of("Z")).toOffsetDateTime();
+            OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(utcZone).toOffsetDateTime();
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
 
