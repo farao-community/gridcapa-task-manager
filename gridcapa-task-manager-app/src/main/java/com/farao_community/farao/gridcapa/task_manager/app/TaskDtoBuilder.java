@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 @Service
 public class TaskDtoBuilder {
 
+    private static final ZoneId UTC_ZONE = ZoneId.of("Z");
     private final TaskManagerConfigurationProperties properties;
     private final TaskRepository taskRepository;
-
     private final ZoneId localZone;
 
     public TaskDtoBuilder(TaskManagerConfigurationProperties properties, TaskRepository taskRepository) {
@@ -52,12 +52,11 @@ public class TaskDtoBuilder {
 
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
-        ZoneId utcZone = ZoneId.of("Z");
         for (OffsetDateTime loopTimestamp = startTimestamp;
              !loopTimestamp.isAfter(endTimestamp);
              loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(localZone).toOffsetDateTime()
         ) {
-            OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(utcZone).toOffsetDateTime();
+            OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(UTC_ZONE).toOffsetDateTime();
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
 
