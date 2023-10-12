@@ -23,12 +23,9 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -56,6 +53,9 @@ class TaskManagerControllerTest {
 
     @Autowired
     private MinioAdapter minioAdapter;
+
+    @Autowired
+    private TaskManagerConfigurationProperties properties;
 
     @Test
     void testGetTaskOk() {
@@ -191,7 +191,7 @@ class TaskManagerControllerTest {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
         Task task = new Task();
         task.setStatus(TaskStatus.CREATED);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findAllByTimestampBetweenForBusinessDayView(Mockito.any(), Mockito.any())).thenReturn(Set.of(task));
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(false, response.getBody());
@@ -200,9 +200,19 @@ class TaskManagerControllerTest {
     @Test
     void testAreAllTasksFromBusinessDateOverShouldReturnTrue() {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
-        Task task = new Task();
-        task.setStatus(TaskStatus.ERROR);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        ZoneId zone = ZoneId.of(properties.getProcess().getTimezone());
+        LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
+        ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
+        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
+        Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
+        Set<Task> tasks = new HashSet<>();
+        while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
+            Task task = new Task(startTimestamp.atZoneSameInstant(ZoneId.of("Z")).toOffsetDateTime());
+            task.setStatus(TaskStatus.ERROR);
+            tasks.add(task);
+            startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
+        }
+        Mockito.when(taskRepository.findAllByTimestampBetweenForBusinessDayView(Mockito.any(), Mockito.any())).thenReturn(tasks);
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(true, response.getBody());

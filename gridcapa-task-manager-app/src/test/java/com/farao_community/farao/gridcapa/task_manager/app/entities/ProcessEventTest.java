@@ -28,7 +28,7 @@ class ProcessEventTest {
 
     @Test
     void testConstructorFromEntity() {
-        ProcessEvent processEvent = new ProcessEvent(OffsetDateTime.now(), "INFO", "CGM arrived", "serviceName");
+        ProcessEvent processEvent = new ProcessEvent(null, OffsetDateTime.now(), "INFO", "CGM arrived", "serviceName");
         ProcessEventDto processEventDto = taskDtoBuilder.createDtoFromEntity(processEvent);
         assertEquals("INFO", processEventDto.getLevel());
         assertNotNull(processEvent.getTimestamp());
