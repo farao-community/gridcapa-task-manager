@@ -23,12 +23,23 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -148,6 +159,39 @@ class TaskManagerControllerTest {
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
         ResponseEntity<byte[]> taskResponse = taskManagerController.getFile(fileType, timestamp);
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testTriggerExportUnknownTimestamp() {
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
+
+        ResponseEntity<Object> result = taskManagerController.triggerExport("2000-01-01T00:00Z");
+
+        assertEquals(ResponseEntity.notFound().build(), result);
+    }
+
+    @Test
+    void testTriggerExportTaskNotFinished() {
+        Task task = new Task();
+        task.setStatus(TaskStatus.RUNNING);
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+
+        ResponseEntity<Object> result = taskManagerController.triggerExport("2000-01-01T00:00Z");
+
+        assertEquals(ResponseEntity.notFound().build(), result);
+    }
+
+    @Test
+    void testTriggerExportTaskSuccess() {
+        Task task = new Task();
+        task.setStatus(TaskStatus.SUCCESS);
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        Mockito.when(statusHandler.handleTaskStatusUpdate(any(), any())).thenReturn(Optional.of(task));
+
+        ResponseEntity<Object> result = taskManagerController.triggerExport("2000-01-01T00:00Z");
+
+        assertEquals(ResponseEntity.ok().build(), result);
+        Mockito.verify(statusHandler, Mockito.times(1)).handleTaskStatusUpdate(any(), eq(TaskStatus.SUCCESS));
     }
 
     @Test

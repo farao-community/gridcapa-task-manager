@@ -19,7 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -93,6 +98,21 @@ public class TaskManagerController {
         } catch (TaskNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PostMapping(value = "/tasks/{timestamp}/export")
+    public ResponseEntity<Object> triggerExport(@PathVariable String timestamp) {
+        Optional<Task> optTask = Optional.empty();
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(timestamp);
+
+        TaskDto taskDto = builder.getTaskDto(offsetDateTime);
+        TaskStatus taskStatus = taskDto.getStatus();
+        if (TaskStatus.SUCCESS.equals(taskStatus) || TaskStatus.ERROR.equals(taskStatus)) {
+            optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
+        }
+
+        return optTask.map(task -> ResponseEntity.ok().build())
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping(value = "/tasks/businessdate/{businessDate}")
