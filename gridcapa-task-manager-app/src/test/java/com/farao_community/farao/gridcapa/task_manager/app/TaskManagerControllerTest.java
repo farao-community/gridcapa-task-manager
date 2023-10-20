@@ -15,6 +15,7 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,6 +57,9 @@ class TaskManagerControllerTest {
 
     @MockBean
     private FileManager fileManager;
+
+    @MockBean
+    private Logger businessLogger;
 
     @Autowired
     private TaskManagerController taskManagerController;
@@ -185,6 +190,7 @@ class TaskManagerControllerTest {
     void testTriggerExportTaskSuccess() {
         Task task = new Task();
         task.setStatus(TaskStatus.SUCCESS);
+        task.setId(UUID.randomUUID());
         Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
         Mockito.when(statusHandler.handleTaskStatusUpdate(any(), any())).thenReturn(Optional.of(task));
 

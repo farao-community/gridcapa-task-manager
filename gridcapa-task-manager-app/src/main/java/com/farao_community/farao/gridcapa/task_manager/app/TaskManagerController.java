@@ -16,6 +16,8 @@ import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -49,12 +51,14 @@ public class TaskManagerController {
     private final TaskDtoBuilder builder;
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
+    private final Logger businessLogger;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger) {
         this.statusHandler = statusHandler;
         this.builder = builder;
         this.fileManager = fileManager;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
+        this.businessLogger = businessLogger;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -111,8 +115,13 @@ public class TaskManagerController {
             optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
         }
 
-        return optTask.map(task -> ResponseEntity.ok().build())
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        if (optTask.isPresent()) {
+            MDC.put("gridcapa-task-id", optTask.get().getId().toString());
+            businessLogger.info("Export of output files has been requested manually");
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping(value = "/tasks/businessdate/{businessDate}")
