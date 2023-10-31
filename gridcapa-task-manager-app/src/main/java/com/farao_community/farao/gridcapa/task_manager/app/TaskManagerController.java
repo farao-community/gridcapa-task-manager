@@ -16,10 +16,17 @@ import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,12 +51,14 @@ public class TaskManagerController {
     private final TaskDtoBuilder builder;
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
+    private final Logger businessLogger;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger) {
         this.statusHandler = statusHandler;
         this.builder = builder;
         this.fileManager = fileManager;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
+        this.businessLogger = businessLogger;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -91,6 +100,28 @@ public class TaskManagerController {
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
         } catch (TaskNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping(value = "/tasks/{timestamp}/export")
+    public ResponseEntity<Object> triggerExport(@PathVariable String timestamp) {
+        Optional<Task> optTask = Optional.empty();
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(timestamp);
+
+        TaskDto taskDto = builder.getTaskDto(offsetDateTime);
+        TaskStatus taskStatus = taskDto.getStatus();
+        if (TaskStatus.SUCCESS.equals(taskStatus)
+            || TaskStatus.ERROR.equals(taskStatus)
+            || TaskStatus.INTERRUPTED.equals(taskStatus)) {
+            optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
+        }
+
+        if (optTask.isPresent()) {
+            MDC.put("gridcapa-task-id", optTask.get().getId().toString());
+            businessLogger.info("Export of output files has been requested manually");
+            return ResponseEntity.ok().build();
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
