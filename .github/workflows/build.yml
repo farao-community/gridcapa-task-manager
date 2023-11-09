@@ -35,10 +35,3 @@ jobs:
                 name: farao/gridcapa-task-manager
                 username: farao
                 password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-            - name: Broadcast update event
-              if: github.ref == 'refs/heads/master'
-              uses: farao-community/broadcast-event@master
-              with:
-                  token: ${{ secrets.REPO_ACCESS_TOKEN }}
-                  event-type: gridcapa_task_manager_updated
