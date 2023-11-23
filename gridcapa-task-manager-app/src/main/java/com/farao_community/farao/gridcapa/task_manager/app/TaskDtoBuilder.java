@@ -54,9 +54,10 @@ public class TaskDtoBuilder {
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
-        ZoneOffset zoneOffSet = localZone.getRules().getOffset(businessDateStartTime);
-        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
-        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSet);
+        ZoneOffset zoneOffSetStart = localZone.getRules().getOffset(businessDateStartTime);
+        ZoneOffset zoneOffSetEnd = localZone.getRules().getOffset(businessDateEndTime);
+        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSetStart);
+        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSetEnd);
 
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
