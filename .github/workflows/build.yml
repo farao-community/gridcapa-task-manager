@@ -30,7 +30,7 @@ jobs:
 
             - name: Build and publish Docker image
               if: github.ref == 'refs/heads/master'
-              uses: elgohr/Publish-Docker-Github-Action@master
+              uses: elgohr/Publish-Docker-Github-Action@v5
               with:
                 name: farao/gridcapa-task-manager
                 username: farao
