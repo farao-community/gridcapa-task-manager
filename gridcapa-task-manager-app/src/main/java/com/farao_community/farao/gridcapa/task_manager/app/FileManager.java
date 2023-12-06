@@ -17,6 +17,7 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -216,5 +217,46 @@ public class FileManager {
 
     public String generatePresignedUrl(String minioUrl) {
         return minioAdapter.generatePreSignedUrlFromFullMinioPath(minioUrl, 1);
+    }
+
+    public void uploadFileToMinio(OffsetDateTime timestamp, MultipartFile file, String fileType, String fileName) {
+        String processTag = taskManagerConfigurationProperties.getProcess().getTag();
+        String path = String.format("MANUAL_UPLOAD/%s/%s/%s", timestamp.format(ZIP_DATE_TIME_FORMATTER), getFileTypeUploadPathElement(fileType, processTag), fileName);
+        try (InputStream in = file.getInputStream()) {
+            minioAdapter.uploadInputForTimestamp(path, in, processTag, fileType, timestamp);
+            businessLogger.info("Manually uploaded file : {}, for timestamp {}", file.getName(), timestamp);
+        } catch (IOException e) {
+            throw new TaskManagerException(String.format("Exception occurred while uploading file to minio : %s", file.getName()), e);
+        }
+    }
+
+    private String getFileTypeUploadPathElement(String fileType, String processTag) {
+        return switch (fileType) {
+            case "AUTOMATED-FORCED-PRAS" -> "AUTOMATED-FORCED-PRAs";
+            case "BOUNDARY_EQ", "BOUNDARY_TP" -> "BOUNDARIES";
+            case "CBCORA" -> "CORE_CC".equals(processTag) ? "CRACs" : "CBCORAs";
+            case "CGM", "CORESO_SV", "REE_EQ", "REE_SSH", "REE_TP", "REN_EQ", "REN_SSH", "REN_TP", "RTE_EQ", "RTE_SSH", "RTE_TP" ->
+                    "CGMs";
+            case "CRAC" -> "CRACs";
+            case "EXPORT_CRAC" -> "EXPORT_CRACs";
+            case "IMPORT_CRAC" -> "IMPORT_CRACs";
+            case "GLSK" -> "GLSKs";
+            case "NTC" -> "NTC";
+            case "NTC2-AT" -> "NTC2-AT";
+            case "NTC2-CH" -> "NTC2-CH";
+            case "NTC2-FR" -> "NTC2-FR";
+            case "NTC2-SI" -> "NTC2-SI";
+            case "NTC-RED" -> "NTCREDs";
+            case "RAOREQUEST" -> "RAOREQUESTs";
+            case "REFPROG" -> "REFPROGs";
+            case "STUDY-POINTS" -> "STUDYPOINTs";
+            case "TARGET-CH" -> "TARGETCHs";
+            case "TTC_ADJUSTMENT" -> "TTC_ADJUSTMENT";
+            case "USER-CONFIG" -> "USER-CONFIGs";
+            case "VIRTUALHUB" -> "VIRTUALHUBs";
+            case "VULCANUS" -> "VULCANUS";
+            default ->
+                    throw new TaskManagerException(String.format("Error occurred manually uploading file because of unknown file type : %s", fileType));
+        };
     }
 }

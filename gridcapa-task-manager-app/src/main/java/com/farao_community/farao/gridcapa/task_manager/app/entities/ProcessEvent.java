@@ -15,8 +15,7 @@ import java.util.UUID;
  * @author Mohamed Benrejeb {@literal <mohamed.ben-rejeb at rte-france.com>}
  */
 @Entity
-@Table(indexes = {
-        @Index(columnList = "task_id", name = "process_event_task_idx") })
+@Table(indexes = { @Index(columnList = "task_id", name = "process_event_task_idx") })
 public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Id

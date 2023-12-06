@@ -50,6 +50,12 @@ spring:
               routing-key-expression: '''status'''
     function:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
+  http:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
 
 task-server:
   process:
@@ -66,7 +72,7 @@ task-server:
 
 minio-adapter:
   bucket: ${GRIDCAPA_MINIO_BUCKET:gridcapa}
-  base-path: ${GRIDCAPA_MINIO_BASE_PATH:}
+  base-path: ${GRIDCAPA_MINIO_BASE_PATH:/CSE/D2CC}
   url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
   access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
   secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}

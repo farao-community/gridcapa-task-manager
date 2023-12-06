@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -178,5 +180,21 @@ public class TaskManagerController {
 
     private String removeIllegalUrlCharacter(String s) {
         return s.replace(":", "");
+    }
+
+    @PostMapping(value = "/tasks/{timestamp}/uploadfile")
+    public ResponseEntity<Object> uploadFile(@PathVariable String timestamp,
+                                             @RequestParam("file") MultipartFile file,
+                                             @RequestParam("fileName") String fileName,
+                                             @RequestParam("fileType") String fileType
+    ) {
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(timestamp);
+        try {
+            fileManager.uploadFileToMinio(offsetDateTime, file, fileType, fileName);
+        } catch (TaskManagerException tme) {
+            businessLogger.error("Failed manually uploading file", tme);
+            return ResponseEntity.internalServerError().build();
+        }
+        return ResponseEntity.ok().build();
     }
 }
