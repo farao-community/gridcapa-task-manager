@@ -279,7 +279,7 @@ class TaskManagerControllerTest {
     }
 
     @Test
-    void testUploadFile_OK() {
+    void testUploadFileOK() {
         String timestamp = "2021-09-02T22:30Z";
         MultipartFile file = Mockito.mock(MultipartFile.class);
         ResponseEntity<Object> taskResponse = taskManagerController.uploadFile(timestamp, file, "TEST", "CGM");
@@ -287,7 +287,7 @@ class TaskManagerControllerTest {
     }
 
     @Test
-    void testUploadFile_Error() {
+    void testUploadFileError() {
         String timestamp = "2021-09-02T22:30Z";
         MultipartFile file = Mockito.mock(MultipartFile.class);
         Mockito.doThrow(new TaskManagerException("example")).when(fileManager).uploadFileToMinio(Mockito.any(OffsetDateTime.class), Mockito.any(MultipartFile.class), Mockito.anyString(), Mockito.anyString());

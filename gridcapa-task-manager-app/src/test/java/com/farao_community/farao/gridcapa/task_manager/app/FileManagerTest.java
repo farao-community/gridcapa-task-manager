@@ -123,7 +123,7 @@ class FileManagerTest {
     }
 
     @Test
-    void checkUploadFileToMinio_inErrorIOException() throws IOException {
+    void checkUploadFileToMinioInErrorIOException() throws IOException {
         MultipartFile file = Mockito.mock(MultipartFile.class);
         Mockito.doThrow(new IOException()).when(file).getInputStream();
         OffsetDateTime timestamp = OffsetDateTime.now();
@@ -131,7 +131,7 @@ class FileManagerTest {
     }
 
     @Test
-    void checkUploadFileToMinio_inErrorUnknownFileType() {
+    void checkUploadFileToMinioInErrorUnknownFileType() {
         OffsetDateTime timestamp = OffsetDateTime.now();
         MultipartFile file = Mockito.mock(MultipartFile.class);
         assertThrows(TaskManagerException.class, () -> fileManager.uploadFileToMinio(timestamp, file, "unknownFileType", "TEST"));
@@ -141,6 +141,6 @@ class FileManagerTest {
     void checkUploadFileToMinio() {
         MultipartFile file = Mockito.mock(MultipartFile.class);
         fileManager.uploadFileToMinio(OffsetDateTime.now(), file, "CRAC", "TEST");
-        Mockito.verify(businessLogger,Mockito.atLeastOnce()).info(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(businessLogger, Mockito.atLeastOnce()).info(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
     }
 }
