@@ -224,7 +224,9 @@ public class FileManager {
         String path = String.format("MANUAL_UPLOAD/%s/%s/%s", timestamp.format(ZIP_DATE_TIME_FORMATTER), getFileTypeUploadPathElement(fileType, processTag), fileName);
         try (InputStream in = file.getInputStream()) {
             minioAdapter.uploadInputForTimestamp(path, in, processTag, fileType, timestamp);
-            businessLogger.info("Manually uploaded file : {}, for timestamp {}", file.getName(), timestamp);
+            String logFileName = fileName != null ? fileName.replaceAll("[\n\r]", "_") : "NULL";
+            String logTimestamp = timestamp.toString().replaceAll("[\n\r]", "_");
+            businessLogger.info("Manually uploaded file : {}, for timestamp {}", logFileName, logTimestamp);
         } catch (IOException e) {
             throw new TaskManagerException(String.format("Exception occurred while uploading file to minio : %s", file.getName()), e);
         }
