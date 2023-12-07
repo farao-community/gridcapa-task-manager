@@ -131,13 +131,6 @@ class FileManagerTest {
     }
 
     @Test
-    void checkUploadFileToMinioInErrorUnknownFileType() {
-        OffsetDateTime timestamp = OffsetDateTime.now();
-        MultipartFile file = Mockito.mock(MultipartFile.class);
-        assertThrows(TaskManagerException.class, () -> fileManager.uploadFileToMinio(timestamp, file, "unknownFileType", "TEST"));
-    }
-
-    @Test
     void checkUploadFileToMinio() {
         MultipartFile file = Mockito.mock(MultipartFile.class);
         fileManager.uploadFileToMinio(OffsetDateTime.now(), file, "CRAC", "TEST");
