@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
@@ -21,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -274,5 +276,22 @@ class TaskManagerControllerTest {
         Mockito.when(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp))).thenReturn(new ByteArrayOutputStream(0));
         ResponseEntity<byte[]> taskResponse = taskManagerController.getLog(timestamp);
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testUploadFileOK() {
+        String timestamp = "2021-09-02T22:30Z";
+        MultipartFile file = Mockito.mock(MultipartFile.class);
+        ResponseEntity<Object> taskResponse = taskManagerController.uploadFile(timestamp, file, "TEST", "CGM");
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void testUploadFileError() {
+        String timestamp = "2021-09-02T22:30Z";
+        MultipartFile file = Mockito.mock(MultipartFile.class);
+        Mockito.doThrow(new TaskManagerException("example")).when(fileManager).uploadFileToMinio(Mockito.any(OffsetDateTime.class), Mockito.any(MultipartFile.class), Mockito.anyString(), Mockito.anyString());
+        ResponseEntity<Object> taskResponse = taskManagerController.uploadFile(timestamp, file, "TEST", "CGM");
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, taskResponse.getStatusCode());
     }
 }

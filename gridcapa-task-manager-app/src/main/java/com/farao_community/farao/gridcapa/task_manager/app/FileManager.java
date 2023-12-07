@@ -17,6 +17,7 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -217,4 +218,18 @@ public class FileManager {
     public String generatePresignedUrl(String minioUrl) {
         return minioAdapter.generatePreSignedUrlFromFullMinioPath(minioUrl, 1);
     }
+
+    public void uploadFileToMinio(OffsetDateTime timestamp, MultipartFile file, String fileType, String fileName) {
+        String processTag = taskManagerConfigurationProperties.getProcess().getTag();
+        String path = String.format("MANUAL_UPLOAD/%s/%s", timestamp.format(ZIP_DATE_TIME_FORMATTER), fileName);
+        try (InputStream in = file.getInputStream()) {
+            minioAdapter.uploadInputForTimestamp(path, in, processTag, fileType, timestamp);
+            String logFileName = fileName != null ? fileName.replaceAll("[\n\r]", "_") : "NULL";
+            String logTimestamp = timestamp.toString().replaceAll("[\n\r]", "_");
+            businessLogger.info("Manually uploaded file : {}, for timestamp {}", logFileName, logTimestamp);
+        } catch (IOException e) {
+            throw new TaskManagerException(String.format("Exception occurred while uploading file to minio : %s", file.getName()), e);
+        }
+    }
+
 }

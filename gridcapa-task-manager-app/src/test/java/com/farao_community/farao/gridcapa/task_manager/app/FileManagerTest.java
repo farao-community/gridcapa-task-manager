@@ -6,14 +6,18 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -30,6 +34,12 @@ class FileManagerTest {
 
     @MockBean
     private TaskRepository taskRepository;
+
+    @MockBean
+    private MinioAdapter minioAdapter;
+
+    @MockBean
+    private Logger businessLogger;
 
     @Autowired
     private FileManager fileManager;
@@ -110,5 +120,20 @@ class FileManagerTest {
     void checkGetRaoRunnerAppLogsThrowsExceptionWhenNoTaskFound() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         assertThrows(TaskNotFoundException.class, () -> fileManager.getRaoRunnerAppLogs(taskTimestamp));
+    }
+
+    @Test
+    void checkUploadFileToMinioInErrorIOException() throws IOException {
+        MultipartFile file = Mockito.mock(MultipartFile.class);
+        Mockito.doThrow(new IOException()).when(file).getInputStream();
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        assertThrows(TaskManagerException.class, () -> fileManager.uploadFileToMinio(timestamp, file, "CGM", "TEST"));
+    }
+
+    @Test
+    void checkUploadFileToMinio() {
+        MultipartFile file = Mockito.mock(MultipartFile.class);
+        fileManager.uploadFileToMinio(OffsetDateTime.now(), file, "CRAC", "TEST");
+        Mockito.verify(businessLogger, Mockito.atLeastOnce()).info(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
     }
 }
