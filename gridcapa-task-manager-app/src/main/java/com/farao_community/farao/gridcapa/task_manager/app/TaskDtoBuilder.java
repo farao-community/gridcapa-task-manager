@@ -86,6 +86,10 @@ public class TaskDtoBuilder {
         return createDtoFromEntityWithOrWithoutEvents(task, true);
     }
 
+    public TaskDto createDtoFromEntityNoLogs(Task task) {
+        return createDtoFromEntityWithOrWithoutEvents(task, false);
+    }
+
     private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {
         var inputs = properties.getProcess().getInputs().stream()
                 .map(input -> task.getInput(input)
