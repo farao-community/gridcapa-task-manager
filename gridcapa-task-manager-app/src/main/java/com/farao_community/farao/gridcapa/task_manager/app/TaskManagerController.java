@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
@@ -13,6 +14,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
@@ -43,7 +45,10 @@ import java.util.Optional;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Marc Schwitzguebel {@literal <marc.schwitzguebel at rte-france.com>}
  */
+
 @Controller
 @RequestMapping
 public class TaskManagerController {
@@ -54,13 +59,15 @@ public class TaskManagerController {
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final Logger businessLogger;
+    private final ParameterService parameterService;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService) {
         this.statusHandler = statusHandler;
         this.builder = builder;
         this.fileManager = fileManager;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.businessLogger = businessLogger;
+        this.parameterService = parameterService;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -196,5 +203,11 @@ public class TaskManagerController {
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/parameters")
+    public ResponseEntity<List<ParameterDto>> getParameters() {
+        List<ParameterDto> parameters = parameterService.getParameters();
+        return ResponseEntity.ok(parameters);
     }
 }

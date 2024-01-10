@@ -6,11 +6,13 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
@@ -41,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -74,6 +77,9 @@ class TaskManagerControllerTest {
 
     @Autowired
     private TaskManagerConfigurationProperties properties;
+
+    @MockBean
+    private ParameterService parameterService;
 
     @Test
     void testGetTaskOk() {
@@ -293,5 +299,23 @@ class TaskManagerControllerTest {
         Mockito.doThrow(new TaskManagerException("example")).when(fileManager).uploadFileToMinio(Mockito.any(OffsetDateTime.class), Mockito.any(MultipartFile.class), Mockito.anyString(), Mockito.anyString());
         ResponseEntity<Object> taskResponse = taskManagerController.uploadFile(timestamp, file, "TEST", "CGM");
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void getParametersConfigurationTest() {
+        List<ParameterDto> dtoList = List.of(new ParameterDto(42L, "name", 5, "INT", "Section title", "eulav"));
+        Mockito.when(parameterService.getParameters()).thenReturn(dtoList);
+        ResponseEntity<List<ParameterDto>> taskResponse = taskManagerController.getParameters();
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+        List<ParameterDto> dtoResponseList = taskResponse.getBody();
+        assertNotNull(dtoResponseList);
+        assertEquals(1, dtoResponseList.size());
+        ParameterDto dto = dtoResponseList.get(0);
+        assertEquals(42L, dto.getId());
+        assertEquals("name", dto.getName());
+        assertEquals(5, dto.getDisplayOrder());
+        assertEquals("INT", dto.getParameterType());
+        assertEquals("Section title", dto.getSectionTitle());
+        assertEquals("eulav", dto.getValue());
     }
 }
