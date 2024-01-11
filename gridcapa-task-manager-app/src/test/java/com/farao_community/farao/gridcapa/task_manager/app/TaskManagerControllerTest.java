@@ -44,6 +44,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -302,7 +303,7 @@ class TaskManagerControllerTest {
     }
 
     @Test
-    void getParametersConfigurationTest() {
+    void getParametersTest() {
         List<ParameterDto> dtoList = List.of(new ParameterDto(42L, "name", 5, "INT", "Section title", "eulav"));
         Mockito.when(parameterService.getParameters()).thenReturn(dtoList);
         ResponseEntity<List<ParameterDto>> taskResponse = taskManagerController.getParameters();
@@ -317,5 +318,34 @@ class TaskManagerControllerTest {
         assertEquals("INT", dto.getParameterType());
         assertEquals("Section title", dto.getSectionTitle());
         assertEquals("eulav", dto.getValue());
+    }
+
+    @Test
+    void setParameterValueOkTest() {
+        long id = 27L;
+        String value = "new value";
+        Mockito.when(parameterService.setParameterValue(id, value))
+            .thenReturn(new ParameterDto(id, "name", 1, "type", "section", value));
+
+        ResponseEntity<ParameterDto> response = taskManagerController.setParameterValue(id, value);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(id, response.getBody().getId());
+        assertEquals(value, response.getBody().getValue());
+    }
+
+    @Test
+    void setParameterValueNotFoundTest() {
+        long id = 27L;
+        String value = "new value";
+        Mockito.when(parameterService.setParameterValue(id, value)).thenReturn(null);
+
+        ResponseEntity<ParameterDto> response = taskManagerController.setParameterValue(id, value);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
     }
 }

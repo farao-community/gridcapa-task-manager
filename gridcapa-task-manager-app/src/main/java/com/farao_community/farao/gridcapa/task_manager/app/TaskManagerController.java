@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -209,5 +210,14 @@ public class TaskManagerController {
     public ResponseEntity<List<ParameterDto>> getParameters() {
         List<ParameterDto> parameters = parameterService.getParameters();
         return ResponseEntity.ok(parameters);
+    }
+
+    @PatchMapping(value = "/parameters/{id}")
+    public ResponseEntity<ParameterDto> setParameterValue(@PathVariable Long id, @RequestParam String value) {
+        ParameterDto parameter = parameterService.setParameterValue(id, value);
+        if (parameter == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(parameter);
     }
 }

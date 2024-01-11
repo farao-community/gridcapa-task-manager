@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
@@ -35,5 +36,19 @@ public class ParameterService {
         return parameters.stream()
             .map(p -> new ParameterDto(p.getId(), p.getName(), p.getDisplayOrder(), p.getParameterType().name(), p.getSectionTitle(), p.getValue()))
             .toList();
+    }
+
+    public ParameterDto setParameterValue(Long id, String value) {
+        LOGGER.info("Setting parameter {} to value {}", id, value);
+        Optional<Parameter> parameterOpt = parameterRepository.findById(id);
+        if (parameterOpt.isEmpty()) {
+            LOGGER.info("Parameter {} not found", id);
+            return null;
+        } else {
+            Parameter parameter = parameterOpt.get();
+            parameter.setValue(value);
+            Parameter savedParameter = parameterRepository.save(parameter);
+            return new ParameterDto(savedParameter.getId(), savedParameter.getName(), savedParameter.getDisplayOrder(), savedParameter.getParameterType().name(), savedParameter.getSectionTitle(), savedParameter.getValue());
+        }
     }
 }

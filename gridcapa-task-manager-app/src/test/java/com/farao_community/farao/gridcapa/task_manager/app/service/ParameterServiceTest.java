@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
@@ -54,5 +55,39 @@ class ParameterServiceTest {
                 .hasFieldOrPropertyWithValue("parameterType", "BOOLEAN")
                 .hasFieldOrPropertyWithValue("sectionTitle", "Best parameters section")
                 .hasFieldOrPropertyWithValue("value", "The value");
+    }
+
+    @Test
+    void setParameterValueOkTest() {
+        Long id = 1515L;
+        String value = "Amazing value";
+        Parameter initialParameter = new Parameter();
+        initialParameter.setId(id);
+        initialParameter.setParameterType(Parameter.ParameterType.STRING);
+        initialParameter.setValue("Poor and annoying value");
+        Parameter newParameter = new Parameter();
+        newParameter.setId(id);
+        newParameter.setParameterType(Parameter.ParameterType.STRING);
+        newParameter.setValue(value);
+        Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.of(initialParameter));
+        Mockito.when(parameterRepository.save(Mockito.any())).thenReturn(newParameter);
+
+        ParameterDto parameterDto = parameterService.setParameterValue(id, value);
+
+        Assertions.assertThat(parameterDto)
+            .isNotNull()
+            .hasFieldOrPropertyWithValue("id", id)
+            .hasFieldOrPropertyWithValue("value", value);
+    }
+
+    @Test
+    void setParameterValueNotFoundTest() {
+        Long id = 1515L;
+        String value = "Amazing value";
+        Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.empty());
+
+        ParameterDto parameterDto = parameterService.setParameterValue(id, value);
+
+        Assertions.assertThat(parameterDto).isNull();
     }
 }
