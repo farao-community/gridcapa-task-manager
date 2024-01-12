@@ -4,12 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.app;
+package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
-import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
-import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.*;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -32,16 +30,18 @@ import java.util.stream.Collectors;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Service
-public class TaskDtoBuilder {
+public class TaskDtoBuilderService {
 
     private static final ZoneId UTC_ZONE = ZoneId.of("Z");
     private final TaskManagerConfigurationProperties properties;
     private final TaskRepository taskRepository;
     private final ZoneId localZone;
+    private final ParameterService parameterService;
 
-    public TaskDtoBuilder(TaskManagerConfigurationProperties properties, TaskRepository taskRepository) {
+    public TaskDtoBuilderService(TaskManagerConfigurationProperties properties, TaskRepository taskRepository, ParameterService parameterService) {
         this.properties = properties;
         this.taskRepository = taskRepository;
+        this.parameterService = parameterService;
         this.localZone = ZoneId.of(this.properties.getProcess().getTimezone());
     }
 
@@ -107,24 +107,19 @@ public class TaskDtoBuilder {
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
                 .toList();
+        List<ProcessEventDto> processEvents = withEvents ?
+                task.getProcessEvents().stream().map(this::createDtoFromEntity).toList()
+                : Collections.emptyList();
+        List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream().map(TaskParameterDto::new).toList();
+        return new TaskDto(
+                task.getId(),
+                task.getTimestamp(),
+                task.getStatus(),
+                inputs,
+                outputs,
+                processEvents,
+                taskParameterDtos);
 
-        if (withEvents) {
-            return new TaskDto(
-                    task.getId(),
-                    task.getTimestamp(),
-                    task.getStatus(),
-                    inputs,
-                    outputs,
-                    task.getProcessEvents().stream().map(this::createDtoFromEntity).toList());
-        } else {
-            return new TaskDto(
-                    task.getId(),
-                    task.getTimestamp(),
-                    task.getStatus(),
-                    inputs,
-                    outputs,
-                    Collections.emptyList());
-        }
     }
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {

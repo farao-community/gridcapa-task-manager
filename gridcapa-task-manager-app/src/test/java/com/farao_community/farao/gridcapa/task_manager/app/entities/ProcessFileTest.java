@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ProcessFileTest {
 
     @Autowired
-    private TaskDtoBuilder taskDtoBuilder;
+    private TaskDtoBuilderService taskDtoBuilderService;
 
     @Test
     void testConstructorFromEntity() {
@@ -36,7 +36,7 @@ class ProcessFileTest {
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
-        ProcessFileDto processFileDto = taskDtoBuilder.createDtoFromEntity(processFile);
+        ProcessFileDto processFileDto = taskDtoBuilderService.createDtoFromEntity(processFile);
         assertEquals("CGM", processFileDto.getFileType());
         assertEquals("cgm-name", processFileDto.getFilename());
         assertEquals("cgm-name", processFileDto.getFilename());

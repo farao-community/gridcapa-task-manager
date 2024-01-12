@@ -16,6 +16,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskMan
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,13 +57,13 @@ public class TaskManagerController {
 
     public static final String CONTENT_DISPOSITION = "Content-Disposition";
     private final StatusHandler statusHandler;
-    private final TaskDtoBuilder builder;
+    private final TaskDtoBuilderService builder;
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final Logger businessLogger;
     private final ParameterService parameterService;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilderService builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService) {
         this.statusHandler = statusHandler;
         this.builder = builder;
         this.fileManager = fileManager;

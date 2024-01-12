@@ -7,7 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,12 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ProcessEventTest {
 
     @Autowired
-    private TaskDtoBuilder taskDtoBuilder;
+    private TaskDtoBuilderService taskDtoBuilderService;
 
     @Test
     void testConstructorFromEntity() {
         ProcessEvent processEvent = new ProcessEvent(null, OffsetDateTime.now(), "INFO", "CGM arrived", "serviceName");
-        ProcessEventDto processEventDto = taskDtoBuilder.createDtoFromEntity(processEvent);
+        ProcessEventDto processEventDto = taskDtoBuilderService.createDtoFromEntity(processEvent);
         assertEquals("INFO", processEventDto.getLevel());
         assertNotNull(processEvent.getTimestamp());
         assertEquals("CGM arrived", processEventDto.getMessage());
