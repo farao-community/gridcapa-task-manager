@@ -304,7 +304,7 @@ class TaskManagerControllerTest {
 
     @Test
     void getParametersTest() {
-        List<ParameterDto> dtoList = List.of(new ParameterDto(42L, "name", 5, "INT", "Section title", "eulav"));
+        List<ParameterDto> dtoList = List.of(new ParameterDto("42L", "name", 5, "INT", "Section title", "eulav", "defaultEulav"));
         Mockito.when(parameterService.getParameters()).thenReturn(dtoList);
         ResponseEntity<List<ParameterDto>> taskResponse = taskManagerController.getParameters();
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
@@ -312,20 +312,21 @@ class TaskManagerControllerTest {
         assertNotNull(dtoResponseList);
         assertEquals(1, dtoResponseList.size());
         ParameterDto dto = dtoResponseList.get(0);
-        assertEquals(42L, dto.getId());
+        assertEquals("42L", dto.getId());
         assertEquals("name", dto.getName());
         assertEquals(5, dto.getDisplayOrder());
         assertEquals("INT", dto.getParameterType());
         assertEquals("Section title", dto.getSectionTitle());
         assertEquals("eulav", dto.getValue());
+        assertEquals("defaultEulav", dto.getDefaultValue());
     }
 
     @Test
     void setParameterValueOkTest() {
-        long id = 27L;
+        String id = "27L";
         String value = "new value";
         Mockito.when(parameterService.setParameterValue(id, value))
-            .thenReturn(new ParameterDto(id, "name", 1, "type", "section", value));
+            .thenReturn(new ParameterDto(id, "name", 1, "type", "section", value, "test"));
 
         ResponseEntity<ParameterDto> response = taskManagerController.setParameterValue(id, value);
 
@@ -338,7 +339,7 @@ class TaskManagerControllerTest {
 
     @Test
     void setParameterValueNotFoundTest() {
-        long id = 27L;
+        String id = "27L";
         String value = "new value";
         Mockito.when(parameterService.setParameterValue(id, value)).thenReturn(null);
 

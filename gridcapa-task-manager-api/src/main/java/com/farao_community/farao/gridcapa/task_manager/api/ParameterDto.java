@@ -12,27 +12,29 @@ package com.farao_community.farao.gridcapa.task_manager.api;
  */
 
 public class ParameterDto {
-    private Long id;
+    private String id;
     private String name;
     private int displayOrder;
     private String parameterType;
     private String sectionTitle;
     private String value;
+    private String defaultValue;
 
-    public ParameterDto(Long id, String name, int displayOrder, String parameterType, String sectionTitle, String value) {
+    public ParameterDto(String id, String name, int displayOrder, String parameterType, String sectionTitle, String value, String defaultValue) {
         this.id = id;
         this.name = name;
         this.displayOrder = displayOrder;
         this.parameterType = parameterType;
         this.sectionTitle = sectionTitle;
         this.value = value;
+        this.defaultValue = defaultValue;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -74,5 +76,13 @@ public class ParameterDto {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 }

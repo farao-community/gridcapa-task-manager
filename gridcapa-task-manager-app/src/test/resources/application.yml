@@ -30,3 +30,9 @@ stomp:
 purge-task-events:
   cron: 0 0 12 * * *
   nb-days: 7
+
+runner:
+  parameters:
+    test1: true
+    test2: 42
+

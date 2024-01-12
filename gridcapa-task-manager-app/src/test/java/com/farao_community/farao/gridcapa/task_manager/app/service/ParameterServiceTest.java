@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.app.ParameterRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Parameter;
 import org.assertj.core.api.Assertions;
@@ -35,7 +36,7 @@ class ParameterServiceTest {
     @Test
     void getParametersConfigurationTest() {
         Parameter parameter = new Parameter();
-        parameter.setId(12L);
+        parameter.setId("test1");
         parameter.setName("Test name");
         parameter.setDisplayOrder(5);
         parameter.setParameterType(Parameter.ParameterType.BOOLEAN);
@@ -49,17 +50,31 @@ class ParameterServiceTest {
         Assertions.assertThat(dtoList)
             .hasSize(1)
             .element(0)
-                .hasFieldOrPropertyWithValue("id", 12L)
+                .hasFieldOrPropertyWithValue("id", "test1")
                 .hasFieldOrPropertyWithValue("name", "Test name")
                 .hasFieldOrPropertyWithValue("displayOrder", 5)
                 .hasFieldOrPropertyWithValue("parameterType", "BOOLEAN")
                 .hasFieldOrPropertyWithValue("sectionTitle", "Best parameters section")
-                .hasFieldOrPropertyWithValue("value", "The value");
+                .hasFieldOrPropertyWithValue("value", "The value")
+                .hasFieldOrPropertyWithValue("defaultValue", "true");
+
+    }
+
+    @Test
+    void getParametersConfigurationThrowsExTest() {
+        Parameter parameter = new Parameter();
+        parameter.setId("unknown");
+        List<Parameter> parameterList = List.of(parameter);
+        Mockito.when(parameterRepository.findAll()).thenReturn(parameterList);
+
+        Assertions.assertThatExceptionOfType(TaskManagerException.class)
+                .isThrownBy(() -> parameterService.getParameters());
+
     }
 
     @Test
     void setParameterValueOkTest() {
-        Long id = 1515L;
+        String id = "1515L";
         String value = "Amazing value";
         Parameter initialParameter = new Parameter();
         initialParameter.setId(id);
@@ -82,7 +97,7 @@ class ParameterServiceTest {
 
     @Test
     void setParameterValueNotFoundTest() {
-        Long id = 1515L;
+        String id = "1515L";
         String value = "Amazing value";
         Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.empty());
 

@@ -213,7 +213,7 @@ public class TaskManagerController {
     }
 
     @PatchMapping(value = "/parameters/{id}")
-    public ResponseEntity<ParameterDto> setParameterValue(@PathVariable Long id, @RequestParam String value) {
+    public ResponseEntity<ParameterDto> setParameterValue(@PathVariable String id, @RequestParam String value) {
         ParameterDto parameter = parameterService.setParameterValue(id, value);
         if (parameter == null) {
             return ResponseEntity.notFound().build();

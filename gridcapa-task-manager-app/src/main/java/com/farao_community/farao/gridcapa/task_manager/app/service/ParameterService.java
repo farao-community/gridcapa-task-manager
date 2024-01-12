@@ -7,12 +7,15 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.app.ParameterRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.RunnerParameters;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,18 +30,25 @@ public class ParameterService {
 
     private final ParameterRepository parameterRepository;
 
-    public ParameterService(ParameterRepository parameterRepository) {
+    private final RunnerParameters runnerParameters;
+
+    public ParameterService(ParameterRepository parameterRepository, RunnerParameters runnerParameters) {
         this.parameterRepository = parameterRepository;
+        this.runnerParameters = runnerParameters;
     }
 
     public List<ParameterDto> getParameters() {
         List<Parameter> parameters = parameterRepository.findAll();
-        return parameters.stream()
-            .map(p -> new ParameterDto(p.getId(), p.getName(), p.getDisplayOrder(), p.getParameterType().name(), p.getSectionTitle(), p.getValue()))
-            .toList();
+        List<ParameterDto> dtos = new ArrayList<>();
+        for (Parameter param : parameters) {
+            String defaultValue = runnerParameters.getRunnerParamater(param.getId()).orElseThrow(() -> new TaskManagerException("No default value for given parameter"));
+            dtos.add(new ParameterDto(param.getId(), param.getName(), param.getDisplayOrder(), param.getParameterType().name(), param.getSectionTitle(), param.getValue(), defaultValue));
+        }
+
+        return dtos;
     }
 
-    public ParameterDto setParameterValue(Long id, String value) {
+    public ParameterDto setParameterValue(String id, String value) {
         LOGGER.info("Setting parameter {} to value {}", id, value);
         Optional<Parameter> parameterOpt = parameterRepository.findById(id);
         if (parameterOpt.isEmpty()) {
@@ -48,7 +58,8 @@ public class ParameterService {
             Parameter parameter = parameterOpt.get();
             parameter.setValue(value);
             Parameter savedParameter = parameterRepository.save(parameter);
-            return new ParameterDto(savedParameter.getId(), savedParameter.getName(), savedParameter.getDisplayOrder(), savedParameter.getParameterType().name(), savedParameter.getSectionTitle(), savedParameter.getValue());
+            String defaultValue = runnerParameters.getRunnerParamater(parameter.getId()).orElse(null);
+            return new ParameterDto(savedParameter.getId(), savedParameter.getName(), savedParameter.getDisplayOrder(), savedParameter.getParameterType().name(), savedParameter.getSectionTitle(), savedParameter.getValue(), defaultValue);
         }
     }
 }

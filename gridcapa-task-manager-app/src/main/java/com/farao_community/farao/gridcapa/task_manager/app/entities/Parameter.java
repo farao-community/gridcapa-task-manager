@@ -6,10 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.io.Serializable;
 
 /**
@@ -20,7 +17,7 @@ import java.io.Serializable;
 @Entity
 public class Parameter implements Serializable {
     @Id
-    private Long id;
+    private String id;
 
     private String name;
 
@@ -37,11 +34,11 @@ public class Parameter implements Serializable {
         INT, STRING, BOOLEAN
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
