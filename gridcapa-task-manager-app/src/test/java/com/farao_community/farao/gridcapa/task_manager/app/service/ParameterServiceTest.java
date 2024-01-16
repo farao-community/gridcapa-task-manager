@@ -74,7 +74,7 @@ class ParameterServiceTest {
 
     @Test
     void setParameterValueOkTest() {
-        String id = "1515L";
+        String id = "test3";
         String value = "Amazing value";
         Parameter initialParameter = new Parameter();
         initialParameter.setId(id);
@@ -85,12 +85,15 @@ class ParameterServiceTest {
         newParameter.setParameterType(Parameter.ParameterType.STRING);
         newParameter.setValue(value);
         Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.of(initialParameter));
-        Mockito.when(parameterRepository.save(Mockito.any())).thenReturn(newParameter);
+        Mockito.when(parameterRepository.saveAll(Mockito.anyList())).thenReturn(List.of(newParameter));
 
-        ParameterDto parameterDto = parameterService.setParameterValue(id, value);
+        ParameterDto newParameterDto = new ParameterDto(newParameter.getId(), newParameter.getName(), newParameter.getDisplayOrder(), newParameter.getParameterType().name(), newParameter.getSectionTitle(), newParameter.getValue(), "");
+        List<ParameterDto> parameterDto = parameterService.setParameterValues(List.of(newParameterDto));
 
         Assertions.assertThat(parameterDto)
             .isNotNull()
+            .isNotEmpty()
+            .element(0)
             .hasFieldOrPropertyWithValue("id", id)
             .hasFieldOrPropertyWithValue("value", value);
     }
@@ -101,7 +104,8 @@ class ParameterServiceTest {
         String value = "Amazing value";
         Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.empty());
 
-        ParameterDto parameterDto = parameterService.setParameterValue(id, value);
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto("unknown", null, 1, null, null, null, null));
+        List<ParameterDto> parameterDto = parameterService.setParameterValues(parameterDtos);
 
         Assertions.assertThat(parameterDto).isNull();
     }

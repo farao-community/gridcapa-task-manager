@@ -6,6 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.api;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  * @author Marc Schwitzguebel {@literal <marc.schwitzguebel at rte-france.com>}
@@ -20,7 +23,14 @@ public class ParameterDto {
     private String value;
     private String defaultValue;
 
-    public ParameterDto(String id, String name, int displayOrder, String parameterType, String sectionTitle, String value, String defaultValue) {
+    @JsonCreator
+    public ParameterDto(@JsonProperty("id") String id,
+                        @JsonProperty("name") String name,
+                        @JsonProperty("displayOrder") int displayOrder,
+                        @JsonProperty("parameterType") String parameterType,
+                        @JsonProperty("sectionTitle") String sectionTitle,
+                        @JsonProperty("value") String value,
+                        @JsonProperty("defaultValue") String defaultValue) {
         this.id = id;
         this.name = name;
         this.displayOrder = displayOrder;

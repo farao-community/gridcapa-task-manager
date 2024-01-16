@@ -15,7 +15,7 @@ public class RunnerParameters {
         return parameters;
     }
 
-    public Optional<String> getRunnerParamater(String id) {
+    public Optional<String> getRunnerParameter(String id) {
         return Optional.ofNullable(parameters.get(id));
     }
 }

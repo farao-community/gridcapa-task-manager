@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -213,12 +214,12 @@ public class TaskManagerController {
         return ResponseEntity.ok(parameters);
     }
 
-    @PatchMapping(value = "/parameters/{id}")
-    public ResponseEntity<ParameterDto> setParameterValue(@PathVariable String id, @RequestParam String value) {
-        ParameterDto parameter = parameterService.setParameterValue(id, value);
-        if (parameter == null) {
+    @PatchMapping(value = "/parameters")
+    public ResponseEntity<List<ParameterDto>> setParameterValues(@RequestBody List<ParameterDto> parameterDtos) {
+        List<ParameterDto> updatedParameterDtos = parameterService.setParameterValues(parameterDtos);
+        if (updatedParameterDtos == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(parameter);
+        return ResponseEntity.ok(updatedParameterDtos);
     }
 }

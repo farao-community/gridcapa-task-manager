@@ -1,6 +1,9 @@
 spring:
   application:
     name: task-manager
+  sql:
+    init:
+      mode: never
 task-server:
   process:
     tag: CSE_D2CC
@@ -35,4 +38,5 @@ runner:
   parameters:
     test1: true
     test2: 42
+    test3: HelloWorld
 

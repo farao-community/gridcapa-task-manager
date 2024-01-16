@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -322,28 +323,31 @@ class TaskManagerControllerTest {
     }
 
     @Test
-    void setParameterValueOkTest() {
+    void setParameterValuesOkTest() {
         String id = "27L";
         String value = "new value";
-        Mockito.when(parameterService.setParameterValue(id, value))
-            .thenReturn(new ParameterDto(id, "name", 1, "type", "section", value, "test"));
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", value, "test"));
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
+            .thenReturn(parameterDtos);
 
-        ResponseEntity<ParameterDto> response = taskManagerController.setParameterValue(id, value);
+        ResponseEntity<List<ParameterDto>> response = taskManagerController.setParameterValues(parameterDtos);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(id, response.getBody().getId());
-        assertEquals(value, response.getBody().getValue());
+        assertFalse(response.getBody().isEmpty());
+        assertEquals(id, response.getBody().get(0).getId());
+        assertEquals(value, response.getBody().get(0).getValue());
     }
 
     @Test
     void setParameterValueNotFoundTest() {
         String id = "27L";
         String value = "new value";
-        Mockito.when(parameterService.setParameterValue(id, value)).thenReturn(null);
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", value, "test"));
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(null);
 
-        ResponseEntity<ParameterDto> response = taskManagerController.setParameterValue(id, value);
+        ResponseEntity<List<ParameterDto>> response = taskManagerController.setParameterValues(parameterDtos);
 
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

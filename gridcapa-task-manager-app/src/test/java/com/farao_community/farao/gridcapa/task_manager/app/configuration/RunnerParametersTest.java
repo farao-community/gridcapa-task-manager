@@ -23,15 +23,15 @@ class RunnerParametersTest {
         String test2Value = parameters.get("test2");
         Assertions.assertNotNull(test2Value);
         Assertions.assertEquals("42", test2Value);
-        Assertions.assertNull(parameters.get("test3"));
+        Assertions.assertNull(parameters.get("inexistant"));
     }
 
     @Test
     void getRunnerParameterTest() {
-        Optional<String> test1Value = runnerParameters.getRunnerParamater("test1");
+        Optional<String> test1Value = runnerParameters.getRunnerParameter("test1");
         Assertions.assertTrue(test1Value.isPresent());
         Assertions.assertEquals("true", test1Value.get());
-        Assertions.assertTrue(runnerParameters.getRunnerParamater("toto").isEmpty());
+        Assertions.assertTrue(runnerParameters.getRunnerParameter("toto").isEmpty());
 
     }
 }
