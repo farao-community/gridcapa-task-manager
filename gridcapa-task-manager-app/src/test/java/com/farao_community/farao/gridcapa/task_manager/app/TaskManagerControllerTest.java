@@ -305,7 +305,7 @@ class TaskManagerControllerTest {
 
     @Test
     void getParametersTest() {
-        List<ParameterDto> dtoList = List.of(new ParameterDto("42L", "name", 5, "INT", "Section title", "eulav", "defaultEulav"));
+        List<ParameterDto> dtoList = List.of(new ParameterDto("42L", "name", 5, "INT", "Section title", 2, "eulav", "defaultEulav"));
         Mockito.when(parameterService.getParameters()).thenReturn(dtoList);
         ResponseEntity<List<ParameterDto>> taskResponse = taskManagerController.getParameters();
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
@@ -318,6 +318,7 @@ class TaskManagerControllerTest {
         assertEquals(5, dto.getDisplayOrder());
         assertEquals("INT", dto.getParameterType());
         assertEquals("Section title", dto.getSectionTitle());
+        assertEquals(2, dto.getSectionOrder());
         assertEquals("eulav", dto.getValue());
         assertEquals("defaultEulav", dto.getDefaultValue());
     }
@@ -326,7 +327,7 @@ class TaskManagerControllerTest {
     void setParameterValuesOkTest() {
         String id = "27L";
         String value = "new value";
-        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", value, "test"));
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
         Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
             .thenReturn(parameterDtos);
 
@@ -344,7 +345,7 @@ class TaskManagerControllerTest {
     void setParameterValueNotFoundTest() {
         String id = "27L";
         String value = "new value";
-        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", value, "test"));
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
         Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(null);
 
         ResponseEntity<List<ParameterDto>> response = taskManagerController.setParameterValues(parameterDtos);

@@ -32,7 +32,7 @@ class TaskParameterDtoTest {
         String aBoolean = "BOOLEAN_";
         String aTrue = "TRUE";
         String aFalse = "FALSE";
-        TaskParameterDto dto = new TaskParameterDto(new ParameterDto(identifiant, "name", 12,  aBoolean, "title of section", aTrue, aFalse));
+        TaskParameterDto dto = new TaskParameterDto(new ParameterDto(identifiant, "name", 12,  aBoolean, "title of section", 1, aTrue, aFalse));
         Assertions.assertEquals(identifiant, dto.getId());
         Assertions.assertEquals(aBoolean, dto.getParameterType());
         Assertions.assertEquals(aTrue, dto.getValue());

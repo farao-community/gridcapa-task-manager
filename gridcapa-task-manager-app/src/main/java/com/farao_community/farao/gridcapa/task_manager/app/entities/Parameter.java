@@ -28,6 +28,8 @@ public class Parameter implements Serializable {
 
     private String sectionTitle;
 
+    private int sectionOrder;
+
     private String value;
 
     public enum ParameterType {
@@ -72,6 +74,14 @@ public class Parameter implements Serializable {
 
     public void setSectionTitle(String sectionTitle) {
         this.sectionTitle = sectionTitle;
+    }
+
+    public int getSectionOrder() {
+        return sectionOrder;
+    }
+
+    public void setSectionOrder(int sectionOrder) {
+        this.sectionOrder = sectionOrder;
     }
 
     public String getValue() {

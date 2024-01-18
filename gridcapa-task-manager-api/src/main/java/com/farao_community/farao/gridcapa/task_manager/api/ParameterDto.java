@@ -20,6 +20,7 @@ public class ParameterDto {
     private int displayOrder;
     private String parameterType;
     private String sectionTitle;
+    private int sectionOrder;
     private String value;
     private String defaultValue;
 
@@ -29,6 +30,7 @@ public class ParameterDto {
                         @JsonProperty("displayOrder") int displayOrder,
                         @JsonProperty("parameterType") String parameterType,
                         @JsonProperty("sectionTitle") String sectionTitle,
+                        @JsonProperty("sectionOrder") int sectionOrder,
                         @JsonProperty("value") String value,
                         @JsonProperty("defaultValue") String defaultValue) {
         this.id = id;
@@ -36,6 +38,7 @@ public class ParameterDto {
         this.displayOrder = displayOrder;
         this.parameterType = parameterType;
         this.sectionTitle = sectionTitle;
+        this.sectionOrder = sectionOrder;
         this.value = value;
         this.defaultValue = defaultValue;
     }
@@ -78,6 +81,14 @@ public class ParameterDto {
 
     public void setSectionTitle(String sectionTitle) {
         this.sectionTitle = sectionTitle;
+    }
+
+    public int getSectionOrder() {
+        return sectionOrder;
+    }
+
+    public void setSectionOrder(int sectionOrder) {
+        this.sectionOrder = sectionOrder;
     }
 
     public String getValue() {

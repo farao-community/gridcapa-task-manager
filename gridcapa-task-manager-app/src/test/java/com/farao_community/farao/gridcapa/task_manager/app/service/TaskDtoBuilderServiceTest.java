@@ -36,7 +36,7 @@ class TaskDtoBuilderServiceTest {
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
         TaskRepository taskRepository = new TaskRepositoryMock();
         ParameterService parameterService = Mockito.mock(ParameterService.class);
-        ParameterDto param = new ParameterDto(null, null, 1, null, null, null, null);
+        ParameterDto param = new ParameterDto(null, null, 1, null, null, 2, null, null);
         Mockito.when(parameterService.getParameters()).thenReturn(List.of(param, param, param));
         TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 11, 9);
