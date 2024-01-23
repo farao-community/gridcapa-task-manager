@@ -8,6 +8,8 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.time.OffsetDateTime;
 
@@ -45,5 +47,9 @@ public class ProcessEventDto {
 
     public String getServiceName() {
         return serviceName;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }
