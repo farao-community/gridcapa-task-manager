@@ -45,6 +45,7 @@ public class ParameterService {
 
     public List<ParameterDto> setParameterValues(List<ParameterDto> parameterDtos) {
         List<Parameter> parametersToSave = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
 
         for (ParameterDto parameterDto : parameterDtos) {
             String id = parameterDto.getId();
@@ -56,14 +57,30 @@ public class ParameterService {
             } else {
                 LOGGER.info("Setting parameter {} to value {}", id, value);
                 Parameter parameter = parameterOpt.get();
+                validateParameterValue(parameter, value, errors);
                 parameter.setValue(value);
                 parametersToSave.add(parameter);
             }
         }
 
+        if (!errors.isEmpty()) {
+            String message = String.format("Validation of parameters failed. Failure reasons are: [\"%s\"].", String.join("\" ; \"", errors));
+            throw new TaskManagerException(message);
+        }
+
         return parameterRepository.saveAll(parametersToSave).stream()
             .map(this::convertToDtoAndFillDefaultValue)
             .toList();
+    }
+
+    private void validateParameterValue(Parameter parameter, String value, List<String> errors) {
+        if (parameter.getParameterType() == Parameter.ParameterType.INT) {
+            try {
+                Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                errors.add(String.format("Parameter %s (%s) could not be parsed as integer (value: %s)", parameter.getName(), parameter.getId(), value));
+            }
+        }
     }
 
     private ParameterDto convertToDtoAndFillDefaultValue(Parameter param) {

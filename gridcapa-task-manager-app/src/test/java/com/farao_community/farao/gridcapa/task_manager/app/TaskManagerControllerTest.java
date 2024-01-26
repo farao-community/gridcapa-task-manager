@@ -44,6 +44,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -331,14 +332,17 @@ class TaskManagerControllerTest {
         Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
             .thenReturn(parameterDtos);
 
-        ResponseEntity<List<ParameterDto>> response = taskManagerController.setParameterValues(parameterDtos);
+        ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isEmpty());
-        assertEquals(id, response.getBody().get(0).getId());
-        assertEquals(value, response.getBody().get(0).getValue());
+        Object responseBodyObject = response.getBody();
+        assertNotNull(responseBodyObject);
+        assertInstanceOf(List.class, responseBodyObject);
+        List<ParameterDto> responseBodyCast = (List<ParameterDto>) responseBodyObject;
+        assertFalse(responseBodyCast.isEmpty());
+        assertEquals(id, responseBodyCast.get(0).getId());
+        assertEquals(value, responseBodyCast.get(0).getValue());
     }
 
     @Test
@@ -348,10 +352,28 @@ class TaskManagerControllerTest {
         List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
         Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(null);
 
-        ResponseEntity<List<ParameterDto>> response = taskManagerController.setParameterValues(parameterDtos);
+        ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
 
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
+    }
+
+    @Test
+    void setParameterValueIncompatibleTypeTest() {
+        String exceptionMessage = "test exception";
+        String id = "27L";
+        String value = "new value";
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
+            .thenThrow(new TaskManagerException(exceptionMessage));
+
+        ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertInstanceOf(String.class, response.getBody());
+        assertEquals(exceptionMessage, response.getBody());
     }
 }

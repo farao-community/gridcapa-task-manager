@@ -215,11 +215,15 @@ public class TaskManagerController {
     }
 
     @PatchMapping(value = "/parameters")
-    public ResponseEntity<List<ParameterDto>> setParameterValues(@RequestBody List<ParameterDto> parameterDtos) {
-        List<ParameterDto> updatedParameterDtos = parameterService.setParameterValues(parameterDtos);
-        if (updatedParameterDtos == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Object> setParameterValues(@RequestBody List<ParameterDto> parameterDtos) {
+        try {
+            List<ParameterDto> updatedParameterDtos = parameterService.setParameterValues(parameterDtos);
+            if (updatedParameterDtos == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(updatedParameterDtos);
+        } catch (TaskManagerException tme) {
+            return ResponseEntity.badRequest().body(tme.getMessage());
         }
-        return ResponseEntity.ok(updatedParameterDtos);
     }
 }
