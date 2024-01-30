@@ -6,10 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.api;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TaskParameterDtoTest {
 
@@ -20,10 +19,10 @@ class TaskParameterDtoTest {
         String aTrue = "true";
         String aFalse = "false";
         TaskParameterDto dto = new TaskParameterDto(identifiant, aBoolean, aTrue, aFalse);
-        Assertions.assertEquals(identifiant, dto.getId());
-        Assertions.assertEquals(aBoolean, dto.getParameterType());
-        Assertions.assertEquals(aTrue, dto.getValue());
-        Assertions.assertEquals(aFalse, dto.getDefaultValue());
+        assertEquals(identifiant, dto.getId());
+        assertEquals(aBoolean, dto.getParameterType());
+        assertEquals(aTrue, dto.getValue());
+        assertEquals(aFalse, dto.getDefaultValue());
     }
 
     @Test
@@ -33,10 +32,9 @@ class TaskParameterDtoTest {
         String aTrue = "TRUE";
         String aFalse = "FALSE";
         TaskParameterDto dto = new TaskParameterDto(new ParameterDto(identifiant, "name", 12,  aBoolean, "title of section", 1, aTrue, aFalse));
-        Assertions.assertEquals(identifiant, dto.getId());
-        Assertions.assertEquals(aBoolean, dto.getParameterType());
-        Assertions.assertEquals(aTrue, dto.getValue());
-        Assertions.assertEquals(aFalse, dto.getDefaultValue());
+        assertEquals(identifiant, dto.getId());
+        assertEquals(aBoolean, dto.getParameterType());
+        assertEquals(aTrue, dto.getValue());
+        assertEquals(aFalse, dto.getDefaultValue());
     }
-
 }

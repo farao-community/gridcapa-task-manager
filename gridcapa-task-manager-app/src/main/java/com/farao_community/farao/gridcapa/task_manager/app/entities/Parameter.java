@@ -6,7 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import java.io.Serializable;
 
 /**
