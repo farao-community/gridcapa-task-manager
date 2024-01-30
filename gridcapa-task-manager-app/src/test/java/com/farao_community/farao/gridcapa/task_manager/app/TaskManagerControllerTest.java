@@ -350,7 +350,7 @@ class TaskManagerControllerTest {
         String id = "27L";
         String value = "new value";
         List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
-        Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(null);
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(List.of());
 
         ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
 

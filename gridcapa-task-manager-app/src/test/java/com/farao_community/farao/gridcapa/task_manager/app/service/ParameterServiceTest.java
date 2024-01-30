@@ -107,6 +107,8 @@ class ParameterServiceTest {
         List<ParameterDto> parameterDtos = List.of(new ParameterDto("unknown", null, 1, null, null, 2, null, null));
         List<ParameterDto> parameterDto = parameterService.setParameterValues(parameterDtos);
 
-        Assertions.assertThat(parameterDto).isNull();
+        Assertions.assertThat(parameterDto)
+            .isNotNull()
+            .isEmpty();
     }
 }

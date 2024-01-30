@@ -52,10 +52,10 @@ public class ParameterService {
             String value = parameterDto.getValue();
             Optional<Parameter> parameterOpt = parameterRepository.findById(id);
             if (parameterOpt.isEmpty()) {
-                LOGGER.info("Parameter {} not found", id);
-                return null;
+                LOGGER.info("Parameter {} not found", id); //NOSONAR We really want to log this piece of information
+                return List.of();
             } else {
-                LOGGER.info("Setting parameter {} to value {}", id, value);
+                LOGGER.info("Setting parameter {} to value {}", id, value); //NOSONAR We really want to log this piece of information
                 Parameter parameter = parameterOpt.get();
                 validateParameterValue(parameter, value, errors);
                 parameter.setValue(value);

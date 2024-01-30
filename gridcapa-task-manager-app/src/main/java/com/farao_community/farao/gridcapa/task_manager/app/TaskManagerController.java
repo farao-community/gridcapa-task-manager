@@ -218,7 +218,7 @@ public class TaskManagerController {
     public ResponseEntity<Object> setParameterValues(@RequestBody List<ParameterDto> parameterDtos) {
         try {
             List<ParameterDto> updatedParameterDtos = parameterService.setParameterValues(parameterDtos);
-            if (updatedParameterDtos == null) {
+            if (updatedParameterDtos.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
             return ResponseEntity.ok(updatedParameterDtos);
