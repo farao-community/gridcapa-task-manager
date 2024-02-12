@@ -12,11 +12,12 @@ task-server:
     outputs:
       - CNE
     enable-export-logs: true
+    manual-upload-base-path: cse/d2cc
   whitelist:
     - http://fakeUrl
 minio-adapter:
   bucket: gridcapa
-  base-path: /cse/d2cc
+  base-path:
   url: http://minio.url
   access-key: gridcapa
   secret-key: gridcapa
