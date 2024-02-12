@@ -67,12 +67,13 @@ task-server:
     outputs:
       - CNE
     enable-export-logs: false
+    manual-upload-base-path: CSE/D2CC
   whitelist:
     - http://minio:9000/
 
 minio-adapter:
   bucket: ${GRIDCAPA_MINIO_BUCKET:gridcapa}
-  base-path: ${GRIDCAPA_MINIO_BASE_PATH:/CSE/D2CC}
+  base-path: ${GRIDCAPA_MINIO_BASE_PATH:}
   url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
   access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
   secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}

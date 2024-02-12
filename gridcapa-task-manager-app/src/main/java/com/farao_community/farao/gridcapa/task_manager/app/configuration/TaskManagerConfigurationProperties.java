@@ -42,14 +42,16 @@ public class TaskManagerConfigurationProperties {
         private final List<String> optionalInputs;
         private final List<String> outputs;
         private final boolean enableExportLogs;
+        private final String manualUploadBasePath;
 
-        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, List<String> outputs, boolean enableExportLogs) {
+        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, List<String> outputs, boolean enableExportLogs, String manualUploadBasePath) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
             this.optionalInputs = optionalInputs;
             this.outputs = outputs;
             this.enableExportLogs = enableExportLogs;
+            this.manualUploadBasePath = manualUploadBasePath;
         }
 
         public String getTag() {
@@ -74,6 +76,10 @@ public class TaskManagerConfigurationProperties {
 
         public boolean isExportLogsEnabled() {
             return enableExportLogs;
+        }
+
+        public String getManualUploadBasePath() {
+            return manualUploadBasePath;
         }
     }
 }

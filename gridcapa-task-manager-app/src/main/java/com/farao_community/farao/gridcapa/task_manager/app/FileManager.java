@@ -221,7 +221,7 @@ public class FileManager {
 
     public void uploadFileToMinio(OffsetDateTime timestamp, MultipartFile file, String fileType, String fileName) {
         String processTag = taskManagerConfigurationProperties.getProcess().getTag();
-        String path = String.format("MANUAL_UPLOAD/%s/%s", timestamp.format(ZIP_DATE_TIME_FORMATTER), fileName);
+        String path = String.format("%s/MANUAL_UPLOAD/%s/%s", taskManagerConfigurationProperties.getProcess().getManualUploadBasePath(), timestamp.format(ZIP_DATE_TIME_FORMATTER), fileName);
         try (InputStream in = file.getInputStream()) {
             minioAdapter.uploadInputForTimestamp(path, in, processTag, fileType, timestamp);
             String logFileName = fileName != null ? fileName.replaceAll("[\n\r]", "_") : "NULL";
