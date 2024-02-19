@@ -95,10 +95,3 @@ purge-task-events:
   cron: 0 0 12 * * *
   nb-days: 7
 
-runner:
-  parameters:
-    TEST_ID_1: 33
-    TEST_ID_2: true
-    TEST_ID_3: "Random thing"
-
-
