@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskDtoBuilder;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TaskTest {
 
     @Autowired
-    private TaskDtoBuilder taskDtoBuilder;
+    private TaskDtoBuilderService taskDtoBuilderService;
 
     private Task task;
 
@@ -107,7 +107,7 @@ class TaskTest {
     void testConstructorFromEntity() {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
         Task task = new Task(timestamp);
-        TaskDto taskDto = taskDtoBuilder.createDtoFromEntity(task);
+        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntity(task);
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getInputs().size());

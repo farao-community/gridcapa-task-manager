@@ -9,6 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.WebsocketConfig;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -25,22 +26,22 @@ public class TaskUpdateNotifier {
     private static final String TASK_STATUS_UPDATED_BINDING = "task-status-updated";
 
     private final StreamBridge streamBridge;
-    private final TaskDtoBuilder taskDtoBuilder;
+    private final TaskDtoBuilderService taskDtoBuilderService;
 
     private final SimpMessagingTemplate stompBridge;
     private final WebsocketConfig websocketConfig;
 
-    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilder taskDtoBuilder, SimpMessagingTemplate broker, WebsocketConfig websocketConfig) {
+    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilderService taskDtoBuilderService, SimpMessagingTemplate broker, WebsocketConfig websocketConfig) {
         this.streamBridge = streamBridge;
-        this.taskDtoBuilder = taskDtoBuilder;
+        this.taskDtoBuilderService = taskDtoBuilderService;
         this.stompBridge = broker;
         this.websocketConfig = websocketConfig;
     }
 
     public void notify(Task task, boolean withStatusUpdate) {
         String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        TaskDto taskdto = taskDtoBuilder.createDtoFromEntity(task);
-        TaskDto taskdtoNoLogs = taskDtoBuilder.createDtoFromEntityNoLogs(task);
+        TaskDto taskdto = taskDtoBuilderService.createDtoFromEntity(task);
+        TaskDto taskdtoNoLogs = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
         streamBridge.send(bindingName, taskdto);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskdto); //to actualize the timestamp view

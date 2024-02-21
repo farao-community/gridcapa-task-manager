@@ -1,5 +1,14 @@
-package com.farao_community.farao.gridcapa.task_manager.app;
+/*
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package com.farao_community.farao.gridcapa.task_manager.app.service;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.junit.jupiter.api.Test;
@@ -18,39 +27,46 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TaskDtoBuilderTest {
+class TaskDtoBuilderServiceTest {
 
     @Test
-    public void testGetListTasksDto24TS() {
+    void testGetListTasksDto24TS() {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
         Mockito.when(processProperties.getTimezone()).thenReturn("CET");
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
         TaskRepository taskRepository = new TaskRepositoryMock();
-        TaskDtoBuilder taskDtoBuilder = new TaskDtoBuilder(properties, taskRepository);
+        ParameterService parameterService = Mockito.mock(ParameterService.class);
+        ParameterDto param = new ParameterDto(null, null, 1, null, null, 2, null, null);
+        Mockito.when(parameterService.getParameters()).thenReturn(List.of(param, param, param));
+        TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 11, 9);
-        assertEquals(24, taskDtoBuilder.getListTasksDto(localDate).size());
+        List<TaskDto> listTasksDto = taskDtoBuilderService.getListTasksDto(localDate);
+        assertEquals(24, listTasksDto.size());
+        assertEquals(3, listTasksDto.get(0).getParameters().size());
     }
 
     @Test
-    public void testGetListTasksDto23TS() {
+    void testGetListTasksDto23TS() {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
         Mockito.when(processProperties.getTimezone()).thenReturn("CET");
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
         TaskRepository taskRepository = new TaskRepositoryMock();
-        TaskDtoBuilder taskDtoBuilder = new TaskDtoBuilder(properties, taskRepository);
+        ParameterService parameterService = Mockito.mock(ParameterService.class);
+        TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 3, 26);
-        assertEquals(23, taskDtoBuilder.getListTasksDto(localDate).size());
+        assertEquals(23, taskDtoBuilderService.getListTasksDto(localDate).size());
     }
 
     @Test
-    public void testGetListTasksDto25TS() {
+    void testGetListTasksDto25TS() {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
         Mockito.when(processProperties.getTimezone()).thenReturn("CET");
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
         TaskRepository taskRepository = new TaskRepositoryMock();
-        TaskDtoBuilder taskDtoBuilder = new TaskDtoBuilder(properties, taskRepository);
+        ParameterService parameterService = Mockito.mock(ParameterService.class);
+        TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 10, 29);
-        assertEquals(25, taskDtoBuilder.getListTasksDto(localDate).size());
+        assertEquals(25, taskDtoBuilderService.getListTasksDto(localDate).size());
     }
 
     private class TaskRepositoryMock implements TaskRepository {

@@ -8,6 +8,8 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ public class TaskDto {
     private final List<ProcessFileDto> inputs;
     private final List<ProcessFileDto> outputs;
     private final List<ProcessEventDto> processEvents;
+    private final List<TaskParameterDto> parameters;
 
     @JsonCreator
     public TaskDto(@JsonProperty("id") UUID id,
@@ -32,13 +35,15 @@ public class TaskDto {
                    @JsonProperty("status") TaskStatus status,
                    @JsonProperty("inputs") List<ProcessFileDto> inputs,
                    @JsonProperty("outputs") List<ProcessFileDto> outputs,
-                   @JsonProperty("processEvents") List<ProcessEventDto> processEvents) {
+                   @JsonProperty("processEvents") List<ProcessEventDto> processEvents,
+                   @JsonProperty("parameters") List<TaskParameterDto> parameters) {
         this.id = id;
         this.timestamp = timestamp;
         this.status = status;
         this.inputs = inputs;
         this.outputs = outputs;
         this.processEvents = processEvents;
+        this.parameters = parameters;
     }
 
     public static TaskDto emptyTask(OffsetDateTime timestamp, List<String> inputs, List<String> outputs) {
@@ -48,6 +53,7 @@ public class TaskDto {
                 TaskStatus.NOT_CREATED,
                 inputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
                 outputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                new ArrayList<>(),
                 new ArrayList<>());
     }
 
@@ -73,5 +79,13 @@ public class TaskDto {
 
     public List<ProcessEventDto> getProcessEvents() {
         return processEvents;
+    }
+
+    public List<TaskParameterDto> getParameters() {
+        return parameters;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }
