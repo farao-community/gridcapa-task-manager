@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +76,6 @@ public class EventHandler {
     void handleTaskEventBatchUpdate(List<TaskLogEventUpdate> events) {
         synchronized (TASK_MANAGER_LOCK) {
             Map<UUID, Task> storedTasks = new HashMap<>();
-            List<Task> tasksToSave = new ArrayList<>();
             for (TaskLogEventUpdate event : events) {
                 UUID taskUUID = UUID.fromString(event.getId());
                 Task task = storedTasks.get(taskUUID);
@@ -85,23 +84,24 @@ public class EventHandler {
                     if (optionalTask.isPresent()) {
                         task = optionalTask.get();
                         storedTasks.put(taskUUID, task);
-                        updateTaskEvent(event, task, tasksToSave);
+                        addProcessEventToTask(event, task);
                     } else {
                         LOGGER.warn("Task {} does not exist. Impossible to update task with log event", event.getId());
                     }
                 } else {
-                    updateTaskEvent(event, task, tasksToSave);
+                    addProcessEventToTask(event, task);
                 }
             }
+            Collection<Task> tasksToSave = storedTasks.values();
             taskRepository.saveAll(tasksToSave);
             for (Task task : tasksToSave) {
                 taskUpdateNotifier.notify(task, false);
-                LOGGER.debug("Task events has been added on {}", task.getTimestamp());
+                LOGGER.debug("Task events have been added on {}", task.getTimestamp());
             }
         }
     }
 
-    private void updateTaskEvent(TaskLogEventUpdate loggerEvent, Task task, List<Task> tasksToSave) {
+    private void addProcessEventToTask(TaskLogEventUpdate loggerEvent, Task task) {
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
         String message = loggerEvent.getMessage();
         Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
@@ -109,8 +109,5 @@ public class EventHandler {
             message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
         }
         task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
-        if (!tasksToSave.contains(task)) {
-            tasksToSave.add(task);
-        }
     }
 }
