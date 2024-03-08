@@ -95,7 +95,7 @@ public class EventHandler {
             Collection<Task> tasksToSave = storedTasks.values();
             taskRepository.saveAll(tasksToSave);
             for (Task task : tasksToSave) {
-                taskUpdateNotifier.notify(task, false);
+                taskUpdateNotifier.notify(task, false, true);
                 LOGGER.debug("Task events have been added on {}", task.getTimestamp());
             }
         }
