@@ -38,17 +38,20 @@ public class TaskUpdateNotifier {
         this.websocketConfig = websocketConfig;
     }
 
-    public void notify(Task task, boolean withStatusUpdate) {
+    public void notify(Task task, boolean withStatusUpdate, boolean withEventsUpdate) {
         String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        TaskDto taskdto = taskDtoBuilderService.createDtoFromEntity(task);
-        TaskDto taskdtoNoLogs = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
-        streamBridge.send(bindingName, taskdto);
+        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntity(task);
+        TaskDto taskDtoNoLogs = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
+        streamBridge.send(bindingName, taskDto);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskdto); //to actualize the timestamp view
-        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskdtoNoLogs); //to actualize the business date view
+        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskDtoNoLogs); // to actualize status/files in the timestamp view
+        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskDtoNoLogs); // to actualize status/files in the business date view
+        if (withEventsUpdate) {
+            stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()) + "/events", true); // to actualize event logs in the timestamp view
+        }
     }
 
     public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
+        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated(), true));
     }
 }

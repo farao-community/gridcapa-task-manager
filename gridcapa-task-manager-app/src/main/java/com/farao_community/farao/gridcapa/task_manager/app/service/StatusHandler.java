@@ -86,7 +86,7 @@ public class StatusHandler {
     private void updateTaskStatus(Task task, TaskStatus taskStatus) {
         task.setStatus(taskStatus);
         Task savedTask = taskRepository.saveAndFlush(task);
-        taskUpdateNotifier.notify(savedTask, true);
+        taskUpdateNotifier.notify(savedTask, true, false);
         LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
     }
 

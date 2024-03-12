@@ -54,13 +54,14 @@ class EventHandlerTest {
 
     @Test
     void consumeTaskEventUpdateTest() {
-        String logEvent = "{\n" +
-            "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f2\",\n" +
-            "  \"timestamp\": \"2023-06-07T13:14:50.106608Z\",\n" +
-            "  \"level\": \"INFO\",\n" +
-            "  \"message\": \"Hello World!\",\n" +
-            "  \"serviceName\": \"GRIDCAPA\" \n" +
-            "}";
+        String logEvent = """
+            {
+              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f2",
+              "timestamp": "2023-06-07T13:14:50.106608Z",
+              "level": "INFO",
+              "message": "Hello World!",
+              "serviceName": "GRIDCAPA"
+            }""";
         Flux<List<byte[]>> logEventBytesFlux = Flux.fromStream(Stream.of(List.of(logEvent.getBytes())));
         Consumer<Flux<List<byte[]>>> fluxConsumer = eventHandler.consumeTaskEventUpdate();
         Assertions.assertDoesNotThrow(() -> fluxConsumer.accept(logEventBytesFlux));
@@ -72,13 +73,14 @@ class EventHandlerTest {
         Task task = new Task(taskTimestamp);
         task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
         taskRepository.save(task);
-        String logEvent = "{\n" +
-                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
-                "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
-                "  \"level\": \"INFO\",\n" +
-                "  \"message\": \"Hello from backend\",\n" +
-                "  \"serviceName\": \"GRIDCAPA\" \n" +
-                "}";
+        String logEvent = """
+            {
+              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
+              "timestamp": "2021-12-30T17:31:33.030+01:00",
+              "level": "INFO",
+              "message": "Hello from backend",
+              "serviceName": "GRIDCAPA"
+            }""";
         List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
@@ -95,14 +97,15 @@ class EventHandlerTest {
         Task task = new Task(taskTimestamp);
         task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
         taskRepository.save(task);
-        String logEvent = "{\n" +
-                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
-                "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
-                "  \"level\": \"INFO\",\n" +
-                "  \"message\": \"Hello from backend\",\n" +
-                "  \"serviceName\": \"GRIDCAPA\" ,\n" +
-                "  \"eventPrefix\": \"STEP-1\" \n" +
-                "}";
+        String logEvent = """
+            {
+              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
+              "timestamp": "2021-12-30T17:31:33.030+01:00",
+              "level": "INFO",
+              "message": "Hello from backend",
+              "serviceName": "GRIDCAPA" ,
+              "eventPrefix": "STEP-1"
+            }""";
         List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
@@ -119,21 +122,23 @@ class EventHandlerTest {
         Task task = new Task(taskTimestamp);
         task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
         taskRepository.save(task);
-        String logEvent1 = "{\n" +
-                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
-                "  \"timestamp\": \"2021-12-30T17:31:33.030+01:00\",\n" +
-                "  \"level\": \"INFO\",\n" +
-                "  \"message\": \"Hello from backend\",\n" +
-                "  \"serviceName\": \"GRIDCAPA\" ,\n" +
-                "  \"eventPrefix\": \"STEP-1\" \n" +
-                "}";
-        String logEvent2 = "{\n" +
-                "  \"gridcapa-task-id\": \"1fdda469-53e9-4d63-a533-b935cffdd2f6\",\n" +
-                "  \"timestamp\": \"2021-12-30T17:31:34.030+01:00\",\n" +
-                "  \"level\": \"WARNING\",\n" +
-                "  \"message\": \"Hello from backend2\",\n" +
-                "  \"serviceName\": \"GRIDCAPA\" \n" +
-                "}";
+        String logEvent1 = """
+            {
+              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
+              "timestamp": "2021-12-30T17:31:33.030+01:00",
+              "level": "INFO",
+              "message": "Hello from backend",
+              "serviceName": "GRIDCAPA",
+              "eventPrefix": "STEP-1"
+            }""";
+        String logEvent2 = """
+            {
+              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
+              "timestamp": "2021-12-30T17:31:34.030+01:00",
+              "level": "WARNING",
+              "message": "Hello from backend2",
+              "serviceName": "GRIDCAPA"
+            }""";
         List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent1.getBytes(), logEvent2.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
