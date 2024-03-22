@@ -6,10 +6,11 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+
 import java.io.Serializable;
 
 /**
@@ -33,7 +34,7 @@ public class Parameter implements Serializable {
 
     private int sectionOrder;
 
-    private String value;
+    private String parameterValue;
 
     public enum ParameterType {
         INT, STRING, BOOLEAN
@@ -87,11 +88,11 @@ public class Parameter implements Serializable {
         this.sectionOrder = sectionOrder;
     }
 
-    public String getValue() {
-        return value;
+    public String getParameterValue() {
+        return parameterValue;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setParameterValue(String value) {
+        this.parameterValue = value;
     }
 }

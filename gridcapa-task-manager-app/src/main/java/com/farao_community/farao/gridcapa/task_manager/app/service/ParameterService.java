@@ -58,7 +58,7 @@ public class ParameterService {
                 LOGGER.info("Setting parameter {} to value {}", id, value); //NOSONAR We really want to log this piece of information
                 Parameter parameter = parameterOpt.get();
                 validateParameterValue(parameter, value, errors);
-                parameter.setValue(value);
+                parameter.setParameterValue(value);
                 parametersToSave.add(parameter);
             }
         }
@@ -86,6 +86,6 @@ public class ParameterService {
     private ParameterDto convertToDtoAndFillDefaultValue(Parameter param) {
         String defaultValue = runnerParameters.getRunnerParameter(param.getId())
             .orElseThrow(() -> new TaskManagerException("No default value for given parameter"));
-        return new ParameterDto(param.getId(), param.getName(), param.getDisplayOrder(), param.getParameterType().name(), param.getSectionTitle(), param.getSectionOrder(), param.getValue(), defaultValue);
+        return new ParameterDto(param.getId(), param.getName(), param.getDisplayOrder(), param.getParameterType().name(), param.getSectionTitle(), param.getSectionOrder(), param.getParameterValue(), defaultValue);
     }
 }

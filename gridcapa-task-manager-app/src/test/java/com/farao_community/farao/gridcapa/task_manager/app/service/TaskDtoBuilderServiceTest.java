@@ -227,6 +227,11 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
+        public Task getReferenceById(final UUID uuid) {
+            return null;
+        }
+
+        @Override
         public <S extends Task> Optional<S> findOne(Example<S> example) {
             return Optional.empty();
         }

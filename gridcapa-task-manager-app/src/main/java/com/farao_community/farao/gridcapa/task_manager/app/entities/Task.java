@@ -9,27 +9,41 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.comparators.ReverseEventComparator;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
-import org.hibernate.annotations.SortNatural;
 import org.hibernate.annotations.SortComparator;
+import org.hibernate.annotations.SortNatural;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
 
-import javax.persistence.*;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.UUID;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Entity
 @org.hibernate.annotations.Cache(
-    usage = CacheConcurrencyStrategy.READ_WRITE
+        usage = CacheConcurrencyStrategy.READ_WRITE
 )
 @NaturalIdCache
-@Table(indexes = { @Index(columnList = "status", name = "task_status_idx") })
+@Table(indexes = {@Index(columnList = "status", name = "task_status_idx")})
 public class Task {
 
     @Id
@@ -37,6 +51,7 @@ public class Task {
     private UUID id;
 
     @NaturalId
+    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE)
     @Column(name = "timestamp", nullable = false, updatable = false, unique = true)
     private OffsetDateTime timestamp;
 
@@ -44,18 +59,18 @@ public class Task {
     private TaskStatus status;
 
     @OneToMany(
-        mappedBy = "task",
-        cascade = {CascadeType.MERGE, CascadeType.PERSIST},
-        orphanRemoval = true
+            mappedBy = "task",
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST},
+            orphanRemoval = true
     )
     @SortComparator(ReverseEventComparator.class)
     private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinTable(
-        name = "task_process_file",
-        joinColumns = @JoinColumn(name = "fk_task"),
-        inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+            name = "task_process_file",
+            joinColumns = @JoinColumn(name = "fk_task"),
+            inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
     @SortNatural
     private final SortedSet<ProcessFile> processFiles = new TreeSet<>();
 
@@ -120,15 +135,15 @@ public class Task {
 
     public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-            .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
-            .filter(file -> fileType.equals(file.getFileType()))
-            .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
+                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(file -> fileType.equals(file.getFileType()))
+                .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
     }
 
     public Optional<ProcessFile> getOutput(String fileType) {
         return processFiles.stream()
-            .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
-            .filter(file -> fileType.equals(file.getFileType()))
-            .findFirst();
+                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(file -> fileType.equals(file.getFileType()))
+                .findFirst();
     }
 }
