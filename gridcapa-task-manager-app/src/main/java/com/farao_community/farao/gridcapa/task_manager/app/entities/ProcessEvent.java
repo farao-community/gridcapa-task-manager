@@ -6,7 +6,16 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.TimeZoneStorage;
+import org.hibernate.annotations.TimeZoneStorageType;
+
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -25,6 +34,7 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
     @Column(name = "level")
     private String level;
 
+    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE)
     @Column(name = "timestamp")
     private OffsetDateTime timestamp;
 
