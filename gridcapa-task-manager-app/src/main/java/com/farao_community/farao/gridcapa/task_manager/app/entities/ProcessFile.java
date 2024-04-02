@@ -13,8 +13,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.TimeZoneStorageType;
 
 import java.time.OffsetDateTime;
 import java.util.Comparator;
@@ -45,15 +43,12 @@ public class ProcessFile implements Comparable<ProcessFile> {
     @Column(name = "file_type")
     private String fileType;
 
-    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE)
     @Column(name = "starting_availability_date")
     private OffsetDateTime startingAvailabilityDate;
 
-    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE)
     @Column(name = "ending_availability_date")
     private OffsetDateTime endingAvailabilityDate;
 
-    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE)
     @Column(name = "last_modification_date")
     private OffsetDateTime lastModificationDate;
 

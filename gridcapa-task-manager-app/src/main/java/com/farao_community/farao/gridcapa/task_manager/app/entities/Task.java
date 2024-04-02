@@ -24,8 +24,6 @@ import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
 import org.hibernate.annotations.SortComparator;
 import org.hibernate.annotations.SortNatural;
-import org.hibernate.annotations.TimeZoneStorage;
-import org.hibernate.annotations.TimeZoneStorageType;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -51,7 +49,6 @@ public class Task {
     private UUID id;
 
     @NaturalId
-    @TimeZoneStorage(TimeZoneStorageType.NORMALIZE)
     @Column(name = "timestamp", nullable = false, updatable = false, unique = true)
     private OffsetDateTime timestamp;
 
