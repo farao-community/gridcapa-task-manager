@@ -4,6 +4,11 @@ spring:
   sql:
     init:
       mode: never
+  jpa:
+    properties:
+      hibernate:
+        timezone:
+          default_storage: NORMALIZE
 task-server:
   process:
     tag: CSE_D2CC

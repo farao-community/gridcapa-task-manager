@@ -10,6 +10,10 @@ spring:
     defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
+    properties:
+        hibernate:
+          timezone:
+            default_storage: NORMALIZE
   sql:
     init:
       mode: always

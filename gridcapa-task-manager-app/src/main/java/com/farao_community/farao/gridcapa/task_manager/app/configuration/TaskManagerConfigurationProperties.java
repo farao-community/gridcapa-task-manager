@@ -7,14 +7,12 @@
 package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
 import java.util.List;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
-@ConstructorBinding
 @ConfigurationProperties("task-server")
 public class TaskManagerConfigurationProperties {
 

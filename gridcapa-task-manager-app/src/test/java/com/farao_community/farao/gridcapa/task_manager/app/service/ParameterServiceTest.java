@@ -41,7 +41,7 @@ class ParameterServiceTest {
         parameter.setDisplayOrder(5);
         parameter.setParameterType(Parameter.ParameterType.BOOLEAN);
         parameter.setSectionTitle("Best parameters section");
-        parameter.setValue("The value");
+        parameter.setParameterValue("The value");
         List<Parameter> parameterList = List.of(parameter);
         Mockito.when(parameterRepository.findAll()).thenReturn(parameterList);
 
@@ -79,15 +79,15 @@ class ParameterServiceTest {
         Parameter initialParameter = new Parameter();
         initialParameter.setId(id);
         initialParameter.setParameterType(Parameter.ParameterType.STRING);
-        initialParameter.setValue("Poor and annoying value");
+        initialParameter.setParameterValue("Poor and annoying value");
         Parameter newParameter = new Parameter();
         newParameter.setId(id);
         newParameter.setParameterType(Parameter.ParameterType.STRING);
-        newParameter.setValue(value);
+        newParameter.setParameterValue(value);
         Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.of(initialParameter));
         Mockito.when(parameterRepository.saveAll(Mockito.anyList())).thenReturn(List.of(newParameter));
 
-        ParameterDto newParameterDto = new ParameterDto(newParameter.getId(), newParameter.getName(), newParameter.getDisplayOrder(), newParameter.getParameterType().name(), newParameter.getSectionTitle(), newParameter.getSectionOrder(), newParameter.getValue(), "");
+        ParameterDto newParameterDto = new ParameterDto(newParameter.getId(), newParameter.getName(), newParameter.getDisplayOrder(), newParameter.getParameterType().name(), newParameter.getSectionTitle(), newParameter.getSectionOrder(), newParameter.getParameterValue(), "");
         List<ParameterDto> parameterDto = parameterService.setParameterValues(List.of(newParameterDto));
 
         Assertions.assertThat(parameterDto)
