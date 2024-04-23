@@ -66,6 +66,7 @@ public class MinioHandler {
     }
 
     @Bean
+    @Transactional
     public Consumer<Flux<NotificationRecords>> consumeMinioEvent() {
         return f -> f.subscribe(nr -> {
             try {
@@ -76,6 +77,7 @@ public class MinioHandler {
         });
     }
 
+    @Transactional
     public void handleMinioEvent(NotificationRecords notificationRecords) {
         notificationRecords.events().forEach(event -> {
             LOGGER.debug("s3 event received");
