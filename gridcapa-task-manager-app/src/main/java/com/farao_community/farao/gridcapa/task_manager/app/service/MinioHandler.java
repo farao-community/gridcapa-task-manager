@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import java.net.URLDecoder;
@@ -98,6 +99,7 @@ public class MinioHandler {
         });
     }
 
+    @Transactional
     public void updateTasks(Event event) {
         synchronized (TASK_MANAGER_LOCK) {
             if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
@@ -317,6 +319,7 @@ public class MinioHandler {
         taskUpdateNotifier.notify(taskWithStatusUpdateSet);
     }
 
+    @Transactional
     public void removeProcessFile(Event event) {
         synchronized (TASK_MANAGER_LOCK) {
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);

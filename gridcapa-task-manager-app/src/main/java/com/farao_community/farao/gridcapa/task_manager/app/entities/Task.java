@@ -12,6 +12,7 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -71,6 +72,14 @@ public class Task {
     @SortNatural
     private final SortedSet<ProcessFile> processFiles = new TreeSet<>();
 
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "task_potential_process_file",
+        joinColumns = @JoinColumn(name = "fk_task"),
+        inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+    @SortNatural
+    private final SortedSet<ProcessFile> potentialInputProcessFiles = new TreeSet<>();
+
     public Task() {
 
     }
@@ -122,17 +131,44 @@ public class Task {
         addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, lastModificationDate));
     }
 
+    private static boolean isInputFile(ProcessFile processFile) {
+        // TODO: place this method as public method in ProcessFile class?
+        return MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup());
+    }
+
     public void addProcessFile(ProcessFile processFile) {
-        processFiles.add(processFile);
+        if (isInputFile(processFile)) {
+            potentialInputProcessFiles.add(processFile);
+            selectProcessFile(processFile);
+        } else {
+            processFiles.add(processFile);
+        }
     }
 
     public void removeProcessFile(ProcessFile processFile) {
-        processFiles.remove(processFile);
+        boolean fileWasSelected = processFiles.remove(processFile);
+
+        if (isInputFile(processFile)) {
+            potentialInputProcessFiles.remove(processFile);
+
+            if (fileWasSelected) {
+                potentialInputProcessFiles.stream()
+                    .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
+                    .min(Comparator.comparing(ProcessFile::getLastModificationDate))
+                    .ifPresent(this::selectProcessFile);
+            }
+        }
+    }
+
+    public void selectProcessFile(ProcessFile processFile) {
+        processFiles.removeIf(pf -> pf.getFileType().equals(processFile.getFileType()));
+        processFiles.add(processFile);
+        //  TODO: reset task status
     }
 
     public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(Task::isInputFile)
                 .filter(file -> fileType.equals(file.getFileType()))
                 .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
     }
