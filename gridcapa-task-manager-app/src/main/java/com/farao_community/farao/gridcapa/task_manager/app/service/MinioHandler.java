@@ -325,7 +325,7 @@ public class MinioHandler {
     private boolean checkAndUpdateTaskStatus(Task task, boolean inputFileSelectionChanged) {
         TaskStatus initialTaskStatus = task.getStatus();
         List<String> inputFileTypes = task.getProcessFiles().stream()
-                .filter(processFile -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup()))
+                .filter(ProcessFile::isInputFile)
                 .map(ProcessFile::getFileType).toList();
         if (inputFileTypes.isEmpty()) {
             task.setStatus(TaskStatus.NOT_CREATED);
@@ -368,7 +368,7 @@ public class MinioHandler {
                 .map(task -> {
                     final Task.FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFile);
                     boolean statusUpdated = false;
-                    if (MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup())) {
+                    if (processFile.isInputFile()) {
                         statusUpdated = checkAndUpdateTaskStatus(task, fileRemovalStatus.newSelectedFile());
                     }
                     if (task.getProcessFiles().isEmpty()) {

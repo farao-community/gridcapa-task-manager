@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -109,6 +110,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public void setFileObjectKey(String fileObjectKey) {
         this.fileObjectKey = fileObjectKey;
+    }
+
+    public boolean isInputFile() {
+        return MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(this.getFileGroup());
     }
 
     @Override

@@ -124,13 +124,8 @@ public class Task {
         return processFiles;
     }
 
-    private static boolean isInputFile(ProcessFile processFile) {
-        // TODO: place this method as public method in ProcessFile class?
-        return MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup());
-    }
-
     public void addProcessFile(ProcessFile processFile) {
-        if (isInputFile(processFile)) {
+        if (processFile.isInputFile()) {
             availableInputProcessFiles.add(processFile);
             selectProcessFile(processFile);
         } else {
@@ -144,7 +139,7 @@ public class Task {
     public FileRemovalStatus removeProcessFile(ProcessFile processFile) {
         final boolean fileWasSelected = processFiles.remove(processFile);
         boolean fileWasRemoved = fileWasSelected;
-        if (isInputFile(processFile)) {
+        if (processFile.isInputFile()) {
             fileWasRemoved = availableInputProcessFiles.remove(processFile);
             if (fileWasSelected) {
                 availableInputProcessFiles.stream()
@@ -163,7 +158,7 @@ public class Task {
 
     public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-                .filter(Task::isInputFile)
+                .filter(ProcessFile::isInputFile)
                 .filter(file -> fileType.equals(file.getFileType()))
                 .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
     }

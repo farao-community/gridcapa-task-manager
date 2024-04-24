@@ -75,9 +75,8 @@ class TaskTest {
         assertTrue(task.getProcessFiles().isEmpty());
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
-        String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
+        Mockito.when(processFileMock.isInputFile()).thenReturn(true);
         Mockito.when(processFileMock.getStartingAvailabilityDate()).thenReturn(task.getTimestamp());
         Mockito.when(processFileMock.getEndingAvailabilityDate()).thenReturn(task.getTimestamp().plusHours(1));
         task.addProcessFile(processFileMock);
