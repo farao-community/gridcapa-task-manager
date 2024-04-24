@@ -15,7 +15,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -25,6 +24,7 @@ public class TaskDto {
     private final OffsetDateTime timestamp;
     private final TaskStatus status;
     private final List<ProcessFileDto> inputs;
+    private final List<ProcessFileDto> availableInputs;
     private final List<ProcessFileDto> outputs;
     private final List<ProcessEventDto> processEvents;
     private final List<TaskParameterDto> parameters;
@@ -34,6 +34,7 @@ public class TaskDto {
                    @JsonProperty("timestamp") OffsetDateTime timestamp,
                    @JsonProperty("status") TaskStatus status,
                    @JsonProperty("inputs") List<ProcessFileDto> inputs,
+                   @JsonProperty("availableInputs") List<ProcessFileDto> availableInputs,
                    @JsonProperty("outputs") List<ProcessFileDto> outputs,
                    @JsonProperty("processEvents") List<ProcessEventDto> processEvents,
                    @JsonProperty("parameters") List<TaskParameterDto> parameters) {
@@ -41,18 +42,23 @@ public class TaskDto {
         this.timestamp = timestamp;
         this.status = status;
         this.inputs = inputs;
+        this.availableInputs = availableInputs;
         this.outputs = outputs;
         this.processEvents = processEvents;
         this.parameters = parameters;
     }
 
-    public static TaskDto emptyTask(OffsetDateTime timestamp, List<String> inputs, List<String> outputs) {
+    public static TaskDto emptyTask(OffsetDateTime timestamp,
+                                    List<String> inputs,
+                                    List<String> outputs,
+                                    List<String> availableInputs) {
         return new TaskDto(
                 UUID.randomUUID(),
                 timestamp,
                 TaskStatus.NOT_CREATED,
-                inputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
-                outputs.stream().map(ProcessFileDto::emptyProcessFile).collect(Collectors.toList()),
+                inputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
+                outputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
+                availableInputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
                 new ArrayList<>(),
                 new ArrayList<>());
     }
@@ -75,6 +81,10 @@ public class TaskDto {
 
     public List<ProcessFileDto> getOutputs() {
         return outputs;
+    }
+
+    public List<ProcessFileDto> getAvailableInputs() {
+        return availableInputs;
     }
 
     public List<ProcessEventDto> getProcessEvents() {

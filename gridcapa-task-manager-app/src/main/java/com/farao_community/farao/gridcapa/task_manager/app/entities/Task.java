@@ -30,9 +30,11 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -74,11 +76,11 @@ public class Task {
 
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
     @JoinTable(
-        name = "task_potential_process_file",
-        joinColumns = @JoinColumn(name = "fk_task"),
-        inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+            name = "task_available_process_file",
+            joinColumns = @JoinColumn(name = "fk_task"),
+            inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
     @SortNatural
-    private final SortedSet<ProcessFile> potentialInputProcessFiles = new TreeSet<>();
+    private final SortedSet<ProcessFile> availableInputProcessFiles = new TreeSet<>();
 
     public Task() {
 
@@ -138,7 +140,7 @@ public class Task {
 
     public void addProcessFile(ProcessFile processFile) {
         if (isInputFile(processFile)) {
-            potentialInputProcessFiles.add(processFile);
+            availableInputProcessFiles.add(processFile);
             selectProcessFile(processFile);
         } else {
             processFiles.add(processFile);
@@ -149,13 +151,13 @@ public class Task {
         boolean fileWasSelected = processFiles.remove(processFile);
 
         if (isInputFile(processFile)) {
-            potentialInputProcessFiles.remove(processFile);
+            availableInputProcessFiles.remove(processFile);
 
             if (fileWasSelected) {
-                potentialInputProcessFiles.stream()
-                    .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
-                    .min(Comparator.comparing(ProcessFile::getLastModificationDate))
-                    .ifPresent(this::selectProcessFile);
+                availableInputProcessFiles.stream()
+                        .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
+                        .min(Comparator.comparing(ProcessFile::getLastModificationDate))
+                        .ifPresent(this::selectProcessFile);
             }
         }
     }
@@ -171,6 +173,12 @@ public class Task {
                 .filter(Task::isInputFile)
                 .filter(file -> fileType.equals(file.getFileType()))
                 .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
+    }
+
+    public Set<ProcessFile> getAvailableInputs(String fileType) {
+        return availableInputProcessFiles.stream()
+                .filter(file -> fileType.equals(file.getFileType()))
+                .collect(Collectors.toSet());
     }
 
     public Optional<ProcessFile> getOutput(String fileType) {

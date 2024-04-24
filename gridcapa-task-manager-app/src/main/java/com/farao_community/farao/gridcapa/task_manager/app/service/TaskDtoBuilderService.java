@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -51,8 +52,8 @@ public class TaskDtoBuilderService {
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
         return taskRepository.findByTimestamp(timestamp)
-            .map(this::createDtoFromEntity)
-            .orElse(getEmptyTask(timestamp));
+                .map(this::createDtoFromEntity)
+                .orElse(getEmptyTask(timestamp));
     }
 
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
@@ -83,7 +84,7 @@ public class TaskDtoBuilderService {
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs());
+        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs(), properties.getProcess().getOptionalInputs());
     }
 
     public TaskDto createDtoFromEntity(Task task) {
@@ -100,6 +101,14 @@ public class TaskDtoBuilderService {
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .collect(Collectors.toList());
+        var availableInputs = properties.getProcess().getInputs()
+                .stream()
+                .map(availableInput -> task.getAvailableInputs(availableInput)
+                        .stream()
+                        .map(this::createDtoFromEntity)
+                        .toList())
+                .flatMap(Collection::stream)
+                .toList();
         var optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
@@ -121,6 +130,7 @@ public class TaskDtoBuilderService {
                 task.getStatus(),
                 inputs,
                 outputs,
+                availableInputs,
                 processEvents,
                 taskParameterDtos);
 
@@ -128,17 +138,17 @@ public class TaskDtoBuilderService {
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
-            processFile.getFileObjectKey(),
-            processFile.getFileType(),
-            ProcessFileStatus.VALIDATED,
-            processFile.getFilename(),
-            processFile.getLastModificationDate());
+                processFile.getFileObjectKey(),
+                processFile.getFileType(),
+                ProcessFileStatus.VALIDATED,
+                processFile.getFilename(),
+                processFile.getLastModificationDate());
     }
 
     public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-            processEvent.getLevel(),
-            processEvent.getMessage(),
-            processEvent.getServiceName());
+                processEvent.getLevel(),
+                processEvent.getMessage(),
+                processEvent.getServiceName());
     }
 }
