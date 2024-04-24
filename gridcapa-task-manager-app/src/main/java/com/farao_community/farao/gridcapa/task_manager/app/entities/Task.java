@@ -124,15 +124,6 @@ public class Task {
         return processFiles;
     }
 
-    public void addProcessFile(String fileObjectKey,
-                               String fileGroup,
-                               String fileType,
-                               OffsetDateTime startingAvailabilityDate,
-                               OffsetDateTime endingAvailabilityDate,
-                               OffsetDateTime lastModificationDate) {
-        addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, lastModificationDate));
-    }
-
     private static boolean isInputFile(ProcessFile processFile) {
         // TODO: place this method as public method in ProcessFile class?
         return MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(processFile.getFileGroup());
@@ -147,12 +138,14 @@ public class Task {
         }
     }
 
-    public void removeProcessFile(ProcessFile processFile) {
-        boolean fileWasSelected = processFiles.remove(processFile);
+    public record FileRemovalStatus(boolean removedFile, boolean newSelectedFile) {
+    }
 
+    public FileRemovalStatus removeProcessFile(ProcessFile processFile) {
+        final boolean fileWasSelected = processFiles.remove(processFile);
+        boolean fileWasRemoved = fileWasSelected;
         if (isInputFile(processFile)) {
-            availableInputProcessFiles.remove(processFile);
-
+            fileWasRemoved = availableInputProcessFiles.remove(processFile);
             if (fileWasSelected) {
                 availableInputProcessFiles.stream()
                         .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
@@ -160,12 +153,12 @@ public class Task {
                         .ifPresent(this::selectProcessFile);
             }
         }
+        return new FileRemovalStatus(fileWasRemoved, fileWasSelected);
     }
 
     public void selectProcessFile(ProcessFile processFile) {
         processFiles.removeIf(pf -> pf.getFileType().equals(processFile.getFileType()));
         processFiles.add(processFile);
-        //  TODO: reset task status
     }
 
     public Optional<ProcessFile> getInput(String fileType) {

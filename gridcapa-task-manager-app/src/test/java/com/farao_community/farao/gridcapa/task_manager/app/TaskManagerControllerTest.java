@@ -11,6 +11,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
@@ -169,7 +170,8 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -218,7 +220,8 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -236,7 +239,8 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");

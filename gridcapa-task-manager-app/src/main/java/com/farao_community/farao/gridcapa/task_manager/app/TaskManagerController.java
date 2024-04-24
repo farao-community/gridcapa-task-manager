@@ -8,12 +8,14 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
@@ -59,14 +61,16 @@ public class TaskManagerController {
     public static final String CONTENT_DISPOSITION = "Content-Disposition";
     private final StatusHandler statusHandler;
     private final TaskDtoBuilderService builder;
+    private final FileSelectorService fileSelectorService;
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final Logger businessLogger;
     private final ParameterService parameterService;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilderService builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilderService builder, FileSelectorService fileSelectorService, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService) {
         this.statusHandler = statusHandler;
         this.builder = builder;
+        this.fileSelectorService = fileSelectorService;
         this.fileManager = fileManager;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.businessLogger = businessLogger;
@@ -76,6 +80,18 @@ public class TaskManagerController {
     @GetMapping(value = "/tasks/{timestamp}")
     public ResponseEntity<TaskDto> getTaskFromTimestamp(@PathVariable String timestamp) {
         return ResponseEntity.ok().body(builder.getTaskDto(OffsetDateTime.parse(timestamp)));
+    }
+
+    @PutMapping(value = "/tasks/{timestamp}/input/{filetype}")
+    public ResponseEntity<String> selectFile(@PathVariable String timestamp, @PathVariable String filetype, @RequestParam String filename) {
+        try {
+            fileSelectorService.selectFile(OffsetDateTime.parse(timestamp), filetype, filename);
+        } catch (final TaskNotFoundException | ProcessFileNotFoundException notFoundException) {
+            return ResponseEntity.notFound().build();
+        } catch (final TaskManagerException taskManagerException) {
+            return ResponseEntity.badRequest().body(taskManagerException.getMessage());
+        }
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping(value = "/tasks/{timestamp}/status")
@@ -124,7 +140,7 @@ public class TaskManagerController {
         TaskDto taskDto = builder.getTaskDto(offsetDateTime);
         TaskStatus taskStatus = taskDto.getStatus();
         if (TaskStatus.SUCCESS.equals(taskStatus)
-            || TaskStatus.ERROR.equals(taskStatus)) {
+                || TaskStatus.ERROR.equals(taskStatus)) {
             optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
         }
 
@@ -145,9 +161,9 @@ public class TaskManagerController {
     @GetMapping(value = "/tasks/businessdate/{businessDate}/allOver")
     public ResponseEntity<Boolean> areAllTasksFromBusinessDateOver(@PathVariable String businessDate) {
         return ResponseEntity.ok().body(
-            builder.getListTasksDto(LocalDate.parse(businessDate))
-                .stream().map(TaskDto::getStatus)
-                .allMatch(TaskStatus::isOver));
+                builder.getListTasksDto(LocalDate.parse(businessDate))
+                        .stream().map(TaskDto::getStatus)
+                        .allMatch(TaskStatus::isOver));
     }
 
     @GetMapping(value = "/tasks/runningtasks")
@@ -184,7 +200,7 @@ public class TaskManagerController {
     public ResponseEntity<byte[]> getLog(@PathVariable String timestamp) throws IOException {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
+                .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
                 .body(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp)).toByteArray());
     }
 
