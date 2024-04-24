@@ -168,10 +168,10 @@ class MinioHandlerTest {
         Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
         ProcessEvent event = processEventIterator.next();
         assertEquals("INFO", event.getLevel());
-        assertEquals("The CRAC : 'crac-test' is available", event.getMessage());
+        assertEquals("A new version of CRAC is available : 'crac-test'", event.getMessage());
         event = processEventIterator.next();
         assertEquals("INFO", event.getLevel());
-        assertEquals("The CGM : 'cgm-test' is available", event.getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-test'", event.getMessage());
     }
 
     @Test
@@ -191,8 +191,8 @@ class MinioHandlerTest {
         assertTrue(event2.getTimestamp().isBefore(event1.getTimestamp()));
         assertEquals("INFO", event1.getLevel());
         assertEquals("INFO", event2.getLevel());
-        assertEquals("The CGM : 'cgm-test' is available", event2.getMessage());
-        assertEquals("A new version of CGM is available : 'cgm-new-test'", event1.getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-test'", event2.getMessage());
+        assertEquals("A new version of CGM replaced previously available one : 'cgm-new-test'", event1.getMessage());
     }
 
     @Test

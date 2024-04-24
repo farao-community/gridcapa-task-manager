@@ -9,7 +9,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -18,14 +18,17 @@ import java.time.OffsetDateTime;
 public class FileSelectorService {
 
     private final TaskRepository taskRepository;
-    private final Logger businessLogger;
+    private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
-    public FileSelectorService(final TaskRepository taskRepository,
-                               final Logger businessLogger,
-                               final TaskUpdateNotifier taskUpdateNotifier) {
+    @Value("${spring.application.name}")
+    private String serviceName;
+
+    public FileSelectorService(TaskRepository taskRepository,
+                               TaskManagerConfigurationProperties taskManagerConfigurationProperties,
+                               TaskUpdateNotifier taskUpdateNotifier) {
         this.taskRepository = taskRepository;
-        this.businessLogger = businessLogger;
+        this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskUpdateNotifier = taskUpdateNotifier;
     }
 
@@ -45,7 +48,11 @@ public class FileSelectorService {
                     .findAny()
                     .orElseThrow(ProcessFileNotFoundException::new);
             task.selectProcessFile(processFile);
-            businessLogger.info("Manual selection of another version of {} : {}", filetype, filename);
+
+            String message = String.format("Manual selection of another version of %s : %s", filetype, filename);
+            OffsetDateTime now = OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
+            task.addProcessEvent(now, "INFO", message, serviceName);
+
             boolean doesStatusNeedReset = doesStatusNeedReset(task.getStatus());
             if (doesStatusNeedReset) {
                 task.setStatus(TaskStatus.READY);

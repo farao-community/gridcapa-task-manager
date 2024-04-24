@@ -116,6 +116,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
         return MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(this.getFileGroup());
     }
 
+    public boolean isOutputFile() {
+        return MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(this.getFileGroup());
+    }
+
     @Override
     public int compareTo(ProcessFile otherProcessFile) {
         Comparator<ProcessFile> processFileComparator = Comparator.comparing(ProcessFile::getFileType)

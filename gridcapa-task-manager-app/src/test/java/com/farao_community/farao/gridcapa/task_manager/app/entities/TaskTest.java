@@ -9,7 +9,6 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -88,9 +87,8 @@ class TaskTest {
         assertTrue(task.getProcessFiles().isEmpty());
         ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
         String fileType = "testFileType";
-        String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE;
         Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
+        Mockito.when(processFileMock.isOutputFile()).thenReturn(true);
         task.addProcessFile(processFileMock);
         assertEquals(processFileMock, task.getOutput(fileType).get());
     }

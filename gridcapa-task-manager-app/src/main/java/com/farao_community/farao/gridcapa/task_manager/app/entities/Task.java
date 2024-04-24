@@ -8,7 +8,6 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.comparators.ReverseEventComparator;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -139,8 +138,10 @@ public class Task {
     public FileRemovalStatus removeProcessFile(ProcessFile processFile) {
         final boolean fileWasSelected = processFiles.remove(processFile);
         boolean fileWasRemoved = fileWasSelected;
+
         if (processFile.isInputFile()) {
             fileWasRemoved = availableInputProcessFiles.remove(processFile);
+
             if (fileWasSelected) {
                 availableInputProcessFiles.stream()
                         .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
@@ -171,7 +172,7 @@ public class Task {
 
     public Optional<ProcessFile> getOutput(String fileType) {
         return processFiles.stream()
-                .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
+                .filter(ProcessFile::isOutputFile)
                 .filter(file -> fileType.equals(file.getFileType()))
                 .findFirst();
     }

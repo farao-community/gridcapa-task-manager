@@ -30,7 +30,6 @@ import reactor.core.publisher.Flux;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,10 +55,9 @@ public class MinioHandler {
     public static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
     public static final String FILE_VALIDITY_INTERVAL_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY;
     private static final String FILE_EVENT_DEFAULT_LEVEL = "INFO";
-    public static final String PROCESS_FILE_REMOVED_MESSAGE = "process file {} was removed from waiting list";
+    private static final String PROCESS_FILE_REMOVED_MESSAGE = "process file {} was removed from waiting list";
 
     private final ProcessFileRepository processFileRepository;
-    private final Logger businessLogger;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
@@ -67,9 +65,8 @@ public class MinioHandler {
     @Value("${spring.application.name}")
     private String serviceName;
 
-    public MinioHandler(ProcessFileRepository processFileRepository, Logger businessLogger, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
+    public MinioHandler(ProcessFileRepository processFileRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
         this.processFileRepository = processFileRepository;
-        this.businessLogger = businessLogger;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
@@ -171,28 +168,16 @@ public class MinioHandler {
         replace the previous one.
         */
         Optional<ProcessFile> optProcessFile = processFileRepository.findByStartingAvailabilityDateAndFileTypeAndGroup(startTime, fileType, fileGroup);
-        final boolean isManualUpload = objectKey.contains("MANUAL_UPLOAD");
-        final String logPrefix = buildBusinessLogPrefix(isManualUpload);
         if (optProcessFile.isPresent()) {
             LOGGER.info("File {} available at {} is already referenced in the database. Updating process file data.", fileType, startTime);
             ProcessFile processFile = optProcessFile.get();
             processFile.setFileObjectKey(objectKey);
             processFile.setLastModificationDate(getProcessNow());
-            businessLogger.info("{} new version of {} replaced previously available one : {}.", logPrefix, fileType, processFile.getFilename());
             return new ProcessFileMinio(processFile, FileEventType.UPDATED);
         } else {
             LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
             ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, getProcessNow());
-            businessLogger.info("{} new version of {} is available : {}", logPrefix, fileType, processFile.getFilename());
             return new ProcessFileMinio(processFile, FileEventType.AVAILABLE);
-        }
-    }
-
-    private static String buildBusinessLogPrefix(final boolean isManualUpload) {
-        if (isManualUpload) {
-            return "Manual upload of a";
-        } else {
-            return "A";
         }
     }
 
@@ -217,8 +202,7 @@ public class MinioHandler {
     }
 
     private OffsetDateTime getProcessNow() {
-        TaskManagerConfigurationProperties.ProcessProperties processProperties = taskManagerConfigurationProperties.getProcess();
-        return OffsetDateTime.now(ZoneId.of(processProperties.getTimezone()));
+        return OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
     }
 
     private Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile processFile, FileEventType fileEventType, boolean isInput, boolean withStatusUpdate) {
@@ -254,17 +238,30 @@ public class MinioHandler {
     }
 
     private void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile, String logLevel) {
-        String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename());
+        final boolean isManualUpload = processFile.getFileObjectKey().contains("MANUAL_UPLOAD");
+        final String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename(), isManualUpload);
         task.addProcessEvent(getProcessNow(), logLevel, message, serviceName);
     }
 
-    private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName) {
+    private String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName, boolean isManualUpload) {
+        final String logPrefix = buildFileEventPrefix(isManualUpload);
         if (fileEventType.equals(FileEventType.WAITING)) {
-            return String.format("A new version of %s is waiting for process to end to be available : '%s'", fileType, fileName);
+            return String.format("%s new version of %s is waiting for process to end to be available : '%s'", logPrefix, fileType, fileName);
         } else if (fileEventType.equals(FileEventType.UPDATED)) {
-            return String.format("A new version of %s is available : '%s'", fileType, fileName);
+            return String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
+        } else if (fileEventType.equals(FileEventType.AVAILABLE)) {
+            // FIXME Si c'est le premier fichier de ce type pour la tâche, on aura quand même un log qui dit "new version"
+            return String.format("%s new version of %s is available : '%s'", logPrefix, fileType, fileName);
         } else {
             return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
+        }
+    }
+
+    private static String buildFileEventPrefix(final boolean isManualUpload) {
+        if (isManualUpload) {
+            return "Manual upload of a";
+        } else {
+            return "A";
         }
     }
 

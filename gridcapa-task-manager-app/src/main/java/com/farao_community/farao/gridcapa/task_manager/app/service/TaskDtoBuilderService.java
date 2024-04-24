@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -96,34 +95,38 @@ public class TaskDtoBuilderService {
     }
 
     private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {
-        var inputs = properties.getProcess().getInputs().stream()
+        List<ProcessFileDto> inputs = properties.getProcess().getInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .collect(Collectors.toList());
-        var availableInputs = properties.getProcess().getInputs()
+
+        List<ProcessFileDto> availableInputs = properties.getProcess().getInputs()
                 .stream()
-                .map(availableInput -> task.getAvailableInputs(availableInput)
+                .flatMap(availableInput -> task.getAvailableInputs(availableInput)
                         .stream()
-                        .map(this::createDtoFromEntity)
-                        .toList())
-                .flatMap(Collection::stream)
+                        .map(this::createDtoFromEntity))
                 .toList();
-        var optionalInputs = properties.getProcess().getOptionalInputs().stream()
+
+        List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .toList();
         inputs.addAll(optionalInputs);
-        var outputs = properties.getProcess().getOutputs().stream()
+
+        List<ProcessFileDto> outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
                 .toList();
+
         List<ProcessEventDto> processEvents = withEvents ?
                 task.getProcessEvents().stream().map(this::createDtoFromEntity).toList()
                 : Collections.emptyList();
+
         List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream().map(TaskParameterDto::new).toList();
+
         return new TaskDto(
                 task.getId(),
                 task.getTimestamp(),
@@ -133,7 +136,6 @@ public class TaskDtoBuilderService {
                 availableInputs,
                 processEvents,
                 taskParameterDtos);
-
     }
 
     public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {

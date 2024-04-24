@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -31,6 +32,10 @@ public class TaskManagerConfigurationProperties {
 
     public List<String> getWhitelist() {
         return whitelist;
+    }
+
+    public ZoneId getProcessTimezone() {
+        return ZoneId.of(process.getTimezone());
     }
 
     public static final class ProcessProperties {
