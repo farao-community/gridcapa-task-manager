@@ -192,7 +192,7 @@ class MinioHandlerTest {
         assertEquals("INFO", event1.getLevel());
         assertEquals("INFO", event2.getLevel());
         assertEquals("A new version of CGM is available : 'cgm-test'", event2.getMessage());
-        assertEquals("A new version of CGM replaced previously available one : 'cgm-new-test'", event1.getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-new-test'", event1.getMessage());
     }
 
     @Test

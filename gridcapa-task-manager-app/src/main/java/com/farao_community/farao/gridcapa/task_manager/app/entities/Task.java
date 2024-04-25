@@ -125,6 +125,7 @@ public class Task {
 
     public void addProcessFile(ProcessFile processFile) {
         if (processFile.isInputFile()) {
+            availableInputProcessFiles.removeIf(pf -> pf.getFileObjectKey().equals(processFile.getFileObjectKey()));
             availableInputProcessFiles.add(processFile);
             selectProcessFile(processFile);
         } else {
