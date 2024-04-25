@@ -132,8 +132,8 @@ public class TaskDtoBuilderService {
                 task.getTimestamp(),
                 task.getStatus(),
                 inputs,
-                outputs,
                 availableInputs,
+                outputs,
                 processEvents,
                 taskParameterDtos);
     }
