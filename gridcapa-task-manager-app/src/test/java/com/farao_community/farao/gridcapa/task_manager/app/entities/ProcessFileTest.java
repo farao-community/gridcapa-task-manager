@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -44,7 +45,7 @@ class ProcessFileTest {
     }
 
     @Test
-    void compareToTest() {
+    void compareToEqualTest() {
         ProcessFile processFile1 = new ProcessFile(
                 "cgm-name",
                 "input",
@@ -58,16 +59,60 @@ class ProcessFileTest {
                 "CGM",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
-                OffsetDateTime.parse("2021-10-11T10:30Z"));
-
-        assertEquals(0, processFile1.compareTo(processFile2));
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
         ProcessFile processFile3 = new ProcessFile(
                 "cgm-name3",
                 "input",
                 "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-24T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        assertEquals(0, processFile1.compareTo(processFile2));
+        assertEquals(0, processFile1.compareTo(processFile3));
+    }
+
+    @Test
+    void compareToNotEqualTest() {
+        ProcessFile processFile1 = new ProcessFile(
+                "cgm-name1",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
-                OffsetDateTime.parse("2021-10-13T00:00Z"),
-                OffsetDateTime.parse("2021-10-11T11:18Z"));
-        assertEquals(-1, processFile1.compareTo(processFile3));
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile2 = new ProcessFile(
+                "cgm-name2",
+                "input",
+                "CRAC",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile3 = new ProcessFile(
+                "cgm-name3",
+                "output",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile4 = new ProcessFile(
+                "cgm-name4",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T12:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFile5 = new ProcessFile(
+                "cgm-name5",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:30Z"));
+
+        assertNotEquals(0, processFile1.compareTo(processFile2));
+        assertNotEquals(0, processFile1.compareTo(processFile3));
+        assertNotEquals(0, processFile1.compareTo(processFile4));
+        assertNotEquals(0, processFile1.compareTo(processFile5));
     }
 }

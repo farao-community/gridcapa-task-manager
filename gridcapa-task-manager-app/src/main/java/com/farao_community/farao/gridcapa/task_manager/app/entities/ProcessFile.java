@@ -124,7 +124,8 @@ public class ProcessFile implements Comparable<ProcessFile> {
     public int compareTo(ProcessFile otherProcessFile) {
         Comparator<ProcessFile> processFileComparator = Comparator.comparing(ProcessFile::getFileType)
                 .thenComparing(ProcessFile::getFileGroup)
-                .thenComparing(ProcessFile::getStartingAvailabilityDate);
+                .thenComparing(ProcessFile::getStartingAvailabilityDate)
+                .thenComparing(ProcessFile::getLastModificationDate);
         return processFileComparator.compare(this, otherProcessFile);
     }
 
@@ -137,7 +138,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
             return false;
         }
         ProcessFile that = (ProcessFile) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.lastModificationDate, that.lastModificationDate) &&
                 Objects.equals(this.fileType, that.fileType) &&
                 Objects.equals(this.fileGroup, that.fileGroup) &&
                 Objects.equals(this.startingAvailabilityDate, that.startingAvailabilityDate);
@@ -145,7 +146,6 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.fileType, this.fileGroup, this.startingAvailabilityDate);
+        return Objects.hash(this.lastModificationDate, this.fileType, this.fileGroup, this.startingAvailabilityDate);
     }
-
 }
