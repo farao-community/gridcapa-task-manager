@@ -9,6 +9,8 @@ import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ import java.time.OffsetDateTime;
 
 @Service
 public class FileSelectorService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileSelectorService.class);
 
     private final TaskRepository taskRepository;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
@@ -35,8 +39,9 @@ public class FileSelectorService {
     public void selectFile(final OffsetDateTime timestamp,
                            final String filetype,
                            final String filename) {
+        LOGGER.info("Selecting file '{}' for input type {} in task {}", filename, filetype, timestamp);
         synchronized (TaskManagerConfigurationProperties.TASK_MANAGER_LOCK) {
-            final Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
+            Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
             // todo comportement à confirmer
             if (doesStatusBlockFileSelection(task.getStatus())) {
                 throw new TaskManagerException("Status of task does not allow to change selected file");
@@ -57,6 +62,7 @@ public class FileSelectorService {
             if (doesStatusNeedReset) {
                 task.setStatus(TaskStatus.READY);
             }
+            task = taskRepository.save(task);
             taskUpdateNotifier.notify(task, doesStatusNeedReset, false);
         }
     }
