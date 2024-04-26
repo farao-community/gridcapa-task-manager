@@ -21,12 +21,14 @@ class TaskDtoTest {
     @Test
     void testConstructorEmptyProcessFile() {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
-        TaskDto taskDto = TaskDto.emptyTask(timestamp, List.of("CGM", "CRAC"), List.of("CNE"), List.of("CGM"));
+
+        TaskDto taskDto = TaskDto.emptyTask(timestamp, List.of("CGM", "CRAC"), List.of("CNE"));
+
         assertEquals(timestamp, taskDto.getTimestamp());
         assertEquals(TaskStatus.NOT_CREATED, taskDto.getStatus());
         assertEquals(2, taskDto.getInputs().size());
         assertEquals(1, taskDto.getOutputs().size());
-        assertEquals(1, taskDto.getAvailableInputs().size());
+        assertEquals(0, taskDto.getAvailableInputs().size());
         assertEquals(0, taskDto.getProcessEvents().size());
     }
 }

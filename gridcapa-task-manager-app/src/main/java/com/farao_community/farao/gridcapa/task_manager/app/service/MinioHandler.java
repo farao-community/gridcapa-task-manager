@@ -13,6 +13,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskWithStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.FileRemovalStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
@@ -89,21 +90,17 @@ public class MinioHandler {
         notificationRecords.events().forEach(event -> {
             LOGGER.debug("s3 event received");
             switch (event.eventType()) {
-                case OBJECT_CREATED_ANY:
-                case OBJECT_CREATED_PUT:
-                case OBJECT_CREATED_POST:
-                case OBJECT_CREATED_COPY:
-                case OBJECT_CREATED_COMPLETE_MULTIPART_UPLOAD:
-                    updateTasks(event);
-                    break;
-                case OBJECT_REMOVED_ANY:
-                case OBJECT_REMOVED_DELETE:
-                case OBJECT_REMOVED_DELETED_MARKER_CREATED:
-                    removeProcessFile(event);
-                    break;
-                default:
-                    LOGGER.info("S3 event type {} not handled by task manager", event.eventType());
-                    break;
+                case OBJECT_CREATED_ANY,
+                     OBJECT_CREATED_PUT,
+                     OBJECT_CREATED_POST,
+                     OBJECT_CREATED_COPY,
+                     OBJECT_CREATED_COMPLETE_MULTIPART_UPLOAD ->
+                        updateTasks(event);
+                case OBJECT_REMOVED_ANY,
+                     OBJECT_REMOVED_DELETE,
+                     OBJECT_REMOVED_DELETED_MARKER_CREATED ->
+                        removeProcessFile(event);
+                default -> LOGGER.info("S3 event type {} not handled by task manager", event.eventType());
             }
         });
     }
@@ -162,7 +159,7 @@ public class MinioHandler {
         }
     }
 
-    private ProcessFileMinio getProcessFileMinio(OffsetDateTime startTime, OffsetDateTime endTime, String objectKey, String fileType, String fileGroup) {
+    ProcessFileMinio getProcessFileMinio(OffsetDateTime startTime, OffsetDateTime endTime, String objectKey, String fileType, String fileGroup) {
         /*
         This implies that only one file per type and group can exist. If another one is imported it would just
         replace the previous one.
@@ -239,7 +236,7 @@ public class MinioHandler {
                 .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(timestamp)), true));
     }
 
-    private void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
+    void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
         addFileEventToTask(task, fileEventType, processFile, FILE_EVENT_DEFAULT_LEVEL);
     }
 
@@ -256,7 +253,6 @@ public class MinioHandler {
         } else if (fileEventType.equals(FileEventType.UPDATED)) {
             return String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
         } else if (fileEventType.equals(FileEventType.AVAILABLE)) {
-            // FIXME Si c'est le premier fichier de ce type pour la tâche, on aura quand même un log qui dit "new version"
             return String.format("%s new version of %s is available : '%s'", logPrefix, fileType, fileName);
         } else {
             return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
@@ -369,10 +365,10 @@ public class MinioHandler {
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
                 .parallelStream()
                 .map(task -> {
-                    final Task.FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFile);
+                    final FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFile);
                     boolean statusUpdated = false;
                     if (processFile.isInputFile()) {
-                        statusUpdated = checkAndUpdateTaskStatus(task, fileRemovalStatus.newSelectedFile());
+                        statusUpdated = checkAndUpdateTaskStatus(task, fileRemovalStatus.fileSelectionUpdated());
                     }
                     if (task.getProcessFiles().isEmpty()) {
                         task.getProcessEvents().clear();

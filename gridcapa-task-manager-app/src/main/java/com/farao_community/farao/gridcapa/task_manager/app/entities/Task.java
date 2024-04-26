@@ -133,9 +133,6 @@ public class Task {
         }
     }
 
-    public record FileRemovalStatus(boolean removedFile, boolean newSelectedFile) {
-    }
-
     public FileRemovalStatus removeProcessFile(ProcessFile processFile) {
         final boolean fileWasSelected = processFiles.remove(processFile);
         boolean fileWasRemoved = fileWasSelected;

@@ -82,18 +82,6 @@ public class TaskManagerController {
         return ResponseEntity.ok().body(builder.getTaskDto(OffsetDateTime.parse(timestamp)));
     }
 
-    @PutMapping(value = "/tasks/{timestamp}/input/{filetype}")
-    public ResponseEntity<String> selectFile(@PathVariable String timestamp, @PathVariable String filetype, @RequestParam String filename) {
-        try {
-            fileSelectorService.selectFile(OffsetDateTime.parse(timestamp), filetype, filename);
-        } catch (final TaskNotFoundException | ProcessFileNotFoundException notFoundException) {
-            return ResponseEntity.notFound().build();
-        } catch (final TaskManagerException taskManagerException) {
-            return ResponseEntity.badRequest().body(taskManagerException.getMessage());
-        }
-        return ResponseEntity.ok().build();
-    }
-
     @PutMapping(value = "/tasks/{timestamp}/status")
     public ResponseEntity<TaskDto> updateStatus(@PathVariable String timestamp, @RequestParam String status) {
         TaskStatus taskStatus;
@@ -110,6 +98,18 @@ public class TaskManagerController {
     @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getZippedInputs(@PathVariable String timestamp) {
         return getZippedGroup(OffsetDateTime.parse(timestamp), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE);
+    }
+
+    @PutMapping(value = "/tasks/{timestamp}/input/{filetype}")
+    public ResponseEntity<String> selectFile(@PathVariable String timestamp, @PathVariable String filetype, @RequestParam String filename) {
+        try {
+            fileSelectorService.selectFile(OffsetDateTime.parse(timestamp), filetype, filename);
+        } catch (final TaskNotFoundException | ProcessFileNotFoundException notFoundException) {
+            return ResponseEntity.notFound().build();
+        } catch (final TaskManagerException taskManagerException) {
+            return ResponseEntity.badRequest().body(taskManagerException.getMessage());
+        }
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/tasks/{timestamp}/outputs", produces = "application/octet-stream")

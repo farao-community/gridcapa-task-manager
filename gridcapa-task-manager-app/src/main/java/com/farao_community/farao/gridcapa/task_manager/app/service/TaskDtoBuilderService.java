@@ -83,7 +83,10 @@ public class TaskDtoBuilderService {
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs(), properties.getProcess().getOptionalInputs());
+        return TaskDto.emptyTask(
+                timestamp,
+                properties.getProcess().getInputs(),
+                properties.getProcess().getOutputs());
     }
 
     public TaskDto createDtoFromEntity(Task task) {
@@ -138,7 +141,7 @@ public class TaskDtoBuilderService {
                 taskParameterDtos);
     }
 
-    public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
+    ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
                 processFile.getFileObjectKey(),
                 processFile.getFileType(),
@@ -147,7 +150,7 @@ public class TaskDtoBuilderService {
                 processFile.getLastModificationDate());
     }
 
-    public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
+    ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
                 processEvent.getLevel(),
                 processEvent.getMessage(),

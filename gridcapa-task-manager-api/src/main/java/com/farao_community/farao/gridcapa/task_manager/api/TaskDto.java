@@ -50,15 +50,14 @@ public class TaskDto {
 
     public static TaskDto emptyTask(OffsetDateTime timestamp,
                                     List<String> inputs,
-                                    List<String> outputs,
-                                    List<String> availableInputs) {
+                                    List<String> outputs) {
         return new TaskDto(
                 UUID.randomUUID(),
                 timestamp,
                 TaskStatus.NOT_CREATED,
                 inputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
+                List.of(),
                 outputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
-                availableInputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
                 new ArrayList<>(),
                 new ArrayList<>());
     }
