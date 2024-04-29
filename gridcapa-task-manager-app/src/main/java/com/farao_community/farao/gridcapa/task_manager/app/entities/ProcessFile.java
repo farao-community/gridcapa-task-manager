@@ -14,6 +14,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
 import java.util.Comparator;
@@ -121,11 +122,13 @@ public class ProcessFile implements Comparable<ProcessFile> {
     }
 
     @Override
-    public int compareTo(ProcessFile otherProcessFile) {
+    public int compareTo(@NotNull ProcessFile otherProcessFile) {
         Comparator<ProcessFile> processFileComparator = Comparator.comparing(ProcessFile::getFileType)
                 .thenComparing(ProcessFile::getFileGroup)
-                .thenComparing(ProcessFile::getStartingAvailabilityDate)
-                .thenComparing(ProcessFile::getLastModificationDate);
+                .thenComparing(ProcessFile::getStartingAvailabilityDate);
+        if (this.isInputFile()) {
+            processFileComparator = processFileComparator.thenComparing(ProcessFile::getLastModificationDate);
+        }
         return processFileComparator.compare(this, otherProcessFile);
     }
 
@@ -138,10 +141,11 @@ public class ProcessFile implements Comparable<ProcessFile> {
             return false;
         }
         ProcessFile that = (ProcessFile) o;
-        return Objects.equals(this.lastModificationDate, that.lastModificationDate) &&
-                Objects.equals(this.fileType, that.fileType) &&
+        boolean modificationDateEqualityForInputFiles = !this.isInputFile() || Objects.equals(this.lastModificationDate, that.lastModificationDate);
+        return Objects.equals(this.fileType, that.fileType) &&
                 Objects.equals(this.fileGroup, that.fileGroup) &&
-                Objects.equals(this.startingAvailabilityDate, that.startingAvailabilityDate);
+                Objects.equals(this.startingAvailabilityDate, that.startingAvailabilityDate) &&
+                modificationDateEqualityForInputFiles;
     }
 
     @Override
