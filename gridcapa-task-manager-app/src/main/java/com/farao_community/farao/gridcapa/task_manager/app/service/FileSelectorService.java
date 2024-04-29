@@ -47,11 +47,10 @@ public class FileSelectorService {
                            final String filename) {
         synchronized (TaskManagerConfigurationProperties.TASK_MANAGER_LOCK) {
             Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
-            // todo comportement à confirmer
             if (doesStatusBlockFileSelection(task.getStatus())) {
                 throw new TaskManagerException("Status of task does not allow to change selected file");
             }
-            //
+
             final ProcessFile processFile = task.getAvailableInputs(filetype)
                     .stream()
                     .filter(pf -> filename.equals(pf.getFilename()))
