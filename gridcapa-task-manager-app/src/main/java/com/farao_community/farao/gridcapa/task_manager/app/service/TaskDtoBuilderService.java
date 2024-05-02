@@ -51,8 +51,8 @@ public class TaskDtoBuilderService {
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
         return taskRepository.findByTimestamp(timestamp)
-            .map(this::createDtoFromEntity)
-            .orElse(getEmptyTask(timestamp));
+                .map(this::createDtoFromEntity)
+                .orElse(getEmptyTask(timestamp));
     }
 
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
@@ -83,7 +83,10 @@ public class TaskDtoBuilderService {
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs());
+        return TaskDto.emptyTask(
+                timestamp,
+                properties.getProcess().getInputs(),
+                properties.getProcess().getOutputs());
     }
 
     public TaskDto createDtoFromEntity(Task task) {
@@ -95,50 +98,62 @@ public class TaskDtoBuilderService {
     }
 
     private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {
-        var inputs = properties.getProcess().getInputs().stream()
+        List<ProcessFileDto> inputs = properties.getProcess().getInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .collect(Collectors.toList());
-        var optionalInputs = properties.getProcess().getOptionalInputs().stream()
+
+        List<ProcessFileDto> availableInputs = properties.getProcess().getInputs()
+                .stream()
+                .flatMap(availableInput -> task.getAvailableInputs(availableInput)
+                        .stream()
+                        .map(this::createDtoFromEntity))
+                .toList();
+
+        List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .toList();
         inputs.addAll(optionalInputs);
-        var outputs = properties.getProcess().getOutputs().stream()
+
+        List<ProcessFileDto> outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
                 .toList();
+
         List<ProcessEventDto> processEvents = withEvents ?
                 task.getProcessEvents().stream().map(this::createDtoFromEntity).toList()
                 : Collections.emptyList();
+
         List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream().map(TaskParameterDto::new).toList();
+
         return new TaskDto(
                 task.getId(),
                 task.getTimestamp(),
                 task.getStatus(),
                 inputs,
+                availableInputs,
                 outputs,
                 processEvents,
                 taskParameterDtos);
-
     }
 
-    public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
+    ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
-            processFile.getFileObjectKey(),
-            processFile.getFileType(),
-            ProcessFileStatus.VALIDATED,
-            processFile.getFilename(),
-            processFile.getLastModificationDate());
+                processFile.getFileObjectKey(),
+                processFile.getFileType(),
+                ProcessFileStatus.VALIDATED,
+                processFile.getFilename(),
+                processFile.getLastModificationDate());
     }
 
-    public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
+    ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-            processEvent.getLevel(),
-            processEvent.getMessage(),
-            processEvent.getServiceName());
+                processEvent.getLevel(),
+                processEvent.getMessage(),
+                processEvent.getServiceName());
     }
 }

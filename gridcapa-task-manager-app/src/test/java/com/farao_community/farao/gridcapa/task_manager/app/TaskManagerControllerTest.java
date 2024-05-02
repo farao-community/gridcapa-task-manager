@@ -7,11 +7,15 @@
 package com.farao_community.farao.gridcapa.task_manager.app;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -65,6 +69,9 @@ class TaskManagerControllerTest {
 
     @MockBean
     private FileManager fileManager;
+
+    @MockBean
+    private FileSelectorService fileSelectorService;
 
     @MockBean
     private Logger businessLogger;
@@ -142,6 +149,39 @@ class TaskManagerControllerTest {
     }
 
     @Test
+    void testSelectInputFileOk() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doNothing().when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void testSelectInputFileThrowsTaskNotFoundException() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doThrow(TaskNotFoundException.class).when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testSelectInputFileThrowsProcessFileNotFoundException() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doThrow(ProcessFileNotFoundException.class).when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testSelectInputFileThrowsTaskManagerException() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doThrow(new TaskManagerException("Test message")).when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Test message", response.getBody());
+    }
+
+    @Test
     void testZipOutputsExportOk() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());
@@ -169,7 +209,8 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -218,7 +259,8 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -236,7 +278,8 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");

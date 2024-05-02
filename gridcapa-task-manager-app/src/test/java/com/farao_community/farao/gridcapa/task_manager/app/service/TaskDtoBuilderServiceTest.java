@@ -7,12 +7,22 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,12 +32,199 @@ import org.springframework.data.repository.query.FluentQuery;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+
+/**
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Philippe Edwards {@literal <philippe.edwards at rte-france.com>}
+ */
+@SpringBootTest
 class TaskDtoBuilderServiceTest {
+
+    @MockBean
+    private TaskRepository taskRepository;
+    @Autowired
+    private TaskDtoBuilderService taskDtoBuilderService;
+
+    @Test
+    void getEmptyTaskTest() {
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
+
+        TaskDto taskDto = taskDtoBuilderService.getEmptyTask(timestamp);
+
+        Assertions.assertThat(taskDto).isNotNull();
+        Assertions.assertThat(taskDto.getId()).isNotNull();
+        Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
+        Assertions.assertThat(taskDto.getStatus()).isEqualTo(TaskStatus.NOT_CREATED);
+        Assertions.assertThat(taskDto.getProcessEvents()).isEmpty();
+        Assertions.assertThat(taskDto.getInputs()).hasSize(2);
+        Assertions.assertThat(taskDto.getAvailableInputs()).isEmpty();
+        Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
+    }
+
+    @Test
+    void getTaskDtoNoTaskInDatabaseTest() {
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
+        Mockito.when(taskRepository.findByTimestamp(timestamp)).thenReturn(Optional.empty());
+
+        TaskDto taskDto = taskDtoBuilderService.getTaskDto(timestamp);
+
+        Assertions.assertThat(taskDto).isNotNull();
+        Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
+        Assertions.assertThat(taskDto.getStatus()).isEqualTo(TaskStatus.NOT_CREATED);
+    }
+
+    @Test
+    void getTaskDtoFromDatabaseTest() {
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
+        Task task = new Task(timestamp);
+        task.setStatus(TaskStatus.READY);
+        Mockito.when(taskRepository.findByTimestamp(timestamp)).thenReturn(Optional.of(task));
+
+        TaskDto taskDto = taskDtoBuilderService.getTaskDto(timestamp);
+
+        Assertions.assertThat(taskDto).isNotNull();
+        Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
+        Assertions.assertThat(taskDto.getStatus()).isEqualTo(TaskStatus.READY);
+    }
+
+    @Test
+    void createDtoFromEntityTaskTest() {
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
+        UUID uuid = UUID.randomUUID();
+        TaskStatus status = TaskStatus.NOT_CREATED;
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                timestamp,
+                timestamp.plusHours(1),
+                timestamp);
+        ProcessFile processFileOutput = new ProcessFile(
+                "cne-file",
+                "output",
+                "CNE",
+                timestamp,
+                timestamp.plusHours(1),
+                timestamp);
+
+        Task task = new Task(timestamp);
+        task.setId(uuid);
+        task.setStatus(status);
+        task.addProcessEvent(timestamp, "info", "message", "serviceName");
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileOutput);
+
+        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntity(task);
+
+        Assertions.assertThat(taskDto).isNotNull();
+        Assertions.assertThat(taskDto.getId()).isEqualTo(uuid);
+        Assertions.assertThat(taskDto.getStatus()).isEqualTo(status);
+        Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
+        Assertions.assertThat(taskDto.getProcessEvents()).hasSize(1);
+        Assertions.assertThat(taskDto.getInputs()).hasSize(2);
+        Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
+        Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
+    }
+
+    @Test
+    void createDtoFromEntityTaskNoLogsTest() {
+        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
+        UUID uuid = UUID.randomUUID();
+        TaskStatus status = TaskStatus.NOT_CREATED;
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                timestamp,
+                timestamp.plusHours(1),
+                timestamp);
+        ProcessFile processFileOutput = new ProcessFile(
+                "cne-file",
+                "output",
+                "CNE",
+                timestamp,
+                timestamp.plusHours(1),
+                timestamp);
+
+        Task task = new Task(timestamp);
+        task.setId(uuid);
+        task.setStatus(status);
+        task.addProcessEvent(timestamp, "info", "message", "serviceName");
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileOutput);
+
+        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
+
+        Assertions.assertThat(taskDto).isNotNull();
+        Assertions.assertThat(taskDto.getId()).isEqualTo(uuid);
+        Assertions.assertThat(taskDto.getStatus()).isEqualTo(status);
+        Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
+        Assertions.assertThat(taskDto.getProcessEvents()).isEmpty();
+        Assertions.assertThat(taskDto.getInputs()).hasSize(2);
+        Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
+        Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
+    }
+
+    @Test
+    void createDtoFromEntityProcessFileTest() {
+        String fileType = "CGM";
+        String filename = "cgm-name";
+        String filePath = "path/to/" + filename;
+        OffsetDateTime modificationDate = OffsetDateTime.parse("2021-10-11T10:18Z");
+        ProcessFile processFile = new ProcessFile(
+                filePath,
+                "input",
+                fileType,
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                modificationDate);
+
+        ProcessFileDto processFileDto = taskDtoBuilderService.createDtoFromEntity(processFile);
+
+        Assertions.assertThat(processFileDto).isNotNull();
+        Assertions.assertThat(processFileDto.getFileType()).isEqualTo(fileType);
+        Assertions.assertThat(processFileDto.getFilePath()).isEqualTo(filePath);
+        Assertions.assertThat(processFileDto.getFilename()).isEqualTo(filename);
+        Assertions.assertThat(processFileDto.getProcessFileStatus()).isEqualTo(ProcessFileStatus.VALIDATED);
+        Assertions.assertThat(processFileDto.getLastModificationDate()).isEqualTo(modificationDate);
+    }
+
+    @Test
+    void createDtoFromEntityProcessEventTest() {
+        OffsetDateTime now = OffsetDateTime.now();
+        String level = "INFO";
+        String message = "CGM arrived";
+        String serviceName = "serviceName";
+        ProcessEvent processEvent = new ProcessEvent(null, now, level, message, serviceName);
+
+        ProcessEventDto processEventDto = taskDtoBuilderService.createDtoFromEntity(processEvent);
+
+        Assertions.assertThat(processEventDto.getLevel()).isEqualTo(level);
+        Assertions.assertThat(processEvent.getTimestamp()).isEqualTo(now);
+        Assertions.assertThat(processEventDto.getMessage()).isEqualTo(message);
+        Assertions.assertThat(processEventDto.getServiceName()).isEqualTo(serviceName);
+    }
+
+    @Test
+    void getListRunningTaskTest() {
+        Task task1 = new Task();
+        Task task2 = new Task();
+        Mockito.when(taskRepository.findAllRunningAndPending()).thenReturn(Set.of(task1, task2));
+
+        List<TaskDto> runningTasks = taskDtoBuilderService.getListRunningTasksDto();
+
+        Assertions.assertThat(runningTasks).hasSize(2);
+    }
 
     @Test
     void testGetListTasksDto24TS() {

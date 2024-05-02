@@ -6,15 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -25,11 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
-@SpringBootTest
 class TaskTest {
-
-    @Autowired
-    private TaskDtoBuilderService taskDtoBuilderService;
 
     private Task task;
 
@@ -59,41 +50,456 @@ class TaskTest {
     }
 
     @Test
-    void getProcessFiles() {
-        assertTrue(task.getProcessFiles().isEmpty());
-        ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
-        String fileType = "testFileType";
-        String fileGroup = "input";
-        Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
-        task.addProcessFile(processFileMock);
-        assertEquals(processFileMock, task.getProcessFiles().iterator().next());
+    void addProcessFileOutput() {
+        ProcessFile processFileOutput = new ProcessFile(
+                "cne-file",
+                "output",
+                "CNE",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileOutput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileOutput);
+
+        // Add the same file again, it should still appear only once in the processFiles collection
+        task.addProcessFile(processFileOutput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileOutput);
+
+        // Add another output file
+        ProcessFile processFileOutput2 = new ProcessFile(
+                "ttc-file",
+                "output",
+                "TTC",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:20Z"));
+
+        task.addProcessFile(processFileOutput2);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(2)
+                .containsExactly(processFileOutput, processFileOutput2);
+    }
+
+    @Test
+    void addProcessFileInput() {
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput);
+
+        // Add the same file again, it should still appear only once in the processFiles collection
+        task.addProcessFile(processFileInput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput);
+
+        // Add another output file
+        ProcessFile processFileInput2 = new ProcessFile(
+                "CRAC-file",
+                "input",
+                "CRAC",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:20Z"));
+
+        task.addProcessFile(processFileInput2);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput2);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CRAC"))
+                .hasSize(1)
+                .containsExactly(processFileInput2);
+    }
+
+    @Test
+    void addProcessFileInputWithSameFilename() {
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput);
+
+        // Add another output file with same filename
+        ProcessFile processFileInput2 = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T22:20Z"));
+
+        task.addProcessFile(processFileInput2);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput2);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput2);
+    }
+
+    @Test
+    void addProcessFileInputWithSameFileType() {
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput);
+
+        // Add another output file with same file type but different filename, the new file should be selected
+        ProcessFile processFileInput2 = new ProcessFile(
+                "other-cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T12:20Z"));
+
+        task.addProcessFile(processFileInput2);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput2);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput2);
+
+        // Add first file again, it should be selected
+        task.addProcessFile(processFileInput);
+
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput2);
+    }
+
+    @Test
+    void removeOutputProcessFile() {
+        // Given
+        ProcessFile processFileOutput = new ProcessFile(
+                "cne-file",
+                "output",
+                "CNE",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFileOutput2 = new ProcessFile(
+                "ttc-file",
+                "output",
+                "TTC",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:20Z"));
+
+        task.addProcessFile(processFileOutput);
+        task.addProcessFile(processFileOutput2);
+
+        // When
+        FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFileOutput2);
+
+        // Then
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileOutput);
+        Assertions.assertThat(fileRemovalStatus.fileRemoved()).isTrue();
+        Assertions.assertThat(fileRemovalStatus.fileSelectionUpdated()).isTrue();
+    }
+
+    @Test
+    void removeNotSelectedInputProcessFile() {
+        // Given
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFileInput2 = new ProcessFile(
+                "other-cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T12:20Z"));
+
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileInput2);
+
+        // When
+        FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFileInput);
+
+        // Then
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput2);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput2);
+        Assertions.assertThat(fileRemovalStatus.fileRemoved()).isTrue();
+        Assertions.assertThat(fileRemovalStatus.fileSelectionUpdated()).isFalse();
+    }
+
+    @Test
+    void removeSelectedInputProcessFileWithOtherVersionAvailable() {
+        // Given
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFileInput2 = new ProcessFile(
+                "other-cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T12:20Z"));
+        ProcessFile processFileInput3 = new ProcessFile(
+                "other-cgm-file-again",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T14:42Z"));
+
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileInput2);
+        task.addProcessFile(processFileInput3);
+        task.selectProcessFile(processFileInput2);
+
+        // When
+        FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFileInput2);
+
+        // Then
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput3);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput3);
+        Assertions.assertThat(fileRemovalStatus.fileRemoved()).isTrue();
+        Assertions.assertThat(fileRemovalStatus.fileSelectionUpdated()).isTrue();
+    }
+
+    @Test
+    void removeSelectedInputProcessFileWithoutOtherVersionAvailable() {
+        // Given
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+
+        // When
+        FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFileInput);
+
+        // Then
+        Assertions.assertThat(task.getProcessFiles()).isEmpty();
+        Assertions.assertThat(task.getAvailableInputs("CGM")).isEmpty();
+        Assertions.assertThat(fileRemovalStatus.fileRemoved()).isTrue();
+        Assertions.assertThat(fileRemovalStatus.fileSelectionUpdated()).isTrue();
+    }
+
+    @Test
+    void removeInexistantFile() {
+        // Given
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        // When
+        FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFileInput);
+
+        // Then
+        Assertions.assertThat(task.getProcessFiles()).isEmpty();
+        Assertions.assertThat(task.getAvailableInputs("CGM")).isEmpty();
+        Assertions.assertThat(fileRemovalStatus.fileRemoved()).isFalse();
+        Assertions.assertThat(fileRemovalStatus.fileSelectionUpdated()).isFalse();
+    }
+
+    @Test
+    void selectProcessFile() {
+        // Given
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFileInput2 = new ProcessFile(
+                "other-cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T12:20Z"));
+
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileInput2);
+
+        // Whe
+        task.selectProcessFile(processFileInput);
+
+        // Then
+        Assertions.assertThat(task.getProcessFiles())
+                .hasSize(1)
+                .containsExactly(processFileInput);
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput2);
     }
 
     @Test
     void getInput() {
-        assertTrue(task.getProcessFiles().isEmpty());
-        ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
-        String fileType = "testFileType";
-        String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
-        Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
-        Mockito.when(processFileMock.getStartingAvailabilityDate()).thenReturn(task.getTimestamp());
-        Mockito.when(processFileMock.getEndingAvailabilityDate()).thenReturn(task.getTimestamp().plusHours(1));
-        task.addProcessFile(processFileMock);
-        assertEquals(processFileMock, task.getInput(fileType).get());
+        Assertions.assertThat(task.getProcessFiles()).isEmpty();
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFileOutput = new ProcessFile(
+                "cne-file",
+                "output",
+                "CNE",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileOutput);
+
+        Assertions.assertThat(task.getInput("CGM")).contains(processFileInput);
+    }
+
+    @Test
+    void getAvailableInputs() {
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+
+        ProcessFile processFileInput2 = new ProcessFile(
+                "glsk-file",
+                "input",
+                "GLSK",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput2);
+
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(1)
+                .containsExactly(processFileInput);
+
+        ProcessFile processFileInput3 = new ProcessFile(
+                "other-cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T22:20Z"));
+
+        task.addProcessFile(processFileInput3);
+
+        Assertions.assertThat(task.getAvailableInputs("CGM"))
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput3);
     }
 
     @Test
     void getOutput() {
-        assertTrue(task.getProcessFiles().isEmpty());
-        ProcessFile processFileMock = Mockito.mock(ProcessFile.class);
-        String fileType = "testFileType";
-        String fileGroup = MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE;
-        Mockito.when(processFileMock.getFileType()).thenReturn(fileType);
-        Mockito.when(processFileMock.getFileGroup()).thenReturn(fileGroup);
-        task.addProcessFile(processFileMock);
-        assertEquals(processFileMock, task.getOutput(fileType).get());
+        Assertions.assertThat(task.getProcessFiles()).isEmpty();
+        ProcessFile processFileInput = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessFile processFileOutput = new ProcessFile(
+                "cne-file",
+                "output",
+                "CNE",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileOutput);
+
+        Assertions.assertThat(task.getOutput("CNE")).contains(processFileOutput);
     }
 
     @Test
@@ -101,15 +507,5 @@ class TaskTest {
         assertTrue(task.getProcessEvents().isEmpty());
         task.addProcessEvent(OffsetDateTime.now(), "WARN", "test", "serviceName");
         assertEquals("WARN", task.getProcessEvents().iterator().next().getLevel());
-    }
-
-    @Test
-    void testConstructorFromEntity() {
-        OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
-        Task task = new Task(timestamp);
-        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntity(task);
-        assertEquals(timestamp, taskDto.getTimestamp());
-        assertEquals(TaskStatus.CREATED, taskDto.getStatus());
-        assertEquals(2, taskDto.getInputs().size());
     }
 }

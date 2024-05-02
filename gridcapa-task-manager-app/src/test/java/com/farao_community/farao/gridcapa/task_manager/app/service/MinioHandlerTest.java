@@ -6,14 +6,22 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.*;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.*;
+import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -21,10 +29,24 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.ERROR;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.NOT_CREATED;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.READY;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.SUCCESS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -50,6 +72,8 @@ class MinioHandlerTest {
 
     @Autowired
     private MinioHandler minioHandler;
+    @Autowired
+    private CompositeMeterRegistryAutoConfiguration compositeMeterRegistryAutoConfiguration;
 
     @AfterEach
     void cleanDatabase() {
@@ -146,10 +170,10 @@ class MinioHandlerTest {
         Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
         ProcessEvent event = processEventIterator.next();
         assertEquals("INFO", event.getLevel());
-        assertEquals("The CRAC : 'crac-test' is available", event.getMessage());
+        assertEquals("A new version of CRAC is available : 'crac-test'", event.getMessage());
         event = processEventIterator.next();
         assertEquals("INFO", event.getLevel());
-        assertEquals("The CGM : 'cgm-test' is available", event.getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-test'", event.getMessage());
     }
 
     @Test
@@ -169,7 +193,7 @@ class MinioHandlerTest {
         assertTrue(event2.getTimestamp().isBefore(event1.getTimestamp()));
         assertEquals("INFO", event1.getLevel());
         assertEquals("INFO", event2.getLevel());
-        assertEquals("The CGM : 'cgm-test' is available", event2.getMessage());
+        assertEquals("A new version of CGM is available : 'cgm-test'", event2.getMessage());
         assertEquals("A new version of CGM is available : 'cgm-new-test'", event1.getMessage());
     }
 
@@ -179,22 +203,24 @@ class MinioHandlerTest {
         Task task = new Task(taskTimestamp);
 
         task.addProcessEvent(OffsetDateTime.now(), "INFO", "CGM available", "task-manager");
-        task.addProcessFile(
+        final ProcessFile processFileCgm = new ProcessFile(
                 "CSE/D2CC/CGMs/cgm-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CGM",
                 OffsetDateTime.parse("2021-10-01T21:00Z"),
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
+        task.addProcessFile(processFileCgm);
 
         task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available", "task-manager");
-        task.addProcessFile(
+        final ProcessFile processFileCrac = new ProcessFile(
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CRAC",
                 OffsetDateTime.parse("2021-10-01T21:00Z"),
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
+        task.addProcessFile(processFileCrac);
 
         taskRepository.save(task);
 
@@ -215,13 +241,14 @@ class MinioHandlerTest {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp);
         task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available", "task-manager");
-        task.addProcessFile(
+        final ProcessFile processFileCrac = new ProcessFile(
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CRAC",
                 OffsetDateTime.parse("2021-10-01T21:00Z"),
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
+        task.addProcessFile(processFileCrac);
         taskRepository.save(task);
 
         Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
@@ -379,5 +406,98 @@ class MinioHandlerTest {
 
         List after = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
         assertTrue(after.isEmpty());
+    }
+
+    @Test
+    void addFileEventToTaskWhenManualUploadTest() {
+        Task task = new Task(OffsetDateTime.now());
+        ProcessFile processFile = new ProcessFile(
+                "path/MANUAL_UPLOAD/to/cgm-file.xml",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+
+        minioHandler.addFileEventToTask(task, FileEventType.UPDATED, processFile);
+
+        assertEquals(1, task.getProcessEvents().size());
+        assertTrue(task.getProcessEvents().first().getMessage().startsWith("Manual upload of a"));
+    }
+
+    @Test
+    void getProcessFileMinioFromDatabaseWithTypeInputTest() {
+        OffsetDateTime startTime = OffsetDateTime.parse("2024-04-22T12:30Z");
+        OffsetDateTime endTime = startTime.plusHours(1);
+        String objectKey = "path/to/crac.xml";
+        String fileType = "CRAC";
+        String fileGroup = "input";
+        OffsetDateTime lastModificationDate = OffsetDateTime.parse("2024-04-26T16:50Z");
+        ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, lastModificationDate);
+        processFileRepository.save(processFile);
+
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+
+        assertNotNull(processFileMinio);
+        assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
+        assertNotEquals(lastModificationDate, processFileMinio.getProcessFile().getLastModificationDate());
+        assertEquals(FileEventType.UPDATED, processFileMinio.getFileEventType());
+    }
+
+    @Test
+    void getProcessFileMinioFromDatabaseWithTypeOuputTest() {
+        OffsetDateTime startTime = OffsetDateTime.parse("2024-04-22T12:30Z");
+        OffsetDateTime endTime = startTime.plusHours(1);
+        String objectKey = "path/to/TTC.xml";
+        String fileType = "TTC";
+        String fileGroup = "output";
+        OffsetDateTime lastModificationDate = OffsetDateTime.parse("2024-04-26T16:50Z");
+        ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, lastModificationDate);
+        processFileRepository.save(processFile);
+
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+
+        assertNotNull(processFileMinio);
+        assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
+        assertNotEquals(lastModificationDate, processFileMinio.getProcessFile().getLastModificationDate());
+        assertEquals(FileEventType.UPDATED, processFileMinio.getFileEventType());
+    }
+
+    @Test
+    void getProcessFileMinioNotInDatabaseWithTypeInputTest() {
+        OffsetDateTime startTime = OffsetDateTime.parse("2024-04-22T12:30Z");
+        OffsetDateTime endTime = startTime.plusHours(1);
+        String objectKey = "path/to/crac.xml";
+        String fileType = "CRAC";
+        String fileGroup = "input";
+
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+
+        assertNotNull(processFileMinio);
+        assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
+        assertEquals(startTime, processFileMinio.getProcessFile().getStartingAvailabilityDate());
+        assertEquals(endTime, processFileMinio.getProcessFile().getEndingAvailabilityDate());
+        assertEquals(fileType, processFileMinio.getProcessFile().getFileType());
+        assertEquals(fileGroup, processFileMinio.getProcessFile().getFileGroup());
+        assertEquals(FileEventType.AVAILABLE, processFileMinio.getFileEventType());
+    }
+
+    @Test
+    void getProcessFileMinioNotInDatabaseWithTypeOuputTest() {
+        OffsetDateTime startTime = OffsetDateTime.parse("2024-04-22T12:30Z");
+        OffsetDateTime endTime = startTime.plusHours(1);
+        String objectKey = "path/to/TTC.xml";
+        String fileType = "TTC";
+        String fileGroup = "output";
+
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+
+        assertNotNull(processFileMinio);
+        assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
+        assertEquals(startTime, processFileMinio.getProcessFile().getStartingAvailabilityDate());
+        assertEquals(endTime, processFileMinio.getProcessFile().getEndingAvailabilityDate());
+        assertEquals(fileType, processFileMinio.getProcessFile().getFileType());
+        assertEquals(fileGroup, processFileMinio.getProcessFile().getFileGroup());
+        assertEquals(FileEventType.AVAILABLE, processFileMinio.getFileEventType());
     }
 }
