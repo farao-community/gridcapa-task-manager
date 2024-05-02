@@ -309,9 +309,18 @@ class TaskTest {
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T12:20Z"));
+        ProcessFile processFileInput3 = new ProcessFile(
+                "other-cgm-file-again",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T14:42Z"));
 
         task.addProcessFile(processFileInput);
         task.addProcessFile(processFileInput2);
+        task.addProcessFile(processFileInput3);
+        task.selectProcessFile(processFileInput2);
 
         // When
         FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFileInput2);
@@ -319,10 +328,10 @@ class TaskTest {
         // Then
         Assertions.assertThat(task.getProcessFiles())
                 .hasSize(1)
-                .containsExactly(processFileInput);
+                .containsExactly(processFileInput3);
         Assertions.assertThat(task.getAvailableInputs("CGM"))
-                .hasSize(1)
-                .containsExactly(processFileInput);
+                .hasSize(2)
+                .containsExactly(processFileInput, processFileInput3);
         Assertions.assertThat(fileRemovalStatus.fileRemoved()).isTrue();
         Assertions.assertThat(fileRemovalStatus.fileSelectionUpdated()).isTrue();
     }

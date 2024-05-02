@@ -143,7 +143,7 @@ public class Task {
             if (fileWasSelected) {
                 availableInputProcessFiles.stream()
                         .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
-                        .min(Comparator.comparing(ProcessFile::getLastModificationDate))
+                        .max(Comparator.comparing(ProcessFile::getLastModificationDate))
                         .ifPresent(this::selectProcessFile);
             }
         }
