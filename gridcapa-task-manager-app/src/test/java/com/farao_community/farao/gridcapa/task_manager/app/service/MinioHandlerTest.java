@@ -409,23 +409,6 @@ class MinioHandlerTest {
     }
 
     @Test
-    void addFileEventToTaskWhenManualUploadTest() {
-        Task task = new Task(OffsetDateTime.now());
-        ProcessFile processFile = new ProcessFile(
-                "path/MANUAL_UPLOAD/to/cgm-file.xml",
-                "input",
-                "CGM",
-                OffsetDateTime.parse("2021-10-11T00:00Z"),
-                OffsetDateTime.parse("2021-10-12T00:00Z"),
-                OffsetDateTime.parse("2021-10-11T10:18Z"));
-
-        minioHandler.addFileEventToTask(task, FileEventType.UPDATED, processFile);
-
-        assertEquals(1, task.getProcessEvents().size());
-        assertTrue(task.getProcessEvents().first().getMessage().startsWith("Manual upload of a"));
-    }
-
-    @Test
     void getProcessFileMinioFromDatabaseWithTypeInputTest() {
         OffsetDateTime startTime = OffsetDateTime.parse("2024-04-22T12:30Z");
         OffsetDateTime endTime = startTime.plusHours(1);

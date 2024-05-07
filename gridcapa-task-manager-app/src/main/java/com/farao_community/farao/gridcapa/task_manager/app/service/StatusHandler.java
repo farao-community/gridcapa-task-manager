@@ -89,5 +89,4 @@ public class StatusHandler {
         taskUpdateNotifier.notify(savedTask, true, false);
         LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
     }
-
 }

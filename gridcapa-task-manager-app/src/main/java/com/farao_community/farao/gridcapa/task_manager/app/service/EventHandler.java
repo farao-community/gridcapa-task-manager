@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -27,21 +26,23 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
 @Service
 public class EventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventHandler.class);
     private final TaskRepository taskRepository;
+    private final TaskService taskService;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
-    public EventHandler(TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
+    public EventHandler(TaskRepository taskRepository, TaskService taskService, TaskUpdateNotifier taskUpdateNotifier) {
         this.taskRepository = taskRepository;
+        this.taskService = taskService;
         this.taskUpdateNotifier = taskUpdateNotifier;
     }
 
@@ -61,7 +62,7 @@ public class EventHandler {
             .map(String::new)
             .map(this::mapMessageToEvent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     TaskLogEventUpdate mapMessageToEvent(String messages) {
@@ -84,12 +85,12 @@ public class EventHandler {
                     if (optionalTask.isPresent()) {
                         task = optionalTask.get();
                         storedTasks.put(taskUUID, task);
-                        addProcessEventToTask(event, task);
+                        taskService.addProcessEventToTask(event, task);
                     } else {
                         LOGGER.warn("Task {} does not exist. Impossible to update task with log event", event.getId());
                     }
                 } else {
-                    addProcessEventToTask(event, task);
+                    taskService.addProcessEventToTask(event, task);
                 }
             }
             Collection<Task> tasksToSave = storedTasks.values();
@@ -99,15 +100,5 @@ public class EventHandler {
                 LOGGER.debug("Task events have been added on {}", task.getTimestamp());
             }
         }
-    }
-
-    private void addProcessEventToTask(TaskLogEventUpdate loggerEvent, Task task) {
-        OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-        String message = loggerEvent.getMessage();
-        Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
-        if (optionalEventPrefix.isPresent()) {
-            message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
-        }
-        task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
     }
 }

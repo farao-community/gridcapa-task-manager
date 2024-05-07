@@ -19,6 +19,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorS
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
 import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskService;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +49,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
+
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
@@ -66,8 +69,9 @@ public class TaskManagerController {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final Logger businessLogger;
     private final ParameterService parameterService;
+    private final TaskService taskService;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilderService builder, FileSelectorService fileSelectorService, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilderService builder, FileSelectorService fileSelectorService, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService, TaskService taskService) {
         this.statusHandler = statusHandler;
         this.builder = builder;
         this.fileSelectorService = fileSelectorService;
@@ -75,6 +79,7 @@ public class TaskManagerController {
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.businessLogger = businessLogger;
         this.parameterService = parameterService;
+        this.taskService = taskService;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -93,6 +98,18 @@ public class TaskManagerController {
         Optional<Task> optTask = statusHandler.handleTaskStatusUpdate(OffsetDateTime.parse(timestamp), taskStatus);
         return optTask.map(task -> ResponseEntity.ok(builder.createDtoFromEntity(task)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping(value = "/tasks/{timestamp}/runHistory")
+    public ResponseEntity<TaskDto> addNewRunInTaskHistory(@PathVariable String timestamp) {
+        try {
+            synchronized (TASK_MANAGER_LOCK) {
+                Task task = taskService.addNewRunAndSaveTask(OffsetDateTime.parse(timestamp));
+                return ResponseEntity.ok(builder.createDtoFromEntity(task));
+            }
+        } catch (final TaskNotFoundException notFoundException) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")
