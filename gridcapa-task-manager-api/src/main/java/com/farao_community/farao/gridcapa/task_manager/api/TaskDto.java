@@ -27,6 +27,7 @@ public class TaskDto {
     private final List<ProcessFileDto> availableInputs;
     private final List<ProcessFileDto> outputs;
     private final List<ProcessEventDto> processEvents;
+    private final List<ProcessRunDto> runHistory;
     private final List<TaskParameterDto> parameters;
 
     @JsonCreator
@@ -37,6 +38,7 @@ public class TaskDto {
                    @JsonProperty("availableInputs") List<ProcessFileDto> availableInputs,
                    @JsonProperty("outputs") List<ProcessFileDto> outputs,
                    @JsonProperty("processEvents") List<ProcessEventDto> processEvents,
+                   @JsonProperty("runHistory") List<ProcessRunDto> runHistory,
                    @JsonProperty("parameters") List<TaskParameterDto> parameters) {
         this.id = id;
         this.timestamp = timestamp;
@@ -45,6 +47,7 @@ public class TaskDto {
         this.availableInputs = availableInputs;
         this.outputs = outputs;
         this.processEvents = processEvents;
+        this.runHistory = runHistory;
         this.parameters = parameters;
     }
 
@@ -58,6 +61,7 @@ public class TaskDto {
                 inputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
                 List.of(),
                 outputs.stream().map(ProcessFileDto::emptyProcessFile).toList(),
+                new ArrayList<>(),
                 new ArrayList<>(),
                 new ArrayList<>());
     }
@@ -88,6 +92,10 @@ public class TaskDto {
 
     public List<ProcessEventDto> getProcessEvents() {
         return processEvents;
+    }
+
+    public List<ProcessRunDto> getRunHistory() {
+        return runHistory;
     }
 
     public List<TaskParameterDto> getParameters() {

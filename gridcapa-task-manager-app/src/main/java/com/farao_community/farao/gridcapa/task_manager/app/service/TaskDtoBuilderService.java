@@ -9,8 +9,10 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
@@ -73,13 +75,17 @@ public class TaskDtoBuilderService {
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
 
-        tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
+        tasks.stream()
+                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
         return taskMap.values().stream().toList();
     }
 
     public List<TaskDto> getListRunningTasksDto() {
-        return taskRepository.findAllRunningAndPending().stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).toList();
+        return taskRepository.findAllRunningAndPending().stream()
+                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .toList();
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
@@ -128,7 +134,13 @@ public class TaskDtoBuilderService {
                 task.getProcessEvents().stream().map(this::createDtoFromEntity).toList()
                 : Collections.emptyList();
 
-        List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream().map(TaskParameterDto::new).toList();
+        List<ProcessRunDto> runHistory = task.getRunHistory().stream()
+                .map(this::createDtoFromEntity)
+                .toList();
+
+        List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream()
+                .map(TaskParameterDto::new)
+                .toList();
 
         return new TaskDto(
                 task.getId(),
@@ -138,6 +150,7 @@ public class TaskDtoBuilderService {
                 availableInputs,
                 outputs,
                 processEvents,
+                runHistory,
                 taskParameterDtos);
     }
 
@@ -155,5 +168,12 @@ public class TaskDtoBuilderService {
                 processEvent.getLevel(),
                 processEvent.getMessage(),
                 processEvent.getServiceName());
+    }
+
+    ProcessRunDto createDtoFromEntity(ProcessRun processRun) {
+        List<ProcessFileDto> processFileDtos = processRun.getInputFiles().stream()
+                .map(this::createDtoFromEntity)
+                .toList();
+        return new ProcessRunDto(processRun.getExecutionDate(), processFileDtos);
     }
 }

@@ -29,6 +29,7 @@ class TaskDtoTest {
         assertEquals(2, taskDto.getInputs().size());
         assertEquals(1, taskDto.getOutputs().size());
         assertEquals(0, taskDto.getAvailableInputs().size());
+        assertEquals(0, taskDto.getRunHistory().size());
         assertEquals(0, taskDto.getProcessEvents().size());
     }
 }
