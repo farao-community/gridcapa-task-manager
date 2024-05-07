@@ -11,8 +11,10 @@ import org.junit.jupiter.api.Test;
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -40,8 +42,9 @@ class ProcessFileDtoTest {
         ProcessFileDto diffFilenameDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "other", now);
         ProcessFileDto diffDateDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", now.minusMinutes(1));
 
-        assertNotEquals(null, referenceDto);
-        assertNotEquals(new Object(), referenceDto);
+        assertFalse(referenceDto.equals(null)); // do not use assertFalse, which does not call equals method in this case
+        assertNotEquals(referenceDto, new Object()); // do not use assertFalse, which does not call equals method in this case
+        assertTrue(referenceDto.equals(referenceDto)); // do not use assertFalse, which does not call equals method in this case
         assertEquals(equalDto, referenceDto);
         assertNotEquals(diffFilePathDto, referenceDto);
         assertNotEquals(diffFileTypeDto, referenceDto);
