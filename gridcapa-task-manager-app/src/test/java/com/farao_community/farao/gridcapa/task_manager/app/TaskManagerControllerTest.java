@@ -15,6 +15,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;

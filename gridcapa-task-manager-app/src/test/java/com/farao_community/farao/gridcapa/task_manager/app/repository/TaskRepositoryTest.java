@@ -1,4 +1,4 @@
-package com.farao_community.farao.gridcapa.task_manager.app;
+package com.farao_community.farao.gridcapa.task_manager.app.repository;
 
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.junit.jupiter.api.Assertions;

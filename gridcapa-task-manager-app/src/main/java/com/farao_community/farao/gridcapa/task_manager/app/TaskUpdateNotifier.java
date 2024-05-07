@@ -9,6 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.WebsocketConfig;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

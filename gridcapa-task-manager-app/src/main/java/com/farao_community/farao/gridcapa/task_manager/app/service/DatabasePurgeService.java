@@ -6,7 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.slf4j.Logger;

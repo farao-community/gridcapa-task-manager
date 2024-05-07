@@ -6,9 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;

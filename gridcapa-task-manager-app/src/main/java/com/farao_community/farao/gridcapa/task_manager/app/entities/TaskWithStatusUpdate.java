@@ -1,6 +1,4 @@
-package com.farao_community.farao.gridcapa.task_manager.app;
-
-import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}

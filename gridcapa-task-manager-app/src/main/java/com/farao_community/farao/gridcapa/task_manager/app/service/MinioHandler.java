@@ -7,16 +7,16 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskWithStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileRemovalStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import io.minio.messages.NotificationRecords;
