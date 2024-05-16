@@ -19,7 +19,6 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,7 +67,7 @@ public class TaskService {
      * @param task:                      Task on which to evaluate the status.
      * @param inputFileSelectionChanged: boolean indicating whether an input file has been changed
      */
-    private boolean checkAndUpdateTaskStatus(Task task, boolean inputFileSelectionChanged) {
+    boolean checkAndUpdateTaskStatus(Task task, boolean inputFileSelectionChanged) {
         TaskStatus initialTaskStatus = task.getStatus();
         List<String> inputFileTypes = task.getProcessFiles().stream()
                 .filter(ProcessFile::isInputFile)
@@ -98,7 +97,7 @@ public class TaskService {
         task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
     }
 
-    public void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
+    void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
         addFileEventToTask(task, fileEventType, processFile, FILE_EVENT_DEFAULT_LEVEL);
     }
 
@@ -145,7 +144,7 @@ public class TaskService {
             Task task = taskWithStatusUpdate.getTask();
             addFileEventToTask(task, fileEventType, savedProcessFile);
             if (isInput) {
-                removeProcessFileFromTaskRunHistory(savedProcessFile, task, fileEventType);
+                removeUnavailableProcessFileFromTaskRunHistory(savedProcessFile, task, fileEventType);
             }
             task.addProcessFile(savedProcessFile);
             if (withStatusUpdate && !taskWithStatusUpdate.isStatusUpdated() && isInput) {
@@ -168,7 +167,7 @@ public class TaskService {
         return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
                 .parallelStream()
                 .map(task -> {
-                    removeProcessFileFromTaskRunHistory(processFile, task, FileEventType.DELETED);
+                    removeUnavailableProcessFileFromTaskRunHistory(processFile, task, FileEventType.DELETED);
                     final FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFile);
                     boolean statusUpdated = false;
                     if (processFile.isInputFile()) {
@@ -225,30 +224,15 @@ public class TaskService {
     public Task addNewRunAndSaveTask(OffsetDateTime timestamp) {
         Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
         ProcessRun processRun = new ProcessRun(task.getProcessFiles().stream().filter(ProcessFile::isInputFile).toList());
-        task.getRunHistory().add(processRun);
+        task.addProcessRun(processRun);
         return taskRepository.save(task);
     }
 
-    public static boolean removeProcessFileFromTaskRunHistory(ProcessFile processFile, Task task, FileEventType fileEventType) {
+    static void removeUnavailableProcessFileFromTaskRunHistory(ProcessFile processFile, Task task, FileEventType fileEventType) {
         if (FileEventType.UPDATED.equals(fileEventType) || FileEventType.DELETED.equals(fileEventType)) {
             task.getRunHistory().stream()
                     .filter(run -> run.getInputFiles().stream().anyMatch(runFile -> runFile.getFilename().equals(processFile.getFilename())))
-                    .forEach(run -> {
-                        run.removeInputFileByFilename(processFile.getFilename());
-                        run.addInputFile(getNotAvailableAnymoreProcessFile(processFile));
-                    });
-            return true;
+                    .forEach(run -> run.removeInputFileByFilename(processFile.getFilename()));
         }
-        return false;
-    }
-
-    @NotNull
-    private static ProcessFile getNotAvailableAnymoreProcessFile(ProcessFile processFile) {
-        return new ProcessFile("NOT_AVAILABLE_ANYMORE",
-                processFile.getFileGroup(),
-                processFile.getFileType(),
-                processFile.getStartingAvailabilityDate(),
-                processFile.getEndingAvailabilityDate(),
-                processFile.getLastModificationDate());
     }
 }

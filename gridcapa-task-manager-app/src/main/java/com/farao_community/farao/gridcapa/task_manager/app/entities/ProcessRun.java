@@ -9,6 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -39,7 +40,7 @@ public class ProcessRun {
     @Column(name = "execution_date")
     private OffsetDateTime executionDate;
 
-    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
     @JoinTable(
             name = "process_run_process_file",
             joinColumns = @JoinColumn(name = "fk_process_run"),
@@ -68,15 +69,7 @@ public class ProcessRun {
         return inputFiles;
     }
 
-    public void addInputFile(ProcessFile inputFile) {
-        this.inputFiles.add(inputFile);
-    }
-
-    public void removeInputFile(ProcessFile inputFile) {
-        this.inputFiles.remove(inputFile);
-    }
-
-    public boolean removeInputFileByFilename(String filename) {
-        return this.inputFiles.removeIf(file -> file.getFilename().equals(filename));
+    public void removeInputFileByFilename(String filename) {
+        this.inputFiles.removeIf(file -> file.getFilename().equals(filename));
     }
 }

@@ -19,6 +19,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskReposi
 import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskService;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.Test;
@@ -92,6 +93,9 @@ class TaskManagerControllerTest {
     @MockBean
     private ParameterService parameterService;
 
+    @MockBean
+    private TaskService taskService;
+
     @Test
     void testGetTaskOk() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
@@ -137,6 +141,25 @@ class TaskManagerControllerTest {
         ResponseEntity<TaskDto> taskResponse = taskManagerController.updateStatus(timestamp, "RUNNING");
         assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
         assertEquals(TaskStatus.RUNNING, taskResponse.getBody().getStatus());
+    }
+
+    @Test
+    void testAddNewRunInTaskHistoryOk() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Task task = new Task(taskTimestamp);
+        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenReturn(task);
+        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(taskTimestamp.toString());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(taskTimestamp, response.getBody().getTimestamp());
+    }
+
+    @Test
+    void testSAddNewRunInTaskHistoryThrowsTaskNotFoundException() {
+        String timestamp = "2021-09-30T23:00Z";
+        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenThrow(TaskNotFoundException.class);
+        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(timestamp);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @Test

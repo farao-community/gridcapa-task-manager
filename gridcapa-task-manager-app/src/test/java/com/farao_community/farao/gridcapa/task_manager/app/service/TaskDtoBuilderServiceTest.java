@@ -10,8 +10,10 @@ import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
@@ -69,6 +71,8 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getInputs()).hasSize(2);
         Assertions.assertThat(taskDto.getAvailableInputs()).isEmpty();
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
+        Assertions.assertThat(taskDto.getParameters()).isEmpty();
+        Assertions.assertThat(taskDto.getRunHistory()).isEmpty();
     }
 
     @Test
@@ -123,6 +127,7 @@ class TaskDtoBuilderServiceTest {
         task.addProcessEvent(timestamp, "info", "message", "serviceName");
         task.addProcessFile(processFileInput);
         task.addProcessFile(processFileOutput);
+        task.addProcessRun(new ProcessRun());
 
         TaskDto taskDto = taskDtoBuilderService.createDtoFromEntity(task);
 
@@ -134,6 +139,7 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getInputs()).hasSize(2);
         Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
+        Assertions.assertThat(taskDto.getRunHistory()).hasSize(1);
     }
 
     @Test
@@ -162,6 +168,7 @@ class TaskDtoBuilderServiceTest {
         task.addProcessEvent(timestamp, "info", "message", "serviceName");
         task.addProcessFile(processFileInput);
         task.addProcessFile(processFileOutput);
+        task.addProcessRun(new ProcessRun());
 
         TaskDto taskDto = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
 
@@ -173,6 +180,7 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getInputs()).hasSize(2);
         Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
+        Assertions.assertThat(taskDto.getRunHistory()).hasSize(1);
     }
 
     @Test
@@ -213,6 +221,20 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(processEvent.getTimestamp()).isEqualTo(now);
         Assertions.assertThat(processEventDto.getMessage()).isEqualTo(message);
         Assertions.assertThat(processEventDto.getServiceName()).isEqualTo(serviceName);
+    }
+
+    @Test
+    void createDtoFromEntityProcessRunTest() {
+        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessRun processRun = new ProcessRun(List.of(processFile1, processFile2));
+
+        ProcessRunDto processRunDto = taskDtoBuilderService.createDtoFromEntity(processRun);
+
+        Assertions.assertThat(processRunDto).isNotNull();
+        Assertions.assertThat(processRunDto.getExecutionDate()).isNotNull();
+        Assertions.assertThat(processRunDto.getInputs()).isNotNull();
+        Assertions.assertThat(processRunDto.getInputs()).hasSize(2);
     }
 
     @Test

@@ -183,4 +183,8 @@ public class Task {
     public List<ProcessRun> getRunHistory() {
         return runHistory;
     }
+
+    public void addProcessRun(ProcessRun processRun) {
+        runHistory.add(processRun);
+    }
 }

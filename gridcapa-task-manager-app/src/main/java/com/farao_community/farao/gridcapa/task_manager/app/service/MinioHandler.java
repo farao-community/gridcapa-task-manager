@@ -106,8 +106,9 @@ public class MinioHandler {
             if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
                 ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
-                    ProcessFile processFile = processFileRepository.save(processFileMinio.getProcessFile());
+                    ProcessFile processFile = processFileMinio.getProcessFile();
                     if (!processFile.isInputFile()) {
+                        processFile = processFileRepository.save(processFile);
                         Set<TaskWithStatusUpdate> taskWithStatusUpdates = taskService.addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), false, false);
                         saveAndNotifyTasks(taskWithStatusUpdates);
                         LOGGER.info("Process file {} has been added properly", processFile.getFilename());
@@ -117,7 +118,10 @@ public class MinioHandler {
                         if (isAnyTaskRunningOrPending(tasksForProcessFile)) {
                             addWaitingFileAndNotifyTasks(processFileMinio, tasksForProcessFile);
                         } else {
+                            processFile = processFileRepository.save(processFile);
                             Set<TaskWithStatusUpdate> taskWithStatusUpdates = taskService.addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), true, true);
+                            // TODO Explain why set value to true
+                            taskWithStatusUpdates.stream().forEach(t -> t.setStatusUpdated(true));
                             saveAndNotifyTasks(taskWithStatusUpdates);
                             LOGGER.info("Process file {} has been added properly", processFile.getFilename());
                         }
