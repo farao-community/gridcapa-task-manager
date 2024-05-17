@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalIdCache;
 
@@ -40,6 +41,9 @@ public class ProcessRun {
     @Column(name = "execution_date")
     private OffsetDateTime executionDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Task task;
+
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
     @JoinTable(
             name = "process_run_process_file",
@@ -63,6 +67,14 @@ public class ProcessRun {
 
     public OffsetDateTime getExecutionDate() {
         return executionDate;
+    }
+
+    public Task getTask() {
+        return task;
+    }
+
+    public void setTask(Task task) {
+        this.task = task;
     }
 
     public List<ProcessFile> getInputFiles() {

@@ -83,7 +83,11 @@ public class Task {
     @SortNatural
     private final SortedSet<ProcessFile> availableInputProcessFiles = new TreeSet<>();
 
-    @OneToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
+    @OneToMany(
+            mappedBy = "task",
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST},
+            orphanRemoval = true,
+            fetch = FetchType.EAGER)
     private final List<ProcessRun> runHistory = new ArrayList<>();
 
     public Task() {
@@ -181,10 +185,11 @@ public class Task {
     }
 
     public List<ProcessRun> getRunHistory() {
-        return runHistory;
+        return List.copyOf(runHistory);
     }
 
     public void addProcessRun(ProcessRun processRun) {
+        processRun.setTask(this);
         runHistory.add(processRun);
     }
 }
