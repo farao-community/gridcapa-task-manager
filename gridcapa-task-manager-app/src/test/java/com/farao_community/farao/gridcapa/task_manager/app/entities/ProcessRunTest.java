@@ -29,6 +29,18 @@ class ProcessRunTest {
     }
 
     @Test
+    void setTaskTest() {
+        ProcessRun processRun = new ProcessRun(List.of());
+        Task task = new Task();
+
+        Assertions.assertThat(processRun.getTask()).isNull();
+
+        processRun.setTask(task);
+
+        Assertions.assertThat(processRun.getTask()).isEqualTo(task);
+    }
+
+    @Test
     void removeInputFileByFilenameTest() {
         OffsetDateTime now = OffsetDateTime.now();
         ProcessFile file1 = new ProcessFile("first-file", "input", "CGM", now, now, now);

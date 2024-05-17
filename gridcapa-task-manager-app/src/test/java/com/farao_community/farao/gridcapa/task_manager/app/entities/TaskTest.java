@@ -526,4 +526,15 @@ class TaskTest {
 
         Assertions.assertThat(task.getRunHistory()).contains(processRun);
     }
+    @Test
+    void addProcessRunTest() {
+        ProcessRun processRun = new ProcessRun(List.of());
+
+        Assertions.assertThat(processRun.getTask()).isNull();
+
+        task.addProcessRun(processRun);
+
+        Assertions.assertThat(task.getRunHistory()).contains(processRun);
+        Assertions.assertThat(processRun.getTask()).isEqualTo(task);
+    }
 }
