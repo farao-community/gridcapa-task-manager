@@ -45,7 +45,7 @@ class TaskTest {
 
     @Test
     void setStatus() {
-        assert task.getStatus().equals(TaskStatus.CREATED);
+        assert task.getStatus() == TaskStatus.CREATED;
         task.setStatus(TaskStatus.READY);
         assertEquals(TaskStatus.READY, task.getStatus());
     }

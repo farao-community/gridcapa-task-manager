@@ -156,8 +156,7 @@ public class TaskManagerController {
 
         TaskDto taskDto = builder.getTaskDto(offsetDateTime);
         TaskStatus taskStatus = taskDto.getStatus();
-        if (TaskStatus.SUCCESS.equals(taskStatus)
-                || TaskStatus.ERROR.equals(taskStatus)) {
+        if (taskStatus == TaskStatus.SUCCESS || taskStatus == TaskStatus.ERROR) {
             optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
         }
 

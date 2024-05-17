@@ -110,11 +110,11 @@ public class TaskService {
 
     private static String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName, boolean isManualUpload) {
         final String logPrefix = buildFileEventPrefix(isManualUpload);
-        if (fileEventType.equals(FileEventType.WAITING)) {
+        if (fileEventType == FileEventType.WAITING) {
             return String.format("%s new version of %s is waiting for process to end to be available : '%s'", logPrefix, fileType, fileName);
-        } else if (fileEventType.equals(FileEventType.UPDATED)) {
+        } else if (fileEventType == FileEventType.UPDATED) {
             return String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
-        } else if (fileEventType.equals(FileEventType.AVAILABLE)) {
+        } else if (fileEventType == FileEventType.AVAILABLE) {
             return String.format("%s new version of %s is available : '%s'", logPrefix, fileType, fileName);
         } else {
             return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
@@ -210,11 +210,11 @@ public class TaskService {
     }
 
     private boolean doesStatusNeedReset(final TaskStatus status) {
-        return TaskStatus.SUCCESS == status || TaskStatus.ERROR == status || TaskStatus.INTERRUPTED == status;
+        return status == TaskStatus.SUCCESS || status == TaskStatus.ERROR || status == TaskStatus.INTERRUPTED;
     }
 
     private boolean doesStatusBlockFileSelection(final TaskStatus status) {
-        return TaskStatus.RUNNING == status || TaskStatus.PENDING == status || TaskStatus.STOPPING == status;
+        return status == TaskStatus.RUNNING || status == TaskStatus.PENDING || status == TaskStatus.STOPPING;
     }
 
     ////////////////////////////
@@ -229,7 +229,7 @@ public class TaskService {
     }
 
     static void removeUnavailableProcessFileFromTaskRunHistory(ProcessFile processFile, Task task, FileEventType fileEventType) {
-        if (FileEventType.UPDATED.equals(fileEventType) || FileEventType.DELETED.equals(fileEventType)) {
+        if (fileEventType == FileEventType.UPDATED || fileEventType == FileEventType.DELETED) {
             task.getRunHistory().stream()
                     .filter(run -> run.getInputFiles().stream().anyMatch(runFile -> runFile.getFilename().equals(processFile.getFilename())))
                     .forEach(run -> run.removeInputFileByFilename(processFile.getFilename()));

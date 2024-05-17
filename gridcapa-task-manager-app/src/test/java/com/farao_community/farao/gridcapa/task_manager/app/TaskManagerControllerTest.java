@@ -155,7 +155,7 @@ class TaskManagerControllerTest {
     }
 
     @Test
-    void testSAddNewRunInTaskHistoryThrowsTaskNotFoundException() {
+    void testAddNewRunInTaskHistoryThrowsTaskNotFoundException() {
         String timestamp = "2021-09-30T23:00Z";
         Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenThrow(TaskNotFoundException.class);
         ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(timestamp);

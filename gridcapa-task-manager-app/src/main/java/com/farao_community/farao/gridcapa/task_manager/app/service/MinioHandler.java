@@ -133,7 +133,7 @@ public class MinioHandler {
     }
 
     boolean isAnyTaskRunningOrPending(Set<Task> tasks) {
-        return tasks.stream().anyMatch(task -> task.getStatus().equals(TaskStatus.RUNNING) || task.getStatus().equals(TaskStatus.PENDING));
+        return tasks.stream().anyMatch(task -> task.getStatus() == TaskStatus.RUNNING || task.getStatus() == TaskStatus.PENDING);
     }
 
     private ProcessFileMinio buildProcessFileMinioFromEvent(Event event) {
