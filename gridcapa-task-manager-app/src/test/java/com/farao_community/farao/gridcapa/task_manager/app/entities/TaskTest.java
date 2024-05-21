@@ -526,6 +526,7 @@ class TaskTest {
 
         Assertions.assertThat(task.getRunHistory()).contains(processRun);
     }
+
     @Test
     void addProcessRunTest() {
         ProcessRun processRun = new ProcessRun(List.of());
