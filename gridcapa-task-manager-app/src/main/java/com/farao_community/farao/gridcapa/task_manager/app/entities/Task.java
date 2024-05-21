@@ -26,8 +26,10 @@ import org.hibernate.annotations.SortComparator;
 import org.hibernate.annotations.SortNatural;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -80,6 +82,13 @@ public class Task {
             inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
     @SortNatural
     private final SortedSet<ProcessFile> availableInputProcessFiles = new TreeSet<>();
+
+    @OneToMany(
+            mappedBy = "task",
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST},
+            orphanRemoval = true,
+            fetch = FetchType.EAGER)
+    private final List<ProcessRun> runHistory = new ArrayList<>();
 
     public Task() {
 
@@ -173,5 +182,14 @@ public class Task {
                 .filter(ProcessFile::isOutputFile)
                 .filter(file -> fileType.equals(file.getFileType()))
                 .findFirst();
+    }
+
+    public List<ProcessRun> getRunHistory() {
+        return List.copyOf(runHistory);
+    }
+
+    public void addProcessRun(ProcessRun processRun) {
+        processRun.setTask(this);
+        runHistory.add(processRun);
     }
 }

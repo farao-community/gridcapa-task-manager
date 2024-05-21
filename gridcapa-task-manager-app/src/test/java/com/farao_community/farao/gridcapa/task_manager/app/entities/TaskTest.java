@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +45,7 @@ class TaskTest {
 
     @Test
     void setStatus() {
-        assert task.getStatus().equals(TaskStatus.CREATED);
+        assert task.getStatus() == TaskStatus.CREATED;
         task.setStatus(TaskStatus.READY);
         assertEquals(TaskStatus.READY, task.getStatus());
     }
@@ -507,5 +508,34 @@ class TaskTest {
         assertTrue(task.getProcessEvents().isEmpty());
         task.addProcessEvent(OffsetDateTime.now(), "WARN", "test", "serviceName");
         assertEquals("WARN", task.getProcessEvents().iterator().next().getLevel());
+    }
+
+    @Test
+    void getRunHistoryTest() {
+        Assertions.assertThat(task.getRunHistory()).isEmpty();
+        ProcessFile processFileCgm = new ProcessFile(
+                "cgm-file",
+                "input",
+                "CGM",
+                OffsetDateTime.parse("2021-10-11T00:00Z"),
+                OffsetDateTime.parse("2021-10-12T00:00Z"),
+                OffsetDateTime.parse("2021-10-11T10:18Z"));
+        ProcessRun processRun = new ProcessRun(List.of(processFileCgm));
+
+        task.addProcessRun(processRun);
+
+        Assertions.assertThat(task.getRunHistory()).contains(processRun);
+    }
+
+    @Test
+    void addProcessRunTest() {
+        ProcessRun processRun = new ProcessRun(List.of());
+
+        Assertions.assertThat(processRun.getTask()).isNull();
+
+        task.addProcessRun(processRun);
+
+        Assertions.assertThat(task.getRunHistory()).contains(processRun);
+        Assertions.assertThat(processRun.getTask()).isEqualTo(task);
     }
 }

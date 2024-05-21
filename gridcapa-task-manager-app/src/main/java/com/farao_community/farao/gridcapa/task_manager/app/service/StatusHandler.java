@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.slf4j.Logger;
@@ -89,5 +89,4 @@ public class StatusHandler {
         taskUpdateNotifier.notify(savedTask, true, false);
         LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
     }
-
 }

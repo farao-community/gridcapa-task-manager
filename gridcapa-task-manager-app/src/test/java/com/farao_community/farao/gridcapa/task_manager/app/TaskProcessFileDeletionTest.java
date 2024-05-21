@@ -9,6 +9,8 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;

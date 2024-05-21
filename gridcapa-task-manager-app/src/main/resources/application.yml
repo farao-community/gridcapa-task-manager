@@ -39,6 +39,8 @@ spring:
           destination: task-updated
         task-status-updated:
           destination: task-updated
+        task-input-updated:
+          destination: task-updated
       rabbit:
         default:
           consumer:
@@ -56,6 +58,9 @@ spring:
           task-status-updated:
             producer:
               routing-key-expression: '''status'''
+          task-input-updated:
+            producer:
+              routing-key-expression: '''input'''
     function:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
   http:

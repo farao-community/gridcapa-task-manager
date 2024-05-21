@@ -8,7 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
-import com.farao_community.farao.gridcapa.task_manager.app.ParameterRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ParameterRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Parameter;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

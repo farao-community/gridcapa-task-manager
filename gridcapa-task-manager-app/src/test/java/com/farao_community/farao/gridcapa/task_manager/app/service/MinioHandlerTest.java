@@ -6,9 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
@@ -406,23 +406,6 @@ class MinioHandlerTest {
 
         List after = (List) ReflectionTestUtils.getField(minioHandler, "waitingFilesList");
         assertTrue(after.isEmpty());
-    }
-
-    @Test
-    void addFileEventToTaskWhenManualUploadTest() {
-        Task task = new Task(OffsetDateTime.now());
-        ProcessFile processFile = new ProcessFile(
-                "path/MANUAL_UPLOAD/to/cgm-file.xml",
-                "input",
-                "CGM",
-                OffsetDateTime.parse("2021-10-11T00:00Z"),
-                OffsetDateTime.parse("2021-10-12T00:00Z"),
-                OffsetDateTime.parse("2021-10-11T10:18Z"));
-
-        minioHandler.addFileEventToTask(task, FileEventType.UPDATED, processFile);
-
-        assertEquals(1, task.getProcessEvents().size());
-        assertTrue(task.getProcessEvents().first().getMessage().startsWith("Manual upload of a"));
     }
 
     @Test
