@@ -6,12 +6,20 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorService;
+import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskService;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.junit.jupiter.api.Test;
@@ -41,6 +49,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,6 +73,9 @@ class TaskManagerControllerTest {
     private FileManager fileManager;
 
     @MockBean
+    private FileSelectorService fileSelectorService;
+
+    @MockBean
     private Logger businessLogger;
 
     @Autowired
@@ -74,6 +89,12 @@ class TaskManagerControllerTest {
 
     @Autowired
     private TaskManagerConfigurationProperties properties;
+
+    @MockBean
+    private ParameterService parameterService;
+
+    @MockBean
+    private TaskService taskService;
 
     @Test
     void testGetTaskOk() {
@@ -123,6 +144,25 @@ class TaskManagerControllerTest {
     }
 
     @Test
+    void testAddNewRunInTaskHistoryOk() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Task task = new Task(taskTimestamp);
+        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenReturn(task);
+        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(taskTimestamp.toString());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(taskTimestamp, response.getBody().getTimestamp());
+    }
+
+    @Test
+    void testAddNewRunInTaskHistoryThrowsTaskNotFoundException() {
+        String timestamp = "2021-09-30T23:00Z";
+        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenThrow(TaskNotFoundException.class);
+        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(timestamp);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
     void testZipInputsExportOk() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Mockito.when(fileManager.getZippedGroup(Mockito.any(), Mockito.eq(MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE))).thenReturn(new ByteArrayOutputStream());
@@ -130,6 +170,39 @@ class TaskManagerControllerTest {
         ResponseEntity<byte[]> inputsBytesResponse = taskManagerController.getZippedInputs(taskTimestamp.toString());
         assertEquals(HttpStatus.OK, inputsBytesResponse.getStatusCode());
         assertEquals("attachment;filename=\"2021-10-01_0130_input.zip\"", inputsBytesResponse.getHeaders().get("Content-Disposition").get(0));
+    }
+
+    @Test
+    void testSelectInputFileOk() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doNothing().when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void testSelectInputFileThrowsTaskNotFoundException() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doThrow(TaskNotFoundException.class).when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testSelectInputFileThrowsProcessFileNotFoundException() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doThrow(ProcessFileNotFoundException.class).when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testSelectInputFileThrowsTaskManagerException() {
+        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
+        Mockito.doThrow(new TaskManagerException("Test message")).when(fileSelectorService).selectFile(Mockito.any(), Mockito.any(), Mockito.any());
+        ResponseEntity<String> response = taskManagerController.selectFile(taskTimestamp.toString(), "CRAC", "crac-filename.xml");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Test message", response.getBody());
     }
 
     @Test
@@ -160,7 +233,8 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -209,7 +283,8 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -227,7 +302,8 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        task.addProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
         Mockito.when(fileManager.generatePresignedUrl(anyString())).thenReturn("MinioUrl");
@@ -293,5 +369,78 @@ class TaskManagerControllerTest {
         Mockito.doThrow(new TaskManagerException("example")).when(fileManager).uploadFileToMinio(Mockito.any(OffsetDateTime.class), Mockito.any(MultipartFile.class), Mockito.anyString(), Mockito.anyString());
         ResponseEntity<Object> taskResponse = taskManagerController.uploadFile(timestamp, file, "TEST", "CGM");
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, taskResponse.getStatusCode());
+    }
+
+    @Test
+    void getParametersTest() {
+        List<ParameterDto> dtoList = List.of(new ParameterDto("42L", "name", 5, "INT", "Section title", 2, "eulav", "defaultEulav"));
+        Mockito.when(parameterService.getParameters()).thenReturn(dtoList);
+        ResponseEntity<List<ParameterDto>> taskResponse = taskManagerController.getParameters();
+        assertEquals(HttpStatus.OK, taskResponse.getStatusCode());
+        List<ParameterDto> dtoResponseList = taskResponse.getBody();
+        assertNotNull(dtoResponseList);
+        assertEquals(1, dtoResponseList.size());
+        ParameterDto dto = dtoResponseList.get(0);
+        assertEquals("42L", dto.getId());
+        assertEquals("name", dto.getName());
+        assertEquals(5, dto.getDisplayOrder());
+        assertEquals("INT", dto.getParameterType());
+        assertEquals("Section title", dto.getSectionTitle());
+        assertEquals(2, dto.getSectionOrder());
+        assertEquals("eulav", dto.getValue());
+        assertEquals("defaultEulav", dto.getDefaultValue());
+    }
+
+    @Test
+    void setParameterValuesOkTest() {
+        String id = "27L";
+        String value = "new value";
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
+            .thenReturn(parameterDtos);
+
+        ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Object responseBodyObject = response.getBody();
+        assertNotNull(responseBodyObject);
+        assertInstanceOf(List.class, responseBodyObject);
+        List<ParameterDto> responseBodyCast = (List<ParameterDto>) responseBodyObject;
+        assertFalse(responseBodyCast.isEmpty());
+        assertEquals(id, responseBodyCast.get(0).getId());
+        assertEquals(value, responseBodyCast.get(0).getValue());
+    }
+
+    @Test
+    void setParameterValueNotFoundTest() {
+        String id = "27L";
+        String value = "new value";
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(List.of());
+
+        ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    void setParameterValueIncompatibleTypeTest() {
+        String exceptionMessage = "test exception";
+        String id = "27L";
+        String value = "new value";
+        List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
+        Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
+            .thenThrow(new TaskManagerException(exceptionMessage));
+
+        ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertInstanceOf(String.class, response.getBody());
+        assertEquals(exceptionMessage, response.getBody());
     }
 }

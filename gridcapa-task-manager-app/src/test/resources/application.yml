@@ -1,6 +1,14 @@
 spring:
   application:
     name: task-manager
+  sql:
+    init:
+      mode: never
+  jpa:
+    properties:
+      hibernate:
+        timezone:
+          default_storage: NORMALIZE_UTC
 task-server:
   process:
     tag: CSE_D2CC
@@ -31,3 +39,10 @@ stomp:
 purge-task-events:
   cron: 0 0 12 * * *
   nb-days: 7
+
+runner:
+  parameters:
+    test1: true
+    test2: 42
+    test3: HelloWorld
+

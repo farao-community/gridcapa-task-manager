@@ -8,28 +8,44 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.comparators.ReverseEventComparator;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
-import org.hibernate.annotations.SortNatural;
 import org.hibernate.annotations.SortComparator;
+import org.hibernate.annotations.SortNatural;
 
-import javax.persistence.*;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Entity
 @org.hibernate.annotations.Cache(
-    usage = CacheConcurrencyStrategy.READ_WRITE
+        usage = CacheConcurrencyStrategy.READ_WRITE
 )
 @NaturalIdCache
-@Table(indexes = { @Index(columnList = "status", name = "task_status_idx") })
+@Table(indexes = {@Index(columnList = "status", name = "task_status_idx")})
 public class Task {
 
     @Id
@@ -44,20 +60,35 @@ public class Task {
     private TaskStatus status;
 
     @OneToMany(
-        mappedBy = "task",
-        cascade = {CascadeType.MERGE, CascadeType.PERSIST},
-        orphanRemoval = true
+            mappedBy = "task",
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST},
+            orphanRemoval = true
     )
     @SortComparator(ReverseEventComparator.class)
     private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());
 
     @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinTable(
-        name = "task_process_file",
-        joinColumns = @JoinColumn(name = "fk_task"),
-        inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+            name = "task_process_file",
+            joinColumns = @JoinColumn(name = "fk_task"),
+            inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
     @SortNatural
     private final SortedSet<ProcessFile> processFiles = new TreeSet<>();
+
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "task_available_process_file",
+            joinColumns = @JoinColumn(name = "fk_task"),
+            inverseJoinColumns = @JoinColumn(name = "fk_process_file"))
+    @SortNatural
+    private final SortedSet<ProcessFile> availableInputProcessFiles = new TreeSet<>();
+
+    @OneToMany(
+            mappedBy = "task",
+            cascade = {CascadeType.MERGE, CascadeType.PERSIST},
+            orphanRemoval = true,
+            fetch = FetchType.EAGER)
+    private final List<ProcessRun> runHistory = new ArrayList<>();
 
     public Task() {
 
@@ -101,34 +132,64 @@ public class Task {
         return processFiles;
     }
 
-    public void addProcessFile(String fileObjectKey,
-                               String fileGroup,
-                               String fileType,
-                               OffsetDateTime startingAvailabilityDate,
-                               OffsetDateTime endingAvailabilityDate,
-                               OffsetDateTime lastModificationDate) {
-        addProcessFile(new ProcessFile(fileObjectKey, fileGroup, fileType, startingAvailabilityDate, endingAvailabilityDate, lastModificationDate));
-    }
-
     public void addProcessFile(ProcessFile processFile) {
-        processFiles.add(processFile);
+        if (processFile.isInputFile()) {
+            availableInputProcessFiles.removeIf(pf -> pf.getFileObjectKey().equals(processFile.getFileObjectKey()));
+            availableInputProcessFiles.add(processFile);
+            selectProcessFile(processFile);
+        } else {
+            processFiles.add(processFile);
+        }
     }
 
-    public void removeProcessFile(ProcessFile processFile) {
-        processFiles.remove(processFile);
+    public FileRemovalStatus removeProcessFile(ProcessFile processFile) {
+        final boolean fileWasSelected = processFiles.remove(processFile);
+        boolean fileWasRemoved = fileWasSelected;
+
+        if (processFile.isInputFile()) {
+            fileWasRemoved = availableInputProcessFiles.remove(processFile);
+
+            if (fileWasSelected) {
+                availableInputProcessFiles.stream()
+                        .filter(pf -> pf.getFileType().equals(processFile.getFileType()))
+                        .max(Comparator.comparing(ProcessFile::getLastModificationDate))
+                        .ifPresent(this::selectProcessFile);
+            }
+        }
+        return new FileRemovalStatus(fileWasRemoved, fileWasSelected);
+    }
+
+    public void selectProcessFile(ProcessFile processFile) {
+        processFiles.removeIf(pf -> pf.getFileType().equals(processFile.getFileType()));
+        processFiles.add(processFile);
     }
 
     public Optional<ProcessFile> getInput(String fileType) {
         return processFiles.stream()
-            .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
-            .filter(file -> fileType.equals(file.getFileType()))
-            .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
+                .filter(ProcessFile::isInputFile)
+                .filter(file -> fileType.equals(file.getFileType()))
+                .max(Comparator.comparing(ProcessFile::getStartingAvailabilityDate));
+    }
+
+    public Set<ProcessFile> getAvailableInputs(String fileType) {
+        return availableInputProcessFiles.stream()
+                .filter(file -> fileType.equals(file.getFileType()))
+                .collect(Collectors.toSet());
     }
 
     public Optional<ProcessFile> getOutput(String fileType) {
         return processFiles.stream()
-            .filter(file -> MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(file.getFileGroup()))
-            .filter(file -> fileType.equals(file.getFileType()))
-            .findFirst();
+                .filter(ProcessFile::isOutputFile)
+                .filter(file -> fileType.equals(file.getFileType()))
+                .findFirst();
+    }
+
+    public List<ProcessRun> getRunHistory() {
+        return List.copyOf(runHistory);
+    }
+
+    public void addProcessRun(ProcessRun processRun) {
+        processRun.setTask(this);
+        runHistory.add(processRun);
     }
 }

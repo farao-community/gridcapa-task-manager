@@ -7,14 +7,13 @@
 package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
+import java.time.ZoneId;
 import java.util.List;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
-@ConstructorBinding
 @ConfigurationProperties("task-server")
 public class TaskManagerConfigurationProperties {
 
@@ -35,20 +34,26 @@ public class TaskManagerConfigurationProperties {
         return whitelist;
     }
 
+    public ZoneId getProcessTimezone() {
+        return ZoneId.of(process.getTimezone());
+    }
+
     public static final class ProcessProperties {
         private final String tag;
         private final String timezone;
         private final List<String> inputs;
         private final List<String> optionalInputs;
+        private final List<String> availableInputs;
         private final List<String> outputs;
         private final boolean enableExportLogs;
         private final String manualUploadBasePath;
 
-        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, List<String> outputs, boolean enableExportLogs, String manualUploadBasePath) {
+        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, final List<String> availableInputs, List<String> outputs, boolean enableExportLogs, String manualUploadBasePath) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
             this.optionalInputs = optionalInputs;
+            this.availableInputs = availableInputs;
             this.outputs = outputs;
             this.enableExportLogs = enableExportLogs;
             this.manualUploadBasePath = manualUploadBasePath;
@@ -81,5 +86,10 @@ public class TaskManagerConfigurationProperties {
         public String getManualUploadBasePath() {
             return manualUploadBasePath;
         }
+
+        public List<String> getAvailableInputs() {
+            return availableInputs;
+        }
+
     }
 }

@@ -6,12 +6,13 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.app.configuration.RunnerParameters;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-import javax.annotation.PostConstruct;
 import java.util.TimeZone;
 
 /**
@@ -19,7 +20,7 @@ import java.util.TimeZone;
  */
 @SuppressWarnings("hideutilityclassconstructor")
 @SpringBootApplication
-@EnableConfigurationProperties(TaskManagerConfigurationProperties.class)
+@EnableConfigurationProperties({TaskManagerConfigurationProperties.class, RunnerParameters.class})
 public class TaskManagerApplication {
     @PostConstruct
     void started() {

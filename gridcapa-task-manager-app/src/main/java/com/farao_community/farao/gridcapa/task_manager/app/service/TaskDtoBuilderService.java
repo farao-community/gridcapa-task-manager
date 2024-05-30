@@ -4,12 +4,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.gridcapa.task_manager.app;
+package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessEventDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -32,23 +36,25 @@ import java.util.stream.Collectors;
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
  */
 @Service
-public class TaskDtoBuilder {
+public class TaskDtoBuilderService {
 
     private static final ZoneId UTC_ZONE = ZoneId.of("Z");
     private final TaskManagerConfigurationProperties properties;
     private final TaskRepository taskRepository;
     private final ZoneId localZone;
+    private final ParameterService parameterService;
 
-    public TaskDtoBuilder(TaskManagerConfigurationProperties properties, TaskRepository taskRepository) {
+    public TaskDtoBuilderService(TaskManagerConfigurationProperties properties, TaskRepository taskRepository, ParameterService parameterService) {
         this.properties = properties;
         this.taskRepository = taskRepository;
+        this.parameterService = parameterService;
         this.localZone = ZoneId.of(this.properties.getProcess().getTimezone());
     }
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
         return taskRepository.findByTimestamp(timestamp)
-            .map(this::createDtoFromEntity)
-            .orElse(getEmptyTask(timestamp));
+                .map(this::createDtoFromEntity)
+                .orElse(getEmptyTask(timestamp));
     }
 
     public List<TaskDto> getListTasksDto(LocalDate businessDate) {
@@ -69,17 +75,24 @@ public class TaskDtoBuilder {
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
 
-        tasks.stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
+        tasks.stream()
+                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
         return taskMap.values().stream().toList();
     }
 
     public List<TaskDto> getListRunningTasksDto() {
-        return taskRepository.findAllRunningAndPending().stream().map(t -> createDtoFromEntityWithOrWithoutEvents(t, false)).toList();
+        return taskRepository.findAllRunningAndPending().stream()
+                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .toList();
     }
 
     public TaskDto getEmptyTask(OffsetDateTime timestamp) {
-        return TaskDto.emptyTask(timestamp, properties.getProcess().getInputs(), properties.getProcess().getOutputs());
+        return TaskDto.emptyTask(
+                timestamp,
+                properties.getProcess().getInputs(),
+                properties.getProcess().getOutputs());
     }
 
     public TaskDto createDtoFromEntity(Task task) {
@@ -91,55 +104,76 @@ public class TaskDtoBuilder {
     }
 
     private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {
-        var inputs = properties.getProcess().getInputs().stream()
+        List<ProcessFileDto> inputs = properties.getProcess().getInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .collect(Collectors.toList());
-        var optionalInputs = properties.getProcess().getOptionalInputs().stream()
+
+        List<ProcessFileDto> availableInputs = properties.getProcess().getInputs()
+                .stream()
+                .flatMap(availableInput -> task.getAvailableInputs(availableInput)
+                        .stream()
+                        .map(this::createDtoFromEntity))
+                .toList();
+
+        List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .toList();
         inputs.addAll(optionalInputs);
-        var outputs = properties.getProcess().getOutputs().stream()
+
+        List<ProcessFileDto> outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
                 .toList();
 
-        if (withEvents) {
-            return new TaskDto(
-                    task.getId(),
-                    task.getTimestamp(),
-                    task.getStatus(),
-                    inputs,
-                    outputs,
-                    task.getProcessEvents().stream().map(this::createDtoFromEntity).toList());
-        } else {
-            return new TaskDto(
-                    task.getId(),
-                    task.getTimestamp(),
-                    task.getStatus(),
-                    inputs,
-                    outputs,
-                    Collections.emptyList());
-        }
+        List<ProcessEventDto> processEvents = withEvents ?
+                task.getProcessEvents().stream().map(this::createDtoFromEntity).toList()
+                : Collections.emptyList();
+
+        List<ProcessRunDto> runHistory = task.getRunHistory().stream()
+                .map(this::createDtoFromEntity)
+                .toList();
+
+        List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream()
+                .map(TaskParameterDto::new)
+                .toList();
+
+        return new TaskDto(
+                task.getId(),
+                task.getTimestamp(),
+                task.getStatus(),
+                inputs,
+                availableInputs,
+                outputs,
+                processEvents,
+                runHistory,
+                taskParameterDtos);
     }
 
-    public ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
+    ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
         return new ProcessFileDto(
-            processFile.getFileObjectKey(),
-            processFile.getFileType(),
-            ProcessFileStatus.VALIDATED,
-            processFile.getFilename(),
-            processFile.getLastModificationDate());
+                processFile.getFileObjectKey(),
+                processFile.getFileType(),
+                ProcessFileStatus.VALIDATED,
+                processFile.getFilename(),
+                processFile.getLastModificationDate());
     }
 
-    public ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
+    ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-            processEvent.getLevel(),
-            processEvent.getMessage(),
-            processEvent.getServiceName());
+                processEvent.getLevel(),
+                processEvent.getMessage(),
+                processEvent.getServiceName());
+    }
+
+    ProcessRunDto createDtoFromEntity(ProcessRun processRun) {
+        List<ProcessFileDto> processFileDtos = processRun.getInputFiles().stream()
+                .map(this::createDtoFromEntity)
+                .toList();
+        return new ProcessRunDto(processRun.getExecutionDate(), processFileDtos);
     }
 }

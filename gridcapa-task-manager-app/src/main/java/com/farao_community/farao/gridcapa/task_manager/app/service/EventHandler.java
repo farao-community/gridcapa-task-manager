@@ -7,7 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,8 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,21 +26,23 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
 @Service
 public class EventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventHandler.class);
     private final TaskRepository taskRepository;
+    private final TaskService taskService;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
-    public EventHandler(TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
+    public EventHandler(TaskRepository taskRepository, TaskService taskService, TaskUpdateNotifier taskUpdateNotifier) {
         this.taskRepository = taskRepository;
+        this.taskService = taskService;
         this.taskUpdateNotifier = taskUpdateNotifier;
     }
 
@@ -61,7 +62,7 @@ public class EventHandler {
             .map(String::new)
             .map(this::mapMessageToEvent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     TaskLogEventUpdate mapMessageToEvent(String messages) {
@@ -76,7 +77,6 @@ public class EventHandler {
     void handleTaskEventBatchUpdate(List<TaskLogEventUpdate> events) {
         synchronized (TASK_MANAGER_LOCK) {
             Map<UUID, Task> storedTasks = new HashMap<>();
-            List<Task> tasksToSave = new ArrayList<>();
             for (TaskLogEventUpdate event : events) {
                 UUID taskUUID = UUID.fromString(event.getId());
                 Task task = storedTasks.get(taskUUID);
@@ -85,32 +85,20 @@ public class EventHandler {
                     if (optionalTask.isPresent()) {
                         task = optionalTask.get();
                         storedTasks.put(taskUUID, task);
-                        updateTaskEvent(event, task, tasksToSave);
+                        taskService.addProcessEventToTask(event, task);
                     } else {
                         LOGGER.warn("Task {} does not exist. Impossible to update task with log event", event.getId());
                     }
                 } else {
-                    updateTaskEvent(event, task, tasksToSave);
+                    taskService.addProcessEventToTask(event, task);
                 }
             }
+            Collection<Task> tasksToSave = storedTasks.values();
             taskRepository.saveAll(tasksToSave);
             for (Task task : tasksToSave) {
-                taskUpdateNotifier.notify(task, false);
-                LOGGER.debug("Task events has been added on {}", task.getTimestamp());
+                taskUpdateNotifier.notify(task, false, true);
+                LOGGER.debug("Task events have been added on {}", task.getTimestamp());
             }
-        }
-    }
-
-    private void updateTaskEvent(TaskLogEventUpdate loggerEvent, Task task, List<Task> tasksToSave) {
-        OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
-        String message = loggerEvent.getMessage();
-        Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
-        if (optionalEventPrefix.isPresent()) {
-            message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
-        }
-        task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
-        if (!tasksToSave.contains(task)) {
-            tasksToSave.add(task);
         }
     }
 }

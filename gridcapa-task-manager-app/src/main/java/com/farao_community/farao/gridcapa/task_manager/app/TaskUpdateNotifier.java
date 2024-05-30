@@ -9,6 +9,8 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.WebsocketConfig;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -23,31 +25,46 @@ import java.util.Set;
 public class TaskUpdateNotifier {
     private static final String TASK_UPDATED_BINDING = "task-updated";
     private static final String TASK_STATUS_UPDATED_BINDING = "task-status-updated";
+    private static final String TASK_INPUT_UPDATED_BINDING = "task-input-updated";
 
     private final StreamBridge streamBridge;
-    private final TaskDtoBuilder taskDtoBuilder;
+    private final TaskDtoBuilderService taskDtoBuilderService;
 
     private final SimpMessagingTemplate stompBridge;
     private final WebsocketConfig websocketConfig;
 
-    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilder taskDtoBuilder, SimpMessagingTemplate broker, WebsocketConfig websocketConfig) {
+    public TaskUpdateNotifier(StreamBridge streamBridge, TaskDtoBuilderService taskDtoBuilderService, SimpMessagingTemplate broker, WebsocketConfig websocketConfig) {
         this.streamBridge = streamBridge;
-        this.taskDtoBuilder = taskDtoBuilder;
+        this.taskDtoBuilderService = taskDtoBuilderService;
         this.stompBridge = broker;
         this.websocketConfig = websocketConfig;
     }
 
-    public void notify(Task task, boolean withStatusUpdate) {
+    public void notify(Task task, boolean withStatusUpdate, boolean withEventsUpdate) {
+        this.notify(task, withStatusUpdate, withEventsUpdate, false);
+    }
+
+    public void notify(Task task, boolean withStatusUpdate, boolean withEventsUpdate, boolean withNewInput) {
         String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        TaskDto taskdto = taskDtoBuilder.createDtoFromEntity(task);
-        TaskDto taskdtoNoLogs = taskDtoBuilder.createDtoFromEntityNoLogs(task);
-        streamBridge.send(bindingName, taskdto);
+        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntity(task);
+        TaskDto taskDtoNoLogs = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
+        streamBridge.send(bindingName, taskDto);
+        if (withNewInput) {
+            streamBridge.send(TASK_INPUT_UPDATED_BINDING, taskDto);
+        }
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskdto); //to actualize the timestamp view
-        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskdtoNoLogs); //to actualize the business date view
+        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskDtoNoLogs); // to actualize status/files in the timestamp view
+        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskDtoNoLogs); // to actualize status/files in the business date view
+        if (withEventsUpdate) {
+            stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()) + "/events", true); // to actualize event logs in the timestamp view
+        }
     }
 
     public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
-        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated()));
+        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated(), true));
+    }
+
+    public void notifyNewInput(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+        taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated(), true, true));
     }
 }

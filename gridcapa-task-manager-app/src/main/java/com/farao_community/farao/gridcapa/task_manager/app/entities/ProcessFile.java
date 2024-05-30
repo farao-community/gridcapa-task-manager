@@ -6,12 +6,16 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.NaturalIdCache;
+import org.jetbrains.annotations.NotNull;
 
-import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.Objects;
@@ -22,7 +26,7 @@ import java.util.UUID;
  */
 @Entity
 @org.hibernate.annotations.Cache(
-    usage = CacheConcurrencyStrategy.READ_WRITE
+        usage = CacheConcurrencyStrategy.READ_WRITE
 )
 @NaturalIdCache
 public class ProcessFile implements Comparable<ProcessFile> {
@@ -109,11 +113,22 @@ public class ProcessFile implements Comparable<ProcessFile> {
         this.fileObjectKey = fileObjectKey;
     }
 
+    public boolean isInputFile() {
+        return MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE.equals(this.getFileGroup());
+    }
+
+    public boolean isOutputFile() {
+        return MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE.equals(this.getFileGroup());
+    }
+
     @Override
-    public int compareTo(ProcessFile otherProcessFile) {
+    public int compareTo(@NotNull ProcessFile otherProcessFile) {
         Comparator<ProcessFile> processFileComparator = Comparator.comparing(ProcessFile::getFileType)
-            .thenComparing(ProcessFile::getFileGroup)
-            .thenComparing(ProcessFile::getStartingAvailabilityDate);
+                .thenComparing(ProcessFile::getFileGroup)
+                .thenComparing(ProcessFile::getStartingAvailabilityDate);
+        if (this.isInputFile()) {
+            processFileComparator = processFileComparator.thenComparing(ProcessFile::getLastModificationDate);
+        }
         return processFileComparator.compare(this, otherProcessFile);
     }
 
@@ -126,15 +141,15 @@ public class ProcessFile implements Comparable<ProcessFile> {
             return false;
         }
         ProcessFile that = (ProcessFile) o;
-        return Objects.equals(this.id, that.id) &&
-            Objects.equals(this.fileType, that.fileType) &&
-            Objects.equals(this.fileGroup, that.fileGroup) &&
-            Objects.equals(this.startingAvailabilityDate, that.startingAvailabilityDate);
+        boolean modificationDateEqualityForInputFiles = !this.isInputFile() || Objects.equals(this.lastModificationDate, that.lastModificationDate);
+        return Objects.equals(this.fileType, that.fileType) &&
+                Objects.equals(this.fileGroup, that.fileGroup) &&
+                Objects.equals(this.startingAvailabilityDate, that.startingAvailabilityDate) &&
+                modificationDateEqualityForInputFiles;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.fileType, this.fileGroup, this.startingAvailabilityDate);
+        return Objects.hash(this.lastModificationDate, this.fileType, this.fileGroup, this.startingAvailabilityDate);
     }
-
 }

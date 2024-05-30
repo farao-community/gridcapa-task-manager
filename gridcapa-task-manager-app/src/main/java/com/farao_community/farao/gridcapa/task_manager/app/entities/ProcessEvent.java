@@ -6,7 +6,14 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;

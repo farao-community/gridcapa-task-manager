@@ -6,9 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 /**
@@ -34,7 +33,7 @@ public class DatabasePurgeService {
     @Value("${purge-task-events.nb-days}")
     private String nbDays;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EventHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabasePurgeService.class);
 
     @Autowired
     private TaskRepository taskRepository;
@@ -49,7 +48,7 @@ public class DatabasePurgeService {
         for (Task task : taskRepository.findAllWithSomeProcessEvent()) {
             List<ProcessEvent> listProcessEventsToRemove = task.getProcessEvents().stream()
                     .filter(processEvent -> processEvent.getTimestamp().isBefore(dateTimeReference))
-                    .collect(Collectors.toList());
+                    .toList();
             if (!listProcessEventsToRemove.isEmpty()) {
                 task.getProcessEvents().removeAll(listProcessEventsToRemove);
                 listTasksToSave.add(task);

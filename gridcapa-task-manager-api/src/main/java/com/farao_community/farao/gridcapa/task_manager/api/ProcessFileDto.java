@@ -8,8 +8,11 @@ package com.farao_community.farao.gridcapa.task_manager.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -61,5 +64,32 @@ public class ProcessFileDto {
 
     public OffsetDateTime getLastModificationDate() {
         return lastModificationDate;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ProcessFileDto other = (ProcessFileDto) o;
+        return Objects.equals(filePath, other.filePath)
+                && Objects.equals(fileType, other.fileType)
+                && processFileStatus == other.processFileStatus
+                && Objects.equals(filename, other.filename)
+                && Objects.equals(lastModificationDate, other.lastModificationDate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filePath, fileType, processFileStatus, filename, lastModificationDate);
     }
 }

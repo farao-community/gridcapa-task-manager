@@ -6,14 +6,20 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ParameterDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.service.FileSelectorService;
+import com.farao_community.farao.gridcapa.task_manager.app.service.ParameterService;
 import com.farao_community.farao.gridcapa.task_manager.app.service.StatusHandler;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
+import com.farao_community.farao.gridcapa.task_manager.app.service.TaskService;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,9 +29,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,26 +49,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
+
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Marc Schwitzguebel {@literal <marc.schwitzguebel at rte-france.com>}
  */
+
 @Controller
 @RequestMapping
 public class TaskManagerController {
 
     public static final String CONTENT_DISPOSITION = "Content-Disposition";
     private final StatusHandler statusHandler;
-    private final TaskDtoBuilder builder;
+    private final TaskDtoBuilderService builder;
+    private final FileSelectorService fileSelectorService;
     private final FileManager fileManager;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final Logger businessLogger;
+    private final ParameterService parameterService;
+    private final TaskService taskService;
 
-    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilder builder, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger) {
+    public TaskManagerController(StatusHandler statusHandler, TaskDtoBuilderService builder, FileSelectorService fileSelectorService, FileManager fileManager, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, ParameterService parameterService, TaskService taskService) {
         this.statusHandler = statusHandler;
         this.builder = builder;
+        this.fileSelectorService = fileSelectorService;
         this.fileManager = fileManager;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.businessLogger = businessLogger;
+        this.parameterService = parameterService;
+        this.taskService = taskService;
     }
 
     @GetMapping(value = "/tasks/{timestamp}")
@@ -81,9 +100,33 @@ public class TaskManagerController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PutMapping(value = "/tasks/{timestamp}/runHistory")
+    public ResponseEntity<TaskDto> addNewRunInTaskHistory(@PathVariable String timestamp) {
+        try {
+            synchronized (TASK_MANAGER_LOCK) {
+                Task task = taskService.addNewRunAndSaveTask(OffsetDateTime.parse(timestamp));
+                return ResponseEntity.ok(builder.createDtoFromEntity(task));
+            }
+        } catch (final TaskNotFoundException notFoundException) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping(value = "/tasks/{timestamp}/inputs", produces = "application/octet-stream")
     public ResponseEntity<byte[]> getZippedInputs(@PathVariable String timestamp) {
         return getZippedGroup(OffsetDateTime.parse(timestamp), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE);
+    }
+
+    @PutMapping(value = "/tasks/{timestamp}/input/{filetype}")
+    public ResponseEntity<String> selectFile(@PathVariable String timestamp, @PathVariable String filetype, @RequestParam String filename) {
+        try {
+            fileSelectorService.selectFile(OffsetDateTime.parse(timestamp), filetype, filename);
+        } catch (final TaskNotFoundException | ProcessFileNotFoundException notFoundException) {
+            return ResponseEntity.notFound().build();
+        } catch (final TaskManagerException taskManagerException) {
+            return ResponseEntity.badRequest().body(taskManagerException.getMessage());
+        }
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/tasks/{timestamp}/outputs", produces = "application/octet-stream")
@@ -113,8 +156,7 @@ public class TaskManagerController {
 
         TaskDto taskDto = builder.getTaskDto(offsetDateTime);
         TaskStatus taskStatus = taskDto.getStatus();
-        if (TaskStatus.SUCCESS.equals(taskStatus)
-            || TaskStatus.ERROR.equals(taskStatus)) {
+        if (taskStatus == TaskStatus.SUCCESS || taskStatus == TaskStatus.ERROR) {
             optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
         }
 
@@ -135,9 +177,9 @@ public class TaskManagerController {
     @GetMapping(value = "/tasks/businessdate/{businessDate}/allOver")
     public ResponseEntity<Boolean> areAllTasksFromBusinessDateOver(@PathVariable String businessDate) {
         return ResponseEntity.ok().body(
-            builder.getListTasksDto(LocalDate.parse(businessDate))
-                .stream().map(TaskDto::getStatus)
-                .allMatch(TaskStatus::isOver));
+                builder.getListTasksDto(LocalDate.parse(businessDate))
+                        .stream().map(TaskDto::getStatus)
+                        .allMatch(TaskStatus::isOver));
     }
 
     @GetMapping(value = "/tasks/runningtasks")
@@ -174,7 +216,7 @@ public class TaskManagerController {
     public ResponseEntity<byte[]> getLog(@PathVariable String timestamp) throws IOException {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
+                .header(CONTENT_DISPOSITION, "attachment;filename=\"rao_logs_" + removeIllegalUrlCharacter(timestamp) + ".zip\"")
                 .body(fileManager.getRaoRunnerAppLogs(OffsetDateTime.parse(timestamp)).toByteArray());
     }
 
@@ -196,5 +238,24 @@ public class TaskManagerController {
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/parameters")
+    public ResponseEntity<List<ParameterDto>> getParameters() {
+        List<ParameterDto> parameters = parameterService.getParameters();
+        return ResponseEntity.ok(parameters);
+    }
+
+    @PatchMapping(value = "/parameters")
+    public ResponseEntity<Object> setParameterValues(@RequestBody List<ParameterDto> parameterDtos) {
+        try {
+            List<ParameterDto> updatedParameterDtos = parameterService.setParameterValues(parameterDtos);
+            if (updatedParameterDtos.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(updatedParameterDtos);
+        } catch (TaskManagerException tme) {
+            return ResponseEntity.badRequest().body(tme.getMessage());
+        }
     }
 }

@@ -7,8 +7,16 @@ spring:
     username: admin
     password: admin
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
+    properties:
+        hibernate:
+          timezone:
+            default_storage: NORMALIZE_UTC
+  sql:
+    init:
+      mode: always
   rabbitmq:
     host: ${GRIDCAPA_RABBITMQ_HOST:localhost}
     port: ${GRIDCAPA_RABBITMQ_PORT:5672}
@@ -31,6 +39,8 @@ spring:
           destination: task-updated
         task-status-updated:
           destination: task-updated
+        task-input-updated:
+          destination: task-updated
       rabbit:
         default:
           consumer:
@@ -48,6 +58,9 @@ spring:
           task-status-updated:
             producer:
               routing-key-expression: '''status'''
+          task-input-updated:
+            producer:
+              routing-key-expression: '''input'''
     function:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
   http:
@@ -91,3 +104,4 @@ logback:
 purge-task-events:
   cron: 0 0 12 * * *
   nb-days: 7
+

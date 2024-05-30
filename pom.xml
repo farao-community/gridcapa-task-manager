@@ -7,11 +7,11 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.6.0</version>
+        <version>1.8.0</version>
     </parent>
 
     <artifactId>gridcapa-task-manager</artifactId>
-    <version>1.25.0-SNAPSHOT</version>
+    <version>1.29.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>GridCapa task manager</name>
     <description>Task manager for GridCapa application</description>
@@ -47,7 +47,7 @@
     <properties>
         <!-- Dependency versions -->
         <apache.commons.verion>2.11.0</apache.commons.verion>
-        <gridcapa.starter.minio.adapter.version>1.1.0</gridcapa.starter.minio.adapter.version>
+        <gridcapa.starter.minio.adapter.version>1.1.2</gridcapa.starter.minio.adapter.version>
         <postgres.jdbc.version>42.3.9</postgres.jdbc.version>
         <logstash.version>7.0.1</logstash.version>
 
