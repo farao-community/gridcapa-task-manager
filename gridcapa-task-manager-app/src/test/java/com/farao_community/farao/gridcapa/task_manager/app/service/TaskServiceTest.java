@@ -80,9 +80,9 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
         task.setStatus(TaskStatus.CREATED);
-        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", timestamp, timestamp, timestamp);
+        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(cgmFile);
-        ProcessFile cracFile = new ProcessFile("file2", "input", "CRAC", timestamp, timestamp, timestamp);
+        ProcessFile cracFile = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(cracFile);
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
@@ -99,9 +99,9 @@ class TaskServiceTest {
         Task task = new Task();
         TaskStatus initialTaskStatus = TaskStatus.SUCCESS;
         task.setStatus(initialTaskStatus);
-        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", timestamp, timestamp, timestamp);
+        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(cgmFile);
-        ProcessFile cracFile = new ProcessFile("file2", "input", "CRAC", timestamp, timestamp, timestamp);
+        ProcessFile cracFile = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(cracFile);
 
         boolean statusChanged = taskService.checkAndUpdateTaskStatus(task, false);
@@ -116,7 +116,7 @@ class TaskServiceTest {
         Task task = new Task();
         TaskStatus initialTaskStatus = TaskStatus.SUCCESS;
         task.setStatus(initialTaskStatus);
-        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", timestamp, timestamp, timestamp);
+        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(cgmFile);
 
         boolean statusChanged = taskService.checkAndUpdateTaskStatus(task, false);
@@ -131,7 +131,7 @@ class TaskServiceTest {
         Task task = new Task();
         TaskStatus initialTaskStatus = TaskStatus.SUCCESS;
         task.setStatus(initialTaskStatus);
-        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", timestamp, timestamp, timestamp);
+        ProcessFile cgmFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(cgmFile);
 
         boolean statusChanged = taskService.checkAndUpdateTaskStatus(task, true);
@@ -185,6 +185,7 @@ class TaskServiceTest {
                 "path/MANUAL_UPLOAD/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -202,6 +203,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -219,6 +221,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -236,6 +239,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -253,6 +257,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -271,6 +276,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -294,6 +300,7 @@ class TaskServiceTest {
                 "path/to/cne-file.xml",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T04:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
@@ -324,6 +331,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T03:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
@@ -331,6 +339,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T03:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
@@ -338,6 +347,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T03:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:45Z"));
@@ -372,6 +382,7 @@ class TaskServiceTest {
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T03:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
@@ -379,6 +390,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T03:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
@@ -386,6 +398,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T01:00Z"),
                 OffsetDateTime.parse("2021-10-11T03:00Z"),
                 OffsetDateTime.parse("2021-10-11T00:45Z"));
@@ -426,6 +439,7 @@ class TaskServiceTest {
                 "path/to/glsk-file.xml",
                 "input",
                 "GLSK",
+                "documentIdGlsk",
                 startingDate,
                 endingDate,
                 startingDate);
@@ -433,6 +447,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 startingDate,
                 endingDate,
                 startingDate);
@@ -467,6 +482,7 @@ class TaskServiceTest {
                 "path/to/glsk-file.xml",
                 "input",
                 "GLSK",
+                "documentIdGlsk",
                 startingDate,
                 endingDate,
                 startingDate);
@@ -474,6 +490,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 startingDate,
                 endingDate,
                 startingDate);
@@ -508,6 +525,7 @@ class TaskServiceTest {
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 startingDate,
                 endingDate,
                 startingDate);
@@ -537,6 +555,7 @@ class TaskServiceTest {
                 "path/to/glsk-file.xml",
                 "input",
                 "GLSK",
+                "documentIdGlsk",
                 startingDate,
                 endingDate,
                 startingDate);
@@ -544,6 +563,7 @@ class TaskServiceTest {
                 "path/to/cne-file.xml",
                 "input",
                 "CNE",
+                null,
                 startingDate,
                 endingDate,
                 startingDate);
@@ -609,11 +629,11 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
         task.setStatus(taskStatus);
-        ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", timestamp, timestamp, timestamp);
+        ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile1);
-        ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", timestamp, timestamp, timestamp);
+        ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile2);
-        ProcessFile processFile3 = new ProcessFile("file3", "input", "CRAC", timestamp, timestamp, timestamp);
+        ProcessFile processFile3 = new ProcessFile("file3", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile3);
         Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
 
@@ -643,9 +663,9 @@ class TaskServiceTest {
     void addNewRunAndSaveTaskOk() {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
-        ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", timestamp, timestamp, timestamp);
+        ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile1);
-        ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", timestamp, timestamp, timestamp);
+        ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile2);
         Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
         Mockito.when(taskRepository.save(task)).thenReturn(task);
@@ -661,8 +681,8 @@ class TaskServiceTest {
     @ParameterizedTest
     @EnumSource(value = FileEventType.class, names = {"AVAILABLE", "WAITING"})
     void removeUnavailableProcessFileFromTaskRunHistoryWithBadFileEventType(FileEventType fileEventType) {
-        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
-        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", "documentIdCgm", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", "documentIdGlsk", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
         ProcessRun processRun = new ProcessRun(List.of(processFile1, processFile2));
         Task task = new Task(OffsetDateTime.now());
         task.addProcessFile(processFile1);
@@ -679,8 +699,8 @@ class TaskServiceTest {
     @ParameterizedTest
     @EnumSource(value = FileEventType.class, names = {"UPDATED", "DELETED"})
     void removeUnavailableProcessFileFromTaskRunHistoryWithGoodFileEventType(FileEventType fileEventType) {
-        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
-        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", "documentIdCgm", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", "documentIdGlsk", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
         ProcessRun processRun = new ProcessRun(List.of(processFile1, processFile2));
         Task task = new Task(OffsetDateTime.now());
         task.addProcessFile(processFile1);

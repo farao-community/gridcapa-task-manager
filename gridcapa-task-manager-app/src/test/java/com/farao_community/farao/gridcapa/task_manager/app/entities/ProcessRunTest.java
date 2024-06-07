@@ -43,8 +43,8 @@ class ProcessRunTest {
     @Test
     void removeInputFileByFilenameTest() {
         OffsetDateTime now = OffsetDateTime.now();
-        ProcessFile file1 = new ProcessFile("first-file", "input", "CGM", now, now, now);
-        ProcessFile file2 = new ProcessFile("second-file", "input", "CGM", now, now, now);
+        ProcessFile file1 = new ProcessFile("first-file", "input", "CGM", "documentIdCgm", now, now, now);
+        ProcessFile file2 = new ProcessFile("second-file", "input", "CGM", "documentIdCgm2", now, now, now);
         ProcessRun processRun = new ProcessRun(List.of(file1, file2));
 
         Assertions.assertThat(processRun.getInputFiles()).isNotNull().containsExactly(file1, file2);

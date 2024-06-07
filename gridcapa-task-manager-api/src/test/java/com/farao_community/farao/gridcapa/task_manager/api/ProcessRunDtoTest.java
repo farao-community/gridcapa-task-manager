@@ -20,7 +20,7 @@ class ProcessRunDtoTest {
 
     @Test
     void testConstructor() {
-        ProcessFileDto processFileDto = new ProcessFileDto(null, null, null, null, null);
+        ProcessFileDto processFileDto = new ProcessFileDto(null, null, null, null, null, null);
         OffsetDateTime now = OffsetDateTime.now();
         List<ProcessFileDto> inputFiles = List.of(processFileDto);
 

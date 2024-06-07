@@ -26,6 +26,7 @@ class ProcessFileTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -39,6 +40,7 @@ class ProcessFileTest {
                 "file-name",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -47,6 +49,7 @@ class ProcessFileTest {
                 "file-name",
                 "artifact",
                 "RANDOM",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -61,6 +64,7 @@ class ProcessFileTest {
                 "file-name",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -74,6 +78,7 @@ class ProcessFileTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -82,6 +87,7 @@ class ProcessFileTest {
                 "file-name",
                 "artifact",
                 "RANDOM",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -96,6 +102,7 @@ class ProcessFileTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -103,6 +110,7 @@ class ProcessFileTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -110,6 +118,7 @@ class ProcessFileTest {
                 "cgm-name3",
                 "input",
                 "CGM",
+                "documentIdCgm3",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-24T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -124,6 +133,7 @@ class ProcessFileTest {
                 "cgm-name1",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -131,6 +141,7 @@ class ProcessFileTest {
                 "cgm-name2",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -138,6 +149,7 @@ class ProcessFileTest {
                 "cgm-name3",
                 "output",
                 "CGM",
+                "documentIdCgm3",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -145,6 +157,7 @@ class ProcessFileTest {
                 "cgm-name4",
                 "input",
                 "CGM",
+                "documentIdCgm4",
                 OffsetDateTime.parse("2021-10-11T12:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -152,6 +165,7 @@ class ProcessFileTest {
                 "cgm-name5",
                 "input",
                 "CGM",
+                "documentIdCgm5",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:30Z"));
@@ -168,6 +182,7 @@ class ProcessFileTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -175,6 +190,7 @@ class ProcessFileTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -182,6 +198,7 @@ class ProcessFileTest {
                 "cgm-name3",
                 "input",
                 "CGM",
+                "documentIdCgm3",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-24T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -197,6 +214,7 @@ class ProcessFileTest {
                 "cgm-name1",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -204,6 +222,7 @@ class ProcessFileTest {
                 "cgm-name2",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -211,6 +230,7 @@ class ProcessFileTest {
                 "cgm-name3",
                 "output",
                 "CGM",
+                "documentIdCgm3",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -218,6 +238,7 @@ class ProcessFileTest {
                 "cgm-name4",
                 "input",
                 "CGM",
+                "documentIdCgm4",
                 OffsetDateTime.parse("2021-10-11T12:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -225,6 +246,7 @@ class ProcessFileTest {
                 "cgm-name5",
                 "input",
                 "CGM",
+                "documentIdCgm5",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:30Z"));

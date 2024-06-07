@@ -57,11 +57,11 @@ class TaskWithOverlappingProcessFilesTest {
 
     @Test
     void checkCorrectFileIsUsedWhenIntervalsOverlap() {
-        Event eventFileInterval1 = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+        Event eventFileInterval1 = TaskManagerTestUtil.createEvent("CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "File", "File-1",
                 "2020-01-01T22:30Z/2020-12-31T22:30Z");
 
-        Event eventFileInterval2 = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+        Event eventFileInterval2 = TaskManagerTestUtil.createEvent("CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "File", "File-2",
                 "2020-06-01T22:30Z/2021-06-30T22:30Z");
 
@@ -76,7 +76,7 @@ class TaskWithOverlappingProcessFilesTest {
         assertEquals("File-2", taskInterval2.getInput("File").get().getFilename());
         assertEquals("File-2", taskHavingFileWithOverlappingIntervals.getInput("File").get().getFilename());
 
-        Event eventFile2Deletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
+        Event eventFile2Deletion = TaskManagerTestUtil.createEvent("CSE_D2CC", MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "File", "File-2", "2020-06-01T22:30Z/2021-06-30T22:30Z");
         minioHandler.removeProcessFile(eventFile2Deletion);
         taskHavingFileWithOverlappingIntervals = taskRepository.findByTimestamp(taskTimeStampInBothIntervals).orElseThrow();
