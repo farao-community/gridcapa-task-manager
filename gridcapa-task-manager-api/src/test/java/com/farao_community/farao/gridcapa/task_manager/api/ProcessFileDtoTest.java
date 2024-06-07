@@ -26,6 +26,7 @@ class ProcessFileDtoTest {
         assertEquals("CGM", processFileDto.getFileType());
         assertNull(processFileDto.getFilePath());
         assertNull(processFileDto.getFilename());
+        assertNull(processFileDto.getDocumentId());
         assertNull(processFileDto.getLastModificationDate());
         assertEquals(ProcessFileStatus.NOT_PRESENT, processFileDto.getProcessFileStatus());
     }
@@ -33,13 +34,13 @@ class ProcessFileDtoTest {
     @Test
     void testEqualsAndHashCode() {
         OffsetDateTime now = OffsetDateTime.now();
-        ProcessFileDto referenceDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", now);
-        ProcessFileDto equalDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", now);
-        ProcessFileDto diffFilePathDto = new ProcessFileDto("other/path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", now);
-        ProcessFileDto diffFileTypeDto = new ProcessFileDto("path/to/filename", "DIFFERENT", ProcessFileStatus.VALIDATED, "filename", now);
-        ProcessFileDto diffStatusDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.NOT_PRESENT, "filename", now);
-        ProcessFileDto diffFilenameDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "other", now);
-        ProcessFileDto diffDateDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", now.minusMinutes(1));
+        ProcessFileDto referenceDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", "documentId", now);
+        ProcessFileDto equalDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", "documentId", now);
+        ProcessFileDto diffFilePathDto = new ProcessFileDto("other/path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", "documentId", now);
+        ProcessFileDto diffFileTypeDto = new ProcessFileDto("path/to/filename", "DIFFERENT", ProcessFileStatus.VALIDATED, "filename", "documentId", now);
+        ProcessFileDto diffStatusDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.NOT_PRESENT, "filename", "documentId", now);
+        ProcessFileDto diffFilenameDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "other", "documentId", now);
+        ProcessFileDto diffDateDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", "documentId", now.minusMinutes(1));
 
         assertFalse(referenceDto.equals(null)); // do not use assertNotEquals, which does not call equals method in this case
         assertNotEquals(referenceDto, new Object());

@@ -110,6 +110,7 @@ class TaskDtoBuilderServiceTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 timestamp,
                 timestamp.plusHours(1),
                 timestamp);
@@ -117,6 +118,7 @@ class TaskDtoBuilderServiceTest {
                 "cne-file",
                 "output",
                 "CNE",
+                null,
                 timestamp,
                 timestamp.plusHours(1),
                 timestamp);
@@ -151,6 +153,7 @@ class TaskDtoBuilderServiceTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 timestamp,
                 timestamp.plusHours(1),
                 timestamp);
@@ -158,6 +161,7 @@ class TaskDtoBuilderServiceTest {
                 "cne-file",
                 "output",
                 "CNE",
+                null,
                 timestamp,
                 timestamp.plusHours(1),
                 timestamp);
@@ -185,24 +189,27 @@ class TaskDtoBuilderServiceTest {
 
     @Test
     void createDtoFromEntityProcessFileTest() {
-        String fileType = "CGM";
-        String filename = "cgm-name";
-        String filePath = "path/to/" + filename;
-        OffsetDateTime modificationDate = OffsetDateTime.parse("2021-10-11T10:18Z");
-        ProcessFile processFile = new ProcessFile(
+        final String fileType = "CGM";
+        final String filename = "cgm-name";
+        final String filePath = "path/to/" + filename;
+        final String documentId = "documentIdCgm";
+        final OffsetDateTime modificationDate = OffsetDateTime.parse("2021-10-11T10:18Z");
+        final ProcessFile processFile = new ProcessFile(
                 filePath,
                 "input",
                 fileType,
+                documentId,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 modificationDate);
 
-        ProcessFileDto processFileDto = taskDtoBuilderService.createDtoFromEntity(processFile);
+        final ProcessFileDto processFileDto = taskDtoBuilderService.createDtoFromEntity(processFile);
 
         Assertions.assertThat(processFileDto).isNotNull();
         Assertions.assertThat(processFileDto.getFileType()).isEqualTo(fileType);
         Assertions.assertThat(processFileDto.getFilePath()).isEqualTo(filePath);
         Assertions.assertThat(processFileDto.getFilename()).isEqualTo(filename);
+        Assertions.assertThat(processFileDto.getDocumentId()).isEqualTo(documentId);
         Assertions.assertThat(processFileDto.getProcessFileStatus()).isEqualTo(ProcessFileStatus.VALIDATED);
         Assertions.assertThat(processFileDto.getLastModificationDate()).isEqualTo(modificationDate);
     }
@@ -225,8 +232,8 @@ class TaskDtoBuilderServiceTest {
 
     @Test
     void createDtoFromEntityProcessRunTest() {
-        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
-        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile1 = new ProcessFile("path/to/file-name", "input", "CGM", "documentIdCgm", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+        ProcessFile processFile2 = new ProcessFile("path/to/other-file-name", "input", "GLSK", "documentIdGlsk", OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
         ProcessRun processRun = new ProcessRun(List.of(processFile1, processFile2));
 
         ProcessRunDto processRunDto = taskDtoBuilderService.createDtoFromEntity(processRun);

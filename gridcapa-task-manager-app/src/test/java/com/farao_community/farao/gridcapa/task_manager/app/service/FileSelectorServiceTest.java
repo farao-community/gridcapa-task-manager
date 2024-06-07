@@ -69,8 +69,8 @@ class FileSelectorServiceTest {
     @Test
     void selectFileWithStatusReset() {
         OffsetDateTime now = OffsetDateTime.now();
-        ProcessFile processFile1 = new ProcessFile("path/to/crac-file", "input", "CRAC", now, now, now);
-        ProcessFile processFile2 = new ProcessFile("path/to/other-crac-file", "input", "CRAC", now, now, now);
+        ProcessFile processFile1 = new ProcessFile("path/to/crac-file", "input", "CRAC", "documentIdCrac", now, now, now);
+        ProcessFile processFile2 = new ProcessFile("path/to/other-crac-file", "input", "CRAC", "documentIdCrac2", now, now, now);
         Task task = new Task(now);
         task.setStatus(TaskStatus.SUCCESS);
         task.addProcessFile(processFile1);
@@ -90,8 +90,8 @@ class FileSelectorServiceTest {
     @Test
     void selectFileWithoutStatusReset() {
         OffsetDateTime now = OffsetDateTime.now();
-        ProcessFile processFile1 = new ProcessFile("path/to/crac-file", "input", "CRAC", now, now, now);
-        ProcessFile processFile2 = new ProcessFile("path/to/other-crac-file", "input", "CRAC", now, now, now);
+        ProcessFile processFile1 = new ProcessFile("path/to/crac-file", "input", "CRAC", "documentIdCrac", now, now, now);
+        ProcessFile processFile2 = new ProcessFile("path/to/other-crac-file", "input", "CRAC", "documentIdCrac2", now, now, now);
         Task task = new Task(now);
         task.setStatus(TaskStatus.READY);
         task.addProcessFile(processFile1);

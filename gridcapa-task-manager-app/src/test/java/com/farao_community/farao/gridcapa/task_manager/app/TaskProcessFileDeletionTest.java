@@ -64,6 +64,7 @@ class TaskProcessFileDeletionTest {
                 "/CGM",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CGM",
+                "documentIdCgm",
                 offsetDateTime0,
                 offsetDateTime0.plusHours(1),
                 OffsetDateTime.now());
@@ -73,6 +74,7 @@ class TaskProcessFileDeletionTest {
                 "/CGM2",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CGM",
+                "documentIdCgm2",
                 offsetDateTime1,
                 offsetDateTime1.plusHours(1),
                 OffsetDateTime.now());
@@ -82,6 +84,7 @@ class TaskProcessFileDeletionTest {
                 "/CGM3",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CGM",
+                "documentIdCgm3",
                 offsetDateTime2,
                 offsetDateTime2.plusHours(1),
                 OffsetDateTime.now());
@@ -91,6 +94,7 @@ class TaskProcessFileDeletionTest {
                 "/REFPROG",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "REFPROG",
+                "documentIdRefprog",
                 offsetDateTime0,
                 offsetDateTime0.plusHours(4),
                 OffsetDateTime.now());

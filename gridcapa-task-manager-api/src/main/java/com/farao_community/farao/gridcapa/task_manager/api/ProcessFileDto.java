@@ -22,6 +22,7 @@ public class ProcessFileDto {
     private final String fileType;
     private final ProcessFileStatus processFileStatus;
     private final String filename;
+    private final String documentId;
     private final OffsetDateTime lastModificationDate;
 
     @JsonCreator
@@ -29,11 +30,13 @@ public class ProcessFileDto {
                           @JsonProperty("fileType") String fileType,
                           @JsonProperty("processFileStatus") ProcessFileStatus processFileStatus,
                           @JsonProperty("fileName") String filename,
+                          @JsonProperty("documentId") String documentId,
                           @JsonProperty("lastModificationDate") OffsetDateTime lastModificationDate) {
         this.filePath = filePath;
         this.fileType = fileType;
         this.processFileStatus = processFileStatus;
         this.filename = filename;
+        this.documentId = documentId;
         this.lastModificationDate = lastModificationDate;
     }
 
@@ -42,6 +45,7 @@ public class ProcessFileDto {
                 null,
                 fileType,
                 ProcessFileStatus.NOT_PRESENT,
+                null,
                 null,
                 null);
     }
@@ -60,6 +64,10 @@ public class ProcessFileDto {
 
     public String getFilename() {
         return filename;
+    }
+
+    public String getDocumentId() {
+        return documentId;
     }
 
     public OffsetDateTime getLastModificationDate() {

@@ -233,7 +233,7 @@ class TaskManagerControllerTest {
         String fileType = "CRAC";
         String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
-        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, "documentIdCrac", taskTimestamp, taskTimestamp, taskTimestamp);
         task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
@@ -283,7 +283,7 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, null, taskTimestamp, taskTimestamp, taskTimestamp);
         task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());
@@ -302,7 +302,7 @@ class TaskManagerControllerTest {
         String fileNameLocalDateTime = taskTimestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HHmm"));
         String fileType = "LOGS";
         Task task = new Task(taskTimestamp);
-        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, taskTimestamp, taskTimestamp, taskTimestamp);
+        final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, null, taskTimestamp, taskTimestamp, taskTimestamp);
         task.addProcessFile(pf);
         Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
         Mockito.when(fileManager.openUrlStream(anyString())).thenReturn(InputStream.nullInputStream());

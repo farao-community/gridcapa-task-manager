@@ -20,6 +20,8 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -84,7 +86,7 @@ class MinioHandlerTest {
     @Test
     void testUpdate() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        Event event = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event event = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "documentIdCgm", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(event);
 
@@ -92,14 +94,15 @@ class MinioHandlerTest {
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
         assertEquals("CSE/D2CC/CGMs/cgm-test", task.getInput("CGM").orElseThrow().getFileObjectKey());
         assertEquals("cgm-test", task.getInput("CGM").orElseThrow().getFilename());
+        assertEquals("documentIdCgm", task.getProcessFiles().first().getDocumentId());
     }
 
     @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "documentIdCgm", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCrac = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "documentIdCrac", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         minioHandler.updateTasks(eventCrac);
@@ -107,24 +110,21 @@ class MinioHandlerTest {
         assertEquals(1, taskRepository.findAll().size());
         assertTrue(taskRepository.findByTimestamp(taskTimestamp).isPresent());
         Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals("CSE/D2CC/CGMs/cgm-test", task.getInput("CGM").orElseThrow().getFileObjectKey());
-        assertEquals("CSE/D2CC/CRACs/crac-test", task.getInput("CRAC").orElseThrow().getFileObjectKey());
-        assertEquals("cgm-test", task.getInput("CGM").orElseThrow().getFilename());
-        assertEquals("crac-test", task.getInput("CRAC").orElseThrow().getFilename());
+        ProcessFile processFileCgm = task.getInput("CGM").orElseThrow();
+        assertEquals("CSE/D2CC/CGMs/cgm-test", processFileCgm.getFileObjectKey());
+        ProcessFile processFileCrac = task.getInput("CRAC").orElseThrow();
+        assertEquals("CSE/D2CC/CRACs/crac-test", processFileCrac.getFileObjectKey());
+        assertEquals("cgm-test", processFileCgm.getFilename());
+        assertEquals("crac-test", processFileCrac.getFilename());
+        assertEquals("documentIdCgm", processFileCgm.getDocumentId());
+        assertEquals("documentIdCrac", processFileCrac.getDocumentId());
     }
 
-    @Test
-    void testUpdateWithEmptyIntervalFileType() {
-        testTimeInterval("CSE_D2CC", "", 0);
-    }
-
-    @Test
-    void testUpdateWithDailyFile() {
-        testTimeInterval("CSE_D2CC", "2021-09-30T22:00Z/2021-10-01T22:00Z", 24);
-    }
-
-    private void testTimeInterval(String process, String interval, int expectedFileNumber) {
-        Event event = TaskManagerTestUtil.createEvent(minioAdapter, process, INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval);
+    @ParameterizedTest
+    @CsvSource({",0", "2021-09-30T22:00Z/2021-10-01T22:00Z,24"})
+    // First test with empty interval ; Second test with daily file
+    void testTimeInterval(String interval, int expectedFileNumber) {
+        Event event = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval);
 
         minioHandler.updateTasks(event);
 
@@ -134,9 +134,9 @@ class MinioHandlerTest {
     @Test
     void checkStatusUpdateToReady() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
-        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCrac = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         assertEquals(CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
@@ -147,8 +147,8 @@ class MinioHandlerTest {
     @Test
     void checkStatusUpdateBackToCreated() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
-        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCrac = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         minioHandler.updateTasks(eventCrac);
@@ -159,8 +159,8 @@ class MinioHandlerTest {
     @Test
     void testCreationEventsForTwoFilesWithDifferentTypesAndSameTs() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
-        Event eventCrac = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCrac = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         minioHandler.updateTasks(eventCrac);
@@ -179,8 +179,8 @@ class MinioHandlerTest {
     @Test
     void testUpdateEventsForTwoFilesWithSameTypeAndSameTs() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
-        Event eventCgm = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
-        Event eventCgmNew = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCgmNew = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         minioHandler.updateTasks(eventCgmNew);
@@ -207,6 +207,7 @@ class MinioHandlerTest {
                 "CSE/D2CC/CGMs/cgm-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-01T21:00Z"),
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
@@ -217,6 +218,7 @@ class MinioHandlerTest {
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-01T21:00Z"),
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
@@ -224,7 +226,7 @@ class MinioHandlerTest {
 
         taskRepository.save(task);
 
-        Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCracDeletion = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         minioHandler.removeProcessFile(eventCracDeletion);
 
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
@@ -245,13 +247,14 @@ class MinioHandlerTest {
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-01T21:00Z"),
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
         task.addProcessFile(processFileCrac);
         taskRepository.save(task);
 
-        Event eventCracDeletion = TaskManagerTestUtil.createEvent(minioAdapter, "CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        Event eventCracDeletion = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         minioHandler.removeProcessFile(eventCracDeletion);
 
         assertEquals(NOT_CREATED, taskRepository.findByTimestamp(taskTimestamp).orElseThrow().getStatus());
@@ -263,6 +266,7 @@ class MinioHandlerTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -270,6 +274,7 @@ class MinioHandlerTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:30Z"));
@@ -293,6 +298,7 @@ class MinioHandlerTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -300,6 +306,7 @@ class MinioHandlerTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:30Z"));
@@ -307,6 +314,7 @@ class MinioHandlerTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-13T00:00Z"),
                 OffsetDateTime.parse("2021-10-13T10:30Z"));
@@ -362,6 +370,7 @@ class MinioHandlerTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -369,6 +378,7 @@ class MinioHandlerTest {
                 "cgm-name2",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-13T00:00Z"),
                 OffsetDateTime.parse("2021-10-14T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:30Z"));
@@ -415,11 +425,12 @@ class MinioHandlerTest {
         String objectKey = "path/to/crac.xml";
         String fileType = "CRAC";
         String fileGroup = "input";
+        String documentId = "documentIdCrac";
         OffsetDateTime lastModificationDate = OffsetDateTime.parse("2024-04-26T16:50Z");
-        ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, lastModificationDate);
+        ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, documentId, startTime, endTime, lastModificationDate);
         processFileRepository.save(processFile);
 
-        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup, documentId);
 
         assertNotNull(processFileMinio);
         assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
@@ -428,17 +439,17 @@ class MinioHandlerTest {
     }
 
     @Test
-    void getProcessFileMinioFromDatabaseWithTypeOuputTest() {
+    void getProcessFileMinioFromDatabaseWithTypeOutputTest() {
         OffsetDateTime startTime = OffsetDateTime.parse("2024-04-22T12:30Z");
         OffsetDateTime endTime = startTime.plusHours(1);
         String objectKey = "path/to/TTC.xml";
         String fileType = "TTC";
         String fileGroup = "output";
         OffsetDateTime lastModificationDate = OffsetDateTime.parse("2024-04-26T16:50Z");
-        ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, lastModificationDate);
+        ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, null, startTime, endTime, lastModificationDate);
         processFileRepository.save(processFile);
 
-        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup, null);
 
         assertNotNull(processFileMinio);
         assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
@@ -453,8 +464,9 @@ class MinioHandlerTest {
         String objectKey = "path/to/crac.xml";
         String fileType = "CRAC";
         String fileGroup = "input";
+        String documentId = "documentIdCrac";
 
-        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup, documentId);
 
         assertNotNull(processFileMinio);
         assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
@@ -473,7 +485,7 @@ class MinioHandlerTest {
         String fileType = "TTC";
         String fileGroup = "output";
 
-        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup);
+        ProcessFileMinio processFileMinio = minioHandler.getProcessFileMinio(startTime, endTime, objectKey, fileType, fileGroup, null);
 
         assertNotNull(processFileMinio);
         assertEquals(objectKey, processFileMinio.getProcessFile().getFileObjectKey());
