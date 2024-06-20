@@ -3,10 +3,9 @@ package com.farao_community.farao.gridcapa.task_manager.app.entities;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProcessFileMinioTest {
 
@@ -16,6 +15,7 @@ class ProcessFileMinioTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -23,10 +23,10 @@ class ProcessFileMinioTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
-        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
         ProcessFileMinio file1 = new ProcessFileMinio(processFile1, null);
         ProcessFileMinio file2 = new ProcessFileMinio(processFile2, null);
         assertTrue(file1.hasSameTypeAndValidity(file1));
@@ -41,6 +41,7 @@ class ProcessFileMinioTest {
                 "cgm-name",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -48,6 +49,7 @@ class ProcessFileMinioTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:01Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -55,6 +57,7 @@ class ProcessFileMinioTest {
                 "cgm-name2",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:02Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -62,10 +65,10 @@ class ProcessFileMinioTest {
                 "cgm-name2",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
-        List<ProcessFileMinio> fileMinioList = new ArrayList<>();
         ProcessFileMinio file1 = new ProcessFileMinio(processFile1, null);
         ProcessFileMinio file2 = new ProcessFileMinio(processFile2, null);
         ProcessFileMinio file3 = new ProcessFileMinio(processFile3, null);

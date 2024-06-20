@@ -160,6 +160,7 @@ public class TaskDtoBuilderService {
                 processFile.getFileType(),
                 ProcessFileStatus.VALIDATED,
                 processFile.getFilename(),
+                processFile.getDocumentId(),
                 processFile.getLastModificationDate());
     }
 

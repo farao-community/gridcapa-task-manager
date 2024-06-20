@@ -50,6 +50,7 @@ public class MinioHandler {
     public static final String FILE_GROUP_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
     public static final String FILE_TARGET_PROCESS_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
     public static final String FILE_TYPE_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
+    public static final String DOCUMENT_ID_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_DOCUMENT_ID_METADATA_KEY;
     public static final String FILE_VALIDITY_INTERVAL_METADATA_KEY = MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY;
     private static final String PROCESS_FILE_REMOVED_MESSAGE = "process file {} was removed from waiting list";
 
@@ -142,6 +143,7 @@ public class MinioHandler {
         if (validityInterval != null && !validityInterval.isEmpty()) {
             String fileGroup = event.userMetadata().get(FILE_GROUP_METADATA_KEY);
             String fileType = event.userMetadata().get(FILE_TYPE_METADATA_KEY);
+            String documentId = event.userMetadata().get(DOCUMENT_ID_METADATA_KEY);
             LOGGER.info("Adding MinIO object {}", objectKey);
             String[] interval = validityInterval.split("/");
             return getProcessFileMinio(
@@ -149,13 +151,14 @@ public class MinioHandler {
                     OffsetDateTime.parse(interval[1]),
                     objectKey,
                     fileType,
-                    fileGroup);
+                    fileGroup,
+                    documentId);
         } else {
             return null;
         }
     }
 
-    ProcessFileMinio getProcessFileMinio(OffsetDateTime startTime, OffsetDateTime endTime, String objectKey, String fileType, String fileGroup) {
+    ProcessFileMinio getProcessFileMinio(OffsetDateTime startTime, OffsetDateTime endTime, String objectKey, String fileType, String fileGroup, String documentId) {
         /*
         This implies that only one file per type and group can exist. If another one is imported it would just
         replace the previous one.
@@ -172,10 +175,11 @@ public class MinioHandler {
             ProcessFile processFile = optProcessFile.get();
             processFile.setFileObjectKey(objectKey);
             processFile.setLastModificationDate(getTimestampNowWithProcessTimezone());
+            processFile.setDocumentId(documentId);
             return new ProcessFileMinio(processFile, FileEventType.UPDATED);
         } else {
             LOGGER.info("Creating a new file {} available at {}.", fileType, startTime);
-            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, startTime, endTime, getTimestampNowWithProcessTimezone());
+            ProcessFile processFile = new ProcessFile(objectKey, fileGroup, fileType, documentId, startTime, endTime, getTimestampNowWithProcessTimezone());
             return new ProcessFileMinio(processFile, FileEventType.AVAILABLE);
         }
     }
