@@ -6,7 +6,9 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
@@ -655,8 +657,23 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.empty());
 
+        List<ProcessFileDto> inputFileDtos = List.of();
         Assertions.assertThatExceptionOfType(TaskNotFoundException.class)
-                .isThrownBy(() -> taskService.addNewRunAndSaveTask(timestamp));
+                .isThrownBy(() -> taskService.addNewRunAndSaveTask(timestamp, inputFileDtos));
+    }
+
+    @Test
+    void addNewRunAndSaveTaskThrowsProcessFileNotFound() {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        Task task = new Task();
+        ProcessFile processFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
+        task.addProcessFile(processFile);
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+
+        ProcessFileDto processFileDto = new ProcessFileDto("path/to/file", "CRAC", ProcessFileStatus.VALIDATED, "file2", "documentIdCrac", timestamp);
+        List<ProcessFileDto> inputFileDtos = List.of(processFileDto);
+        Assertions.assertThatExceptionOfType(ProcessFileNotFoundException.class)
+                .isThrownBy(() -> taskService.addNewRunAndSaveTask(timestamp, inputFileDtos));
     }
 
     @Test
@@ -672,7 +689,11 @@ class TaskServiceTest {
 
         Assertions.assertThat(task.getRunHistory()).isEmpty();
 
-        Task savedTask = taskService.addNewRunAndSaveTask(timestamp);
+        ProcessFileDto processFileDto1 = new ProcessFileDto("path/to/file1", "CGM", ProcessFileStatus.VALIDATED, "file1", "documentIdCgm", timestamp);
+        ProcessFileDto processFileDto2 = new ProcessFileDto("path/to/file2", "CRAC", ProcessFileStatus.VALIDATED, "file2", "documentIdCrac", timestamp);
+        List<ProcessFileDto> inputFileDtos = List.of(processFileDto1, processFileDto2);
+
+        Task savedTask = taskService.addNewRunAndSaveTask(timestamp, inputFileDtos);
 
         Assertions.assertThat(savedTask.getRunHistory()).hasSize(1);
         Assertions.assertThat(savedTask.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);

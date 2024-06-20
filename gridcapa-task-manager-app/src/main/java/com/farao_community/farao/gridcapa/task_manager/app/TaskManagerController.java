@@ -101,10 +101,10 @@ public class TaskManagerController {
     }
 
     @PutMapping(value = "/tasks/{timestamp}/runHistory")
-    public ResponseEntity<TaskDto> addNewRunInTaskHistory(@PathVariable String timestamp) {
+    public ResponseEntity<TaskDto> addNewRunInTaskHistory(@PathVariable String timestamp, @RequestBody List<ProcessFileDto> inputFiles) {
         try {
             synchronized (TASK_MANAGER_LOCK) {
-                Task task = taskService.addNewRunAndSaveTask(OffsetDateTime.parse(timestamp));
+                Task task = taskService.addNewRunAndSaveTask(OffsetDateTime.parse(timestamp), inputFiles);
                 return ResponseEntity.ok(builder.createDtoFromEntity(task));
             }
         } catch (final TaskNotFoundException notFoundException) {

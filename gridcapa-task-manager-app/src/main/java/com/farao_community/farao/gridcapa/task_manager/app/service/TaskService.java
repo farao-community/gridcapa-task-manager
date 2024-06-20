@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
@@ -221,11 +222,21 @@ public class TaskService {
     // RUN HISTORY MANAGEMENT //
     ////////////////////////////
 
-    public Task addNewRunAndSaveTask(OffsetDateTime timestamp) {
-        Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
-        ProcessRun processRun = new ProcessRun(task.getProcessFiles().stream().filter(ProcessFile::isInputFile).toList());
+    public Task addNewRunAndSaveTask(OffsetDateTime timestamp, List<ProcessFileDto> inputFileDtos) {
+        final Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
+        final List<ProcessFile> inputFiles = inputFileDtos.stream()
+                .map(dto -> getProcessFileFromTaskMatchingDto(task, dto))
+                .toList();
+        final ProcessRun processRun = new ProcessRun(inputFiles);
         task.addProcessRun(processRun);
         return taskRepository.save(task);
+    }
+
+    private static ProcessFile getProcessFileFromTaskMatchingDto(Task task, ProcessFileDto processFileDto) {
+        return task.getAvailableInputs(processFileDto.getFileType()).stream()
+                .filter(f -> f.getFilename().equals(processFileDto.getFilename()))
+                .findAny()
+                .orElseThrow(ProcessFileNotFoundException::new);
     }
 
     static void removeUnavailableProcessFileFromTaskRunHistory(ProcessFile processFile, Task task, FileEventType fileEventType) {

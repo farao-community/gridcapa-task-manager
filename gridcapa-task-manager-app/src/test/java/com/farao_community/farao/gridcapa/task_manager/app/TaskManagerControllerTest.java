@@ -147,8 +147,8 @@ class TaskManagerControllerTest {
     void testAddNewRunInTaskHistoryOk() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenReturn(task);
-        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(taskTimestamp.toString());
+        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any(), Mockito.any())).thenReturn(task);
+        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(taskTimestamp.toString(), List.of());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(taskTimestamp, response.getBody().getTimestamp());
@@ -157,8 +157,8 @@ class TaskManagerControllerTest {
     @Test
     void testAddNewRunInTaskHistoryThrowsTaskNotFoundException() {
         String timestamp = "2021-09-30T23:00Z";
-        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any())).thenThrow(TaskNotFoundException.class);
-        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(timestamp);
+        Mockito.when(taskService.addNewRunAndSaveTask(Mockito.any(), Mockito.any())).thenThrow(TaskNotFoundException.class);
+        ResponseEntity<TaskDto> response = taskManagerController.addNewRunInTaskHistory(timestamp, List.of());
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
