@@ -72,6 +72,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="file_type" type="VARCHAR(255)"/>
+            <column name="document_id" type="VARCHAR(255)"/>
             <column name="last_modification_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="starting_availability_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
         </createTable>
