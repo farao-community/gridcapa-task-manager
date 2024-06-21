@@ -6,6 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
 
     <!-- Include your changelogs here in the order you want them to be executed -->
-    <include file="db/v5.9.0/initialize.xml"/>
+    <include file="/db/v5.10.0/initialize.xml"/>
 
 </databaseChangeLog>
