@@ -12,8 +12,8 @@ spring:
     defer-datasource-initialization: true
     properties:
       hibernate:
-          timezone:
-            default_storage: NORMALIZE_UTC
+        timezone:
+          default_storage: NORMALIZE_UTC
   sql:
     init:
       mode: always
