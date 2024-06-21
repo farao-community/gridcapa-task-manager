@@ -11,6 +11,51 @@
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet author="DTH" id="init-1">
+        <createTable tableName="task">
+            <column name="id" type="UUID">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="task_pkey"/>
+            </column>
+            <column name="status" type="SMALLINT"/>
+            <column name="timestamp" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="DTH" id="init-2">
+        <createTable tableName="process_file">
+            <column name="id" type="UUID">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="process_file_pkey"/>
+            </column>
+            <column name="ending_availability_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="file_group" type="VARCHAR(255)"/>
+            <column name="file_object_key" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_type" type="VARCHAR(255)"/>
+            <column name="document_id" type="VARCHAR(255)"/>
+            <column name="last_modification_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="starting_availability_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="DTH" id="init-3">
+        <createTable tableName="process_run">
+            <column name="id" type="UUID">
+                <constraints nullable="false"
+                             primaryKey="true"
+                             primaryKeyName="process_run_pkey"/>
+            </column>
+            <column name="execution_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="task_id" type="UUID"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="DTH" id="init-4">
         <createTable tableName="process_event">
             <column name="id" type="UUID">
                 <constraints nullable="false"
@@ -25,21 +70,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet author="DTH" id="init-2">
-        <createTable tableName="task">
-            <column name="id" type="UUID">
-                <constraints nullable="false"
-                             primaryKey="true"
-                             primaryKeyName="task_pkey"/>
-            </column>
-            <column name="status" type="SMALLINT"/>
-            <column name="timestamp" type="TIMESTAMP WITHOUT TIME ZONE">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-3">
+    <changeSet author="DTH" id="init-5">
         <createTable tableName="parameter">
             <column name="id" type="VARCHAR(255)">
                 <constraints nullable="false"
@@ -59,73 +90,22 @@
         </createTable>
     </changeSet>
 
-    <changeSet author="DTH" id="init-4">
-        <createTable tableName="process_file">
-            <column name="id" type="UUID">
-                <constraints nullable="false"
-                             primaryKey="true"
-                             primaryKeyName="process_file_pkey"/>
-            </column>
-            <column name="ending_availability_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="file_group" type="VARCHAR(255)"/>
-            <column name="file_object_key" type="VARCHAR(500)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="file_type" type="VARCHAR(255)"/>
-            <column name="document_id" type="VARCHAR(255)"/>
-            <column name="last_modification_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="starting_availability_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
-        </createTable>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-5">
-        <createIndex indexName="process_event_task_idx" tableName="process_event">
-            <column name="task_id"/>
-        </createIndex>
-    </changeSet>
-
     <changeSet author="DTH" id="init-6">
-        <createIndex indexName="task_status_idx" tableName="task">
-            <column name="status"/>
-        </createIndex>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-7">
-        <addUniqueConstraint constraintName="uk_task_timestamp"
-                             tableName="task"
-                             columnNames="timestamp"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-8">
-        <addUniqueConstraint constraintName="uk_process_file_file_object_key"
-                             tableName="process_file"
-                             columnNames="file_object_key"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-9">
-        <createTable tableName="process_run">
-            <column name="id" type="UUID">
-                <constraints nullable="false"
-                             primaryKey="true"
-                             primaryKeyName="process_run_pkey"/>
-            </column>
-            <column name="execution_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="task_id" type="UUID"/>
-        </createTable>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-10">
-        <createTable tableName="process_run_process_file">
-            <column name="fk_process_run" type="UUID">
+        <createTable tableName="task_process_file">
+            <column name="fk_task" type="UUID">
                 <constraints nullable="false"/>
             </column>
             <column name="fk_process_file" type="UUID">
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addPrimaryKey tableName="task_process_file"
+                       columnNames="fk_process_file, fk_task"
+                       constraintName="task_process_file_pkey"/>
+
     </changeSet>
 
-    <changeSet author="DTH" id="init-11">
+    <changeSet author="DTH" id="init-7">
         <createTable tableName="task_available_process_file">
             <column name="fk_task" type="UUID">
                 <constraints nullable="false"/>
@@ -139,19 +119,39 @@
                        constraintName="task_available_process_file_pkey"/>
     </changeSet>
 
-    <changeSet author="DTH" id="init-12">
-        <createTable tableName="task_process_file">
-            <column name="fk_task" type="UUID">
+    <changeSet author="DTH" id="init-8">
+        <createTable tableName="process_run_process_file">
+            <column name="fk_process_run" type="UUID">
                 <constraints nullable="false"/>
             </column>
             <column name="fk_process_file" type="UUID">
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey tableName="task_process_file"
-                       columnNames="fk_process_file, fk_task"
-                       constraintName="task_process_file_pkey"/>
+    </changeSet>
 
+    <changeSet author="DTH" id="init-9">
+        <createIndex indexName="process_event_task_idx" tableName="process_event">
+            <column name="task_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="DTH" id="init-10">
+        <createIndex indexName="task_status_idx" tableName="task">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="DTH" id="init-11">
+        <addUniqueConstraint constraintName="uk_task_timestamp"
+                             tableName="task"
+                             columnNames="timestamp"/>
+    </changeSet>
+
+    <changeSet author="DTH" id="init-12">
+        <addUniqueConstraint constraintName="uk_process_file_file_object_key"
+                             tableName="process_file"
+                             columnNames="file_object_key"/>
     </changeSet>
 
     <changeSet author="DTH" id="init-13">
