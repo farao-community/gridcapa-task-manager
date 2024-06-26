@@ -11,6 +11,11 @@
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <changeSet author="DTH" id="init-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="task"/>
+            </not>
+        </preConditions>
         <createTable tableName="task">
             <column name="id" type="UUID">
                 <constraints nullable="false"
@@ -22,9 +27,20 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addUniqueConstraint constraintName="uk_task_timestamp"
+                             tableName="task"
+                             columnNames="timestamp"/>
+        <createIndex indexName="task_status_idx" tableName="task">
+            <column name="status"/>
+        </createIndex>
     </changeSet>
 
     <changeSet author="DTH" id="init-2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="process_file"/>
+            </not>
+        </preConditions>
         <createTable tableName="process_file">
             <column name="id" type="UUID">
                 <constraints nullable="false"
@@ -41,9 +57,18 @@
             <column name="last_modification_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="starting_availability_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
         </createTable>
+        <addUniqueConstraint constraintName="uk_process_file_file_object_key"
+                             tableName="process_file"
+                             columnNames="file_object_key"/>
     </changeSet>
 
     <changeSet author="DTH" id="init-3">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="process_run"/>
+            </not>
+            <tableExists tableName="task"/>
+        </preConditions>
         <createTable tableName="process_run">
             <column name="id" type="UUID">
                 <constraints nullable="false"
@@ -53,9 +78,21 @@
             <column name="execution_date" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="task_id" type="UUID"/>
         </createTable>
+        <addForeignKeyConstraint baseTableName="process_run"
+                                 baseColumnNames="task_id"
+                                 constraintName="fk_process_run_fk1"
+                                 referencedTableName="task"
+                                 referencedColumnNames="id"
+                                 validate="true"/>
     </changeSet>
 
     <changeSet author="DTH" id="init-4">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="process_event"/>
+            </not>
+            <tableExists tableName="task"/>
+        </preConditions>
         <createTable tableName="process_event">
             <column name="id" type="UUID">
                 <constraints nullable="false"
@@ -68,9 +105,23 @@
             <column name="timestamp" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="task_id" type="UUID"/>
         </createTable>
+        <createIndex indexName="process_event_task_idx" tableName="process_event">
+            <column name="task_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="process_event"
+                                 baseColumnNames="task_id"
+                                 constraintName="fk_process_event_fk1"
+                                 referencedTableName="task"
+                                 referencedColumnNames="id"
+                                 validate="true"/>
     </changeSet>
 
     <changeSet author="DTH" id="init-5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="parameter"/>
+            </not>
+        </preConditions>
         <createTable tableName="parameter">
             <column name="id" type="VARCHAR(255)">
                 <constraints nullable="false"
@@ -91,6 +142,13 @@
     </changeSet>
 
     <changeSet author="DTH" id="init-6">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="task_process_file"/>
+            </not>
+            <tableExists tableName="process_file"/>
+            <tableExists tableName="task"/>
+        </preConditions>
         <createTable tableName="task_process_file">
             <column name="fk_task" type="UUID">
                 <constraints nullable="false"/>
@@ -102,10 +160,28 @@
         <addPrimaryKey tableName="task_process_file"
                        columnNames="fk_process_file, fk_task"
                        constraintName="task_process_file_pkey"/>
-
+        <addForeignKeyConstraint baseTableName="task_process_file"
+                                 baseColumnNames="fk_process_file"
+                                 constraintName="fk_task_process_file_fk1"
+                                 referencedTableName="process_file"
+                                 referencedColumnNames="id"
+                                 validate="true"/>
+        <addForeignKeyConstraint baseTableName="task_process_file"
+                                 baseColumnNames="fk_task"
+                                 constraintName="fk_task_process_file_fk2"
+                                 referencedTableName="task"
+                                 referencedColumnNames="id"
+                                 validate="true"/>
     </changeSet>
 
     <changeSet author="DTH" id="init-7">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="task_available_process_file"/>
+            </not>
+            <tableExists tableName="process_file"/>
+            <tableExists tableName="task"/>
+        </preConditions>
         <createTable tableName="task_available_process_file">
             <column name="fk_task" type="UUID">
                 <constraints nullable="false"/>
@@ -117,98 +193,12 @@
         <addPrimaryKey tableName="task_available_process_file"
                        columnNames="fk_process_file, fk_task"
                        constraintName="task_available_process_file_pkey"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-8">
-        <createTable tableName="process_run_process_file">
-            <column name="fk_process_run" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="fk_process_file" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-9">
-        <createIndex indexName="process_event_task_idx" tableName="process_event">
-            <column name="task_id"/>
-        </createIndex>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-10">
-        <createIndex indexName="task_status_idx" tableName="task">
-            <column name="status"/>
-        </createIndex>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-11">
-        <addUniqueConstraint constraintName="uk_task_timestamp"
-                             tableName="task"
-                             columnNames="timestamp"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-12">
-        <addUniqueConstraint constraintName="uk_process_file_file_object_key"
-                             tableName="process_file"
-                             columnNames="file_object_key"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-13">
-        <addForeignKeyConstraint baseTableName="process_run_process_file"
-                                 baseColumnNames="fk_process_run"
-                                 constraintName="fk_process_run_process_file_fk1"
-                                 referencedTableName="process_run"
-                                 referencedColumnNames="id"
-                                 validate="true"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-14">
-        <addForeignKeyConstraint baseTableName="process_run_process_file"
-                                 baseColumnNames="fk_process_file"
-                                 constraintName="fk_process_run_process_file_fk2"
-                                 referencedTableName="process_file"
-                                 referencedColumnNames="id"
-                                 validate="true"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-15">
-        <addForeignKeyConstraint baseTableName="task_process_file"
-                                 baseColumnNames="fk_process_file"
-                                 constraintName="fk_task_process_file_fk1"
-                                 referencedTableName="process_file"
-                                 referencedColumnNames="id"
-                                 validate="true"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-16">
-        <addForeignKeyConstraint baseTableName="task_process_file"
-                                 baseColumnNames="fk_task"
-                                 constraintName="fk_task_process_file_fk2"
-                                 referencedTableName="task"
-                                 referencedColumnNames="id"
-                                 validate="true"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-17">
         <addForeignKeyConstraint baseTableName="task_available_process_file"
                                  baseColumnNames="fk_process_file"
                                  constraintName="fk_task_available_process_file_fk1"
                                  referencedTableName="process_file"
                                  referencedColumnNames="id"
                                  validate="true"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-18">
-        <addForeignKeyConstraint baseTableName="process_event"
-                                 baseColumnNames="task_id"
-                                 constraintName="fk_process_event_fk1"
-                                 referencedTableName="task"
-                                 referencedColumnNames="id"
-                                 validate="true"/>
-    </changeSet>
-
-    <changeSet author="DTH" id="init-19">
         <addForeignKeyConstraint baseTableName="task_available_process_file"
                                  baseColumnNames="fk_task"
                                  constraintName="fk_task_available_process_file_fk2"
@@ -217,11 +207,32 @@
                                  validate="true"/>
     </changeSet>
 
-    <changeSet author="DTH" id="init-20">
-        <addForeignKeyConstraint baseTableName="process_run"
-                                 baseColumnNames="task_id"
-                                 constraintName="fk_process_run_fk1"
-                                 referencedTableName="task"
+    <changeSet author="DTH" id="init-8">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="process_run_process_file"/>
+            </not>
+            <tableExists tableName="process_run"/>
+            <tableExists tableName="process_file"/>
+        </preConditions>
+        <createTable tableName="process_run_process_file">
+            <column name="fk_process_run" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fk_process_file" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="process_run_process_file"
+                                 baseColumnNames="fk_process_run"
+                                 constraintName="fk_process_run_process_file_fk1"
+                                 referencedTableName="process_run"
+                                 referencedColumnNames="id"
+                                 validate="true"/>
+        <addForeignKeyConstraint baseTableName="process_run_process_file"
+                                 baseColumnNames="fk_process_file"
+                                 constraintName="fk_process_run_process_file_fk2"
+                                 referencedTableName="process_file"
                                  referencedColumnNames="id"
                                  validate="true"/>
     </changeSet>
