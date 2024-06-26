@@ -9,11 +9,12 @@ spring:
     username: admin
     password: admin
   jpa:
-    defer-datasource-initialization: true
     properties:
       hibernate:
         timezone:
           default_storage: NORMALIZE_UTC
+    hibernate:
+      ddl-auto: validate
   sql:
     init:
       mode: always
