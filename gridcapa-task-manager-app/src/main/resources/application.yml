@@ -1,19 +1,20 @@
 spring:
   application:
     name: task-manager
+  liquibase:
+    change-log: classpath:/db/changelog-master.xml
   datasource:
     url: jdbc:h2:file:${HOME}/gridcapa/task-manager
     driverClassName: org.h2.Driver
     username: admin
     password: admin
   jpa:
-    defer-datasource-initialization: true
-    hibernate:
-      ddl-auto: create-drop
     properties:
-        hibernate:
-          timezone:
-            default_storage: NORMALIZE_UTC
+      hibernate:
+        timezone:
+          default_storage: NORMALIZE_UTC
+    hibernate:
+      ddl-auto: validate
   sql:
     init:
       mode: always

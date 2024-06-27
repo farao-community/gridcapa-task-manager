@@ -1,4 +1,6 @@
 spring:
+  liquibase:
+    enabled: false
   application:
     name: task-manager
   sql:
