@@ -1,13 +1,6 @@
 spring:
-  application:
-    name: task-manager
   liquibase:
     change-log: classpath:/db/changelog-master.xml
-  datasource:
-    url: jdbc:h2:file:${HOME}/gridcapa/task-manager
-    driverClassName: org.h2.Driver
-    username: admin
-    password: admin
   jpa:
     properties:
       hibernate:
@@ -15,53 +8,7 @@ spring:
           default_storage: NORMALIZE_UTC
     hibernate:
       ddl-auto: validate
-  sql:
-    init:
-      mode: always
-  rabbitmq:
-    host: ${GRIDCAPA_RABBITMQ_HOST:localhost}
-    port: ${GRIDCAPA_RABBITMQ_PORT:5672}
-    username: ${GRIDCAPA_RABBITMQ_USERNAME:gridcapa}
-    password: ${GRIDCAPA_RABBITMQ_PASSWORD:gridcapa}
   cloud:
-    stream:
-      default:
-        group: task-manager
-      bindings:
-        consumeMinioEvent-in-0:
-          destination: gridcapa.minio.events
-        consumeTaskStatusUpdate-in-0:
-          destination: task-status-updated
-        consumeTaskEventUpdate-in-0:
-          destination: task-manager-logs-exchange
-          consumer:
-            batch-mode: true
-        task-updated:
-          destination: task-updated
-        task-status-updated:
-          destination: task-updated
-        task-input-updated:
-          destination: task-updated
-      rabbit:
-        default:
-          consumer:
-            auto-bind-dlq: true
-            max-attempts: 1
-        bindings:
-          consumeMinioEvent-in-0:
-            consumer:
-              exchange-type: fanout
-          consumeTaskEventUpdate-in-0:
-            consumer:
-              enable-batching: true
-              batch-size: 200
-              receive-timeout: 5000
-          task-status-updated:
-            producer:
-              routing-key-expression: '''status'''
-          task-input-updated:
-            producer:
-              routing-key-expression: '''input'''
     function:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
   http:
@@ -70,37 +17,9 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
 
-
 task-server:
   process:
-    tag: CSE_D2CC
     timezone: CET
-    inputs:
-      - CGM
-    optional-inputs:
-    outputs:
-      - CNE
-    enable-export-logs: false
-    manual-upload-base-path: CSE/D2CC
-  whitelist:
-    - http://minio:9000/
-
-minio-adapter:
-  bucket: ${GRIDCAPA_MINIO_BUCKET:gridcapa}
-  base-path: ${GRIDCAPA_MINIO_BASE_PATH:}
-  url: ${GRIDCAPA_MINIO_URL:http://localhost:9000}
-  access-key: ${GRIDCAPA_MINIO_ACCESS_KEY:gridcapa}
-  secret-key: ${GRIDCAPA_MINIO_SECRET_KEY:gridcapa}
-
-stomp:
-  allowed-origin: http://localhost,http://127.0.0.1
-  starting-ws-endpoint: /tasks/notify
-  notify: /task
-  receive-request: /app
-
-logback:
-  amqp:
-    exchange: task-manager-logs-exchange
 
 purge-task-events:
   cron: 0 0 12 * * *
