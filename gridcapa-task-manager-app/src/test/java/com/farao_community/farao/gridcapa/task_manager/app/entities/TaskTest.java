@@ -56,6 +56,7 @@ class TaskTest {
                 "cne-file",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -78,6 +79,7 @@ class TaskTest {
                 "ttc-file",
                 "output",
                 "TTC",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:20Z"));
@@ -95,6 +97,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -123,6 +126,7 @@ class TaskTest {
                 "CRAC-file",
                 "input",
                 "CRAC",
+                "documentIdCrac",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:20Z"));
@@ -146,6 +150,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -164,6 +169,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T22:20Z"));
@@ -184,6 +190,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -202,6 +209,7 @@ class TaskTest {
                 "other-cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T12:20Z"));
@@ -233,6 +241,7 @@ class TaskTest {
                 "cne-file",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -240,6 +249,7 @@ class TaskTest {
                 "ttc-file",
                 "output",
                 "TTC",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:20Z"));
@@ -265,6 +275,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -272,6 +283,7 @@ class TaskTest {
                 "other-cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T12:20Z"));
@@ -300,6 +312,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -307,6 +320,7 @@ class TaskTest {
                 "other-cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T12:20Z"));
@@ -314,6 +328,7 @@ class TaskTest {
                 "other-cgm-file-again",
                 "input",
                 "CGM",
+                "documentIdCgm3",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T14:42Z"));
@@ -344,6 +359,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -367,6 +383,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -388,6 +405,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -395,6 +413,7 @@ class TaskTest {
                 "other-cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T12:20Z"));
@@ -421,6 +440,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -428,6 +448,7 @@ class TaskTest {
                 "cne-file",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -444,6 +465,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -454,6 +476,7 @@ class TaskTest {
                 "glsk-file",
                 "input",
                 "GLSK",
+                "documentIdGlsk",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -468,6 +491,7 @@ class TaskTest {
                 "other-cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm2",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T22:20Z"));
@@ -486,6 +510,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -493,6 +518,7 @@ class TaskTest {
                 "cne-file",
                 "output",
                 "CNE",
+                null,
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
@@ -517,6 +543,7 @@ class TaskTest {
                 "cgm-file",
                 "input",
                 "CGM",
+                "documentIdCgm",
                 OffsetDateTime.parse("2021-10-11T00:00Z"),
                 OffsetDateTime.parse("2021-10-12T00:00Z"),
                 OffsetDateTime.parse("2021-10-11T10:18Z"));

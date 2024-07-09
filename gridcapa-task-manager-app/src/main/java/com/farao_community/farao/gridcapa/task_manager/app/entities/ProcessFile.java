@@ -45,6 +45,9 @@ public class ProcessFile implements Comparable<ProcessFile> {
     @Column(name = "file_type")
     private String fileType;
 
+    @Column(name = "document_id")
+    private String documentId;
+
     @Column(name = "starting_availability_date")
     private OffsetDateTime startingAvailabilityDate;
 
@@ -61,6 +64,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
     public ProcessFile(String fileObjectKey,
                        String fileGroup,
                        String fileType,
+                       String documentId,
                        OffsetDateTime startingAvailabilityDate,
                        OffsetDateTime endingAvailabilityDate,
                        OffsetDateTime lastModificationDate) {
@@ -68,6 +72,7 @@ public class ProcessFile implements Comparable<ProcessFile> {
         this.fileObjectKey = fileObjectKey;
         this.fileGroup = fileGroup;
         this.fileType = fileType;
+        this.documentId = documentId;
         this.startingAvailabilityDate = startingAvailabilityDate;
         this.endingAvailabilityDate = endingAvailabilityDate;
         this.lastModificationDate = lastModificationDate;
@@ -87,6 +92,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public String getFilename() {
         return FilenameUtils.getName(fileObjectKey);
+    }
+
+    public String getDocumentId() {
+        return documentId;
     }
 
     public OffsetDateTime getStartingAvailabilityDate() {
@@ -111,6 +120,10 @@ public class ProcessFile implements Comparable<ProcessFile> {
 
     public void setFileObjectKey(String fileObjectKey) {
         this.fileObjectKey = fileObjectKey;
+    }
+
+    public void setDocumentId(String documentId) {
+        this.documentId = documentId;
     }
 
     public boolean isInputFile() {

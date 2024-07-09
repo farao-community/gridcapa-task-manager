@@ -37,10 +37,10 @@ class TaskDtoTest {
 
     @Test
     void testConstructor() {
-        ProcessFileDto file1 = new ProcessFileDto("file1", null, null, "file1", null);
-        ProcessFileDto file2 = new ProcessFileDto("file2", null, null, "file2", null);
-        ProcessFileDto file3 = new ProcessFileDto("file3", null, null, "file3", null);
-        ProcessFileDto file4 = new ProcessFileDto("file4", null, null, "file4", null);
+        ProcessFileDto file1 = new ProcessFileDto("file1", null, null, "file1", null, null);
+        ProcessFileDto file2 = new ProcessFileDto("file2", null, null, "file2", null, null);
+        ProcessFileDto file3 = new ProcessFileDto("file3", null, null, "file3", null, null);
+        ProcessFileDto file4 = new ProcessFileDto("file4", null, null, "file4", null, null);
         ProcessEventDto event1 = new ProcessEventDto(null, null, "event1", null);
         ProcessEventDto event2 = new ProcessEventDto(null, null, "event2", null);
         ProcessRunDto run = new ProcessRunDto(null, null);
