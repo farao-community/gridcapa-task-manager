@@ -3,14 +3,12 @@ spring:
     enabled: false
   application:
     name: task-manager
-  sql:
-    init:
-      mode: never
   jpa:
     properties:
       hibernate:
         timezone:
           default_storage: NORMALIZE_UTC
+
 task-server:
   process:
     tag: CSE_D2CC
@@ -25,12 +23,13 @@ task-server:
     manual-upload-base-path: cse/d2cc
   whitelist:
     - http://fakeUrl
+
 minio-adapter:
-  bucket: gridcapa
-  base-path:
-  url: http://minio.url
+  bucket: bucket-for-tests
+  base-path: base/path/for/tests
   access-key: gridcapa
-  secret-key: gridcapa
+  secret-key: gridcapa-secret
+  url: https://minio.test/
 
 stomp:
   allowed-origin: http://localhost,http://127.0.0.1
