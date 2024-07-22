@@ -13,19 +13,27 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
 public class ProcessRunDto {
+    private final UUID id;
     private final OffsetDateTime executionDate;
     private final List<ProcessFileDto> inputs;
 
     @JsonCreator
-    public ProcessRunDto(@JsonProperty("executionDate") OffsetDateTime executionDate,
+    public ProcessRunDto(@JsonProperty("id") UUID id,
+                         @JsonProperty("executionDate") OffsetDateTime executionDate,
                          @JsonProperty("inputFiles") List<ProcessFileDto> inputFiles) {
+        this.id = id;
         this.executionDate = executionDate;
         this.inputs = inputFiles;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public OffsetDateTime getExecutionDate() {
