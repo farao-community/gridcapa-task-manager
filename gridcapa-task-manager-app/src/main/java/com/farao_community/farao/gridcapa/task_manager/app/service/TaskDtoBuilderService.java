@@ -115,7 +115,7 @@ public class TaskDtoBuilderService {
                 .flatMap(availableInput -> task.getAvailableInputs(availableInput)
                         .stream()
                         .map(this::createDtoFromEntity))
-                .toList();
+                .collect(Collectors.toList());
 
         List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
                 .map(input -> task.getInput(input)
@@ -123,6 +123,13 @@ public class TaskDtoBuilderService {
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
                 .toList();
         inputs.addAll(optionalInputs);
+
+        List<ProcessFileDto> availableOptionalInputs = properties.getProcess().getOptionalInputs().stream()
+                .flatMap(input -> task.getInput(input)
+                        .stream()
+                        .map(this::createDtoFromEntity))
+                .toList();
+        availableInputs.addAll(availableOptionalInputs);
 
         List<ProcessFileDto> outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
