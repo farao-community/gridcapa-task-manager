@@ -349,7 +349,6 @@ class MinioHandlerTest {
         assertTrue(result.contains(file2));
     }
 
-
     @Test
     void emptyWaitingListTest() {
 
