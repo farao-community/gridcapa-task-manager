@@ -6,7 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
 
     <!-- Include your changelogs here in the order you want them to be executed -->
-    <include file="/db/v5.10.0/v5.10.0-changelog.xml"/>
-    <include file="/db/v5.11.0/v5.11.0-changelog.xml"/>
+    <include file="/db/v5.11.0/add_document_id_to_process_file.xml"/>
 
 </databaseChangeLog>
