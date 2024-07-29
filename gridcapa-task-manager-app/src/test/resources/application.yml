@@ -17,6 +17,7 @@ task-server:
       - CGM
       - CRAC
     optional-inputs:
+      - OPTIONAL_INPUT
     outputs:
       - CNE
     enable-export-logs: true

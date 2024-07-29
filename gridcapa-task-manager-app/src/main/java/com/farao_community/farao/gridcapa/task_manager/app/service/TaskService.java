@@ -8,6 +8,7 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
@@ -225,6 +226,7 @@ public class TaskService {
     public Task addNewRunAndSaveTask(OffsetDateTime timestamp, List<ProcessFileDto> inputFileDtos) {
         final Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
         final List<ProcessFile> inputFiles = inputFileDtos.stream()
+                .filter(dto -> ProcessFileStatus.VALIDATED.equals(dto.getProcessFileStatus()))
                 .map(dto -> getProcessFileFromTaskMatchingDto(task, dto))
                 .toList();
         final ProcessRun processRun = new ProcessRun(inputFiles);

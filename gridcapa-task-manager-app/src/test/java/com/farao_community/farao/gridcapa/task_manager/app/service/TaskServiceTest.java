@@ -699,6 +699,29 @@ class TaskServiceTest {
         Assertions.assertThat(savedTask.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);
     }
 
+    @Test
+    void addNewRunAndSaveTaskTestWithOptionalEntries() {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        Task task = new Task();
+        ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
+        task.addProcessFile(processFile1);
+        ProcessFile processFile2 = new ProcessFile("file2", "input", "OPTIONAL_INPUT", "documentIdCrac", timestamp, timestamp, timestamp);
+        task.addProcessFile(processFile2);
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.save(task)).thenReturn(task);
+
+        Assertions.assertThat(task.getRunHistory()).isEmpty();
+
+        ProcessFileDto processFileDto1 = new ProcessFileDto("path/to/file1", "CGM", ProcessFileStatus.VALIDATED, "file1", "documentIdCgm", timestamp);
+        ProcessFileDto processFileDto2 = new ProcessFileDto("path/to/file2", "OPTIONAL_INPUT", ProcessFileStatus.NOT_PRESENT, "file2", "documentIdCrac", timestamp);
+        List<ProcessFileDto> inputFileDtos = List.of(processFileDto1, processFileDto2);
+
+        Task savedTask = taskService.addNewRunAndSaveTask(timestamp, inputFileDtos);
+
+        Assertions.assertThat(savedTask.getRunHistory()).hasSize(1);
+        Assertions.assertThat(savedTask.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1);
+    }
+
     @ParameterizedTest
     @EnumSource(value = FileEventType.class, names = {"AVAILABLE", "WAITING"})
     void removeUnavailableProcessFileFromTaskRunHistoryWithBadFileEventType(FileEventType fileEventType) {

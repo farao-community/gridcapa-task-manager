@@ -114,6 +114,15 @@ class TaskDtoBuilderServiceTest {
                 timestamp,
                 timestamp.plusHours(1),
                 timestamp);
+
+        ProcessFile processFileInput2 = new ProcessFile(
+                "optional-file",
+                "input",
+                "OPTIONAL_INPUT",
+                "documentIdOpt",
+                timestamp,
+                timestamp.plusHours(1),
+                timestamp);
         ProcessFile processFileOutput = new ProcessFile(
                 "cne-file",
                 "output",
@@ -128,6 +137,7 @@ class TaskDtoBuilderServiceTest {
         task.setStatus(status);
         task.addProcessEvent(timestamp, "info", "message", "serviceName");
         task.addProcessFile(processFileInput);
+        task.addProcessFile(processFileInput2);
         task.addProcessFile(processFileOutput);
         task.addProcessRun(new ProcessRun());
 
@@ -138,8 +148,8 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getStatus()).isEqualTo(status);
         Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
         Assertions.assertThat(taskDto.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(taskDto.getInputs()).hasSize(2);
-        Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
+        Assertions.assertThat(taskDto.getInputs()).hasSize(3);
+        Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(2);
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
         Assertions.assertThat(taskDto.getRunHistory()).hasSize(1);
     }
@@ -181,7 +191,7 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getStatus()).isEqualTo(status);
         Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
         Assertions.assertThat(taskDto.getProcessEvents()).isEmpty();
-        Assertions.assertThat(taskDto.getInputs()).hasSize(2);
+        Assertions.assertThat(taskDto.getInputs()).hasSize(3);
         Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
         Assertions.assertThat(taskDto.getRunHistory()).hasSize(1);
