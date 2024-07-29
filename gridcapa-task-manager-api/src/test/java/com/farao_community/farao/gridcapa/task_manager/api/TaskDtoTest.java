@@ -43,7 +43,8 @@ class TaskDtoTest {
         ProcessFileDto file4 = new ProcessFileDto("file4", null, null, "file4", null, null);
         ProcessEventDto event1 = new ProcessEventDto(null, null, "event1", null);
         ProcessEventDto event2 = new ProcessEventDto(null, null, "event2", null);
-        ProcessRunDto run = new ProcessRunDto(null, null);
+        UUID runId = UUID.randomUUID();
+        ProcessRunDto run = new ProcessRunDto(runId, null, null);
         TaskParameterDto parameter = new TaskParameterDto(null, null, null, null);
         UUID id = UUID.randomUUID();
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
