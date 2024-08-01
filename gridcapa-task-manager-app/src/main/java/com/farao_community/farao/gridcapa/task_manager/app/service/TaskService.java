@@ -235,7 +235,10 @@ public class TaskService {
     }
 
     private static ProcessFile getProcessFileFromTaskMatchingDto(Task task, ProcessFileDto processFileDto) {
-        return task.getAvailableInputs(processFileDto.getFileType()).stream()
+        return Stream.concat(
+                        task.getAvailableInputs(processFileDto.getFileType()).stream(),
+                        task.getInput(processFileDto.getFileType()).stream()
+                )
                 .filter(f -> f.getFilename().equals(processFileDto.getFilename()))
                 .findAny()
                 .orElseThrow(ProcessFileNotFoundException::new);
