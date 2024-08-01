@@ -28,6 +28,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -697,6 +698,31 @@ class TaskServiceTest {
 
         Assertions.assertThat(savedTask.getRunHistory()).hasSize(1);
         Assertions.assertThat(savedTask.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);
+    }
+
+    @Test
+    void addNewRunAndSaveTaskOkWithAvailableInputFilesNotInitializedCorrectly() {
+        OffsetDateTime timestamp = OffsetDateTime.now();
+        Task task = Mockito.mock(Task.class);
+        ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
+        Mockito.when(task.getInput("CGM")).thenReturn(Optional.of(processFile1));
+        Mockito.when(task.getAvailableInputs("CGM")).thenReturn(Set.of(processFile1));
+        ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
+        Mockito.when(task.getInput("CRAC")).thenReturn(Optional.of(processFile2));
+        Mockito.when(task.getAvailableInputs("CRAC")).thenReturn(Set.of());
+        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.save(task)).thenReturn(task);
+
+        ProcessFileDto processFileDto1 = new ProcessFileDto("path/to/file1", "CGM", ProcessFileStatus.VALIDATED, "file1", "documentIdCgm", timestamp);
+        ProcessFileDto processFileDto2 = new ProcessFileDto("path/to/file2", "CRAC", ProcessFileStatus.VALIDATED, "file2", "documentIdCrac", timestamp);
+        List<ProcessFileDto> inputFileDtos = List.of(processFileDto1, processFileDto2);
+
+        taskService.addNewRunAndSaveTask(timestamp, inputFileDtos);
+
+        ArgumentCaptor<ProcessRun> captor = ArgumentCaptor.forClass(ProcessRun.class);
+        Mockito.verify(task, Mockito.times(1)).addProcessRun(captor.capture());
+
+        Assertions.assertThat(captor.getValue().getInputFiles()).containsExactly(processFile1, processFile2);
     }
 
     @Test
