@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.repository;
 
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -38,6 +40,13 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             + "WHERE task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING "
             + "OR task.status = com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING")
     Set<Task> findAllRunningAndPending();
+
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processEvents JOIN FETCH task.processFiles " +
+            "WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp " +
+            "AND task.status IN :statuses")
+    Set<Task> findAllByTimestampBetweenAndStatusIn(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
+                                                   @Param("endingTimestamp") OffsetDateTime endingTimestamp,
+                                                   @Param("statuses") Collection<TaskStatus> statuses);
 
     @Query("SELECT task FROM Task task INNER JOIN task.processEvents")
     Set<Task> findAllWithSomeProcessEvent();

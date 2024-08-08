@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -335,6 +336,11 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
+        public Set<Task> findAllByTimestampBetweenAndStatusIn(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp, final Collection<TaskStatus> statuses) {
+            return findAllByTimestampBetween(startingTimestamp, endingTimestamp);
+        }
+
+        @Override
         public Set<Task> findAllWithSomeProcessEvent() {
             return null;
         }
@@ -435,6 +441,11 @@ class TaskDtoBuilderServiceTest {
         @Override
         public <S extends Task> List<S> saveAllAndFlush(Iterable<S> entities) {
             return null;
+        }
+
+        @Override
+        public void deleteInBatch(final Iterable<Task> entities) {
+            TaskRepository.super.deleteInBatch(entities);
         }
 
         @Override

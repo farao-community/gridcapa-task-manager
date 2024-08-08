@@ -6,19 +6,21 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskManagerTestUtil;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import io.minio.messages.Event;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -33,19 +35,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.ERROR;
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.NOT_CREATED;
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.READY;
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING;
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -98,6 +94,26 @@ class MinioHandlerTest {
     }
 
     @Test
+    void testUpdateOnRunningTask() {
+        final OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
+        final OffsetDateTime taskTimestampEnd = OffsetDateTime.parse("2021-09-30T22:00Z");
+        final Event event = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "documentIdCgm", "2021-09-30T21:00Z/2021-09-30T22:00Z");
+        final Task runningTask = new Task(taskTimestamp);
+        runningTask.setStatus(TaskStatus.RUNNING);
+        final ProcessFile pf = new ProcessFile("", "", "", "", taskTimestamp, taskTimestampEnd, taskTimestamp);
+        runningTask.addProcessFile(pf);
+        taskRepository.save(runningTask);
+        minioHandler.updateTasks(event);
+
+        final Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        Assertions.assertFalse(task.getProcessEvents().isEmpty());
+        final ProcessEvent processEvent = task.getProcessEvents().first();
+        Assertions.assertEquals("A new version of CGM is waiting for process to end to be available : 'cgm-test'", processEvent.getMessage());
+        Assertions.assertEquals("WARN", processEvent.getLevel());
+        Assertions.assertEquals("task-manager", processEvent.getServiceName());
+    }
+
+    @Test
     void testUpdateWithTwoFileTypesInTheSameTimestamp() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "documentIdCgm", "2021-09-30T21:00Z/2021-09-30T22:00Z");
@@ -122,7 +138,7 @@ class MinioHandlerTest {
 
     @ParameterizedTest
     @CsvSource({",0", "2021-09-30T22:00Z/2021-10-01T22:00Z,24"})
-    // First test with empty interval ; Second test with daily file
+        // First test with empty interval ; Second test with daily file
     void testTimeInterval(String interval, int expectedFileNumber) {
         Event event = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", interval);
 
@@ -331,36 +347,6 @@ class MinioHandlerTest {
         assertEquals(2, result.size());
         assertTrue(result.contains(file1));
         assertTrue(result.contains(file2));
-    }
-
-    @Test
-    void testAtLeastOneTaskIsRunningOrPendingNoTasks() {
-        Set<Task> listTaskWithStatusUpdate = Set.of();
-        assertFalse(minioHandler.isAnyTaskRunningOrPending(listTaskWithStatusUpdate));
-    }
-
-    @Test
-    void testAtLeastOneTaskIsRunningOrPendingAllTasksCompleted() {
-        Set<Task> tasks = new HashSet<>();
-        Task taskSuccess = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(SUCCESS);
-        Task taskError = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(ERROR);
-        tasks.add(taskSuccess);
-        tasks.add(taskError);
-        assertFalse(minioHandler.isAnyTaskRunningOrPending(tasks));
-    }
-
-    @Test
-    void testAtLeastOneTaskIsRunningOrPendingSomeTasksRunningOrPending() {
-        Task taskSuccess = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(SUCCESS);
-        Task taskError = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(ERROR);
-        Task taskRunning = new Task(OffsetDateTime.now());
-        taskSuccess.setStatus(RUNNING);
-        Set<Task> tasks = new HashSet<>(Arrays.asList(taskError, taskSuccess, taskRunning));
-        assertTrue(minioHandler.isAnyTaskRunningOrPending(tasks));
     }
 
     @Test
