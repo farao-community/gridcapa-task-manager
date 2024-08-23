@@ -588,7 +588,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCne);
         task.addProcessRun(processRun);
         task.setStatus(TaskStatus.SUCCESS);
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        Mockito.when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCne, processFileGlsk);

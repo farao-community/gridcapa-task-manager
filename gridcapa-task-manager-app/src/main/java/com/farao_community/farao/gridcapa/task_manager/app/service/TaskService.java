@@ -30,8 +30,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -148,40 +150,72 @@ public class TaskService {
     // PROCESS FILES MANAGEMENT //
     //////////////////////////////
 
-    public Set<TaskWithStatusUpdate> addProcessFileToTasks(ProcessFile savedProcessFile, FileEventType fileEventType, boolean isInput, boolean withStatusUpdate) {
-        Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = Stream.iterate(savedProcessFile.getStartingAvailabilityDate(), time -> time.plusHours(1))
-                .limit(ChronoUnit.HOURS.between(savedProcessFile.getStartingAvailabilityDate(), savedProcessFile.getEndingAvailabilityDate()))
-                .parallel()
-                .map(this::getTaskWithStatusUpdate) //by default statusUpdated false except if task is created
-                .collect(Collectors.toSet());
+    //TODO test performance
+    public Set<TaskWithStatusUpdate> addProcessFileToTasks(final ProcessFile savedProcessFile,
+                                                           final FileEventType fileEventType,
+                                                           final boolean isInput,
+                                                           final boolean withStatusUpdate) {
+        final OffsetDateTime start = savedProcessFile.getStartingAvailabilityDate();
+        final OffsetDateTime end = savedProcessFile.getEndingAvailabilityDate();
+        final Set<TaskWithStatusUpdate> allTasks = new HashSet<>();
 
-        for (TaskWithStatusUpdate taskWithStatusUpdate : taskWithStatusUpdateSet) {
-            Task task = taskWithStatusUpdate.getTask();
-            addFileEventToTask(task, fileEventType, savedProcessFile);
-            if (isInput) {
-                removeUnavailableProcessFileFromTaskRunHistory(savedProcessFile, task, fileEventType);
-            }
-            task.addProcessFile(savedProcessFile);
-            if (withStatusUpdate && !taskWithStatusUpdate.isStatusUpdated() && isInput) {
-                //if taskWithStatusUpdate is already false and the process file of type input, we need to check if the status should be updated
-                boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
+        //Deal with existing tasks in database
+        final Map<OffsetDateTime, TaskWithStatusUpdate> existingTasksInDatabase = taskRepository.findAllByTimestampBetween(start, end)
+                .stream()
+                .collect(Collectors.toMap(Task::getTimestamp, task -> new TaskWithStatusUpdate(task, false)));
+
+        existingTasksInDatabase.values().forEach(taskWithStatusUpdate -> {
+            applyProcessFileToTask(savedProcessFile, fileEventType, isInput, taskWithStatusUpdate);
+            if (withStatusUpdate && isInput) {
+                final Task task = taskWithStatusUpdate.getTask();
+                final boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
                 taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
+
                 if (statusUpdateDueToFileArrival) {
-                    LOGGER.info("Update task status of task with timestamp {} when processFile {} arrived to status {}", task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
+                    LOGGER.info("Update task status of task with timestamp {} when processFile {} arrived to status {}",
+                            task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
                 }
             }
+            allTasks.add(taskWithStatusUpdate);
+        });
+
+        //Deal with missing tasks
+        final List<Task> tasksToSave = new ArrayList<>();
+        final Set<TaskWithStatusUpdate> newTasksWithStatusUpdate = new HashSet<>();
+
+        Stream.iterate(start, time -> time.plusHours(1))
+                .limit(ChronoUnit.HOURS.between(start, end))
+                .filter(timestamp -> !existingTasksInDatabase.containsKey(timestamp))
+                .forEach(timestamp -> {
+                    final Task newTask = new Task(timestamp);
+                    final TaskWithStatusUpdate newTaskWithStatusUpdate = new TaskWithStatusUpdate(newTask, true);
+                    tasksToSave.add(newTask);
+                    newTasksWithStatusUpdate.add(newTaskWithStatusUpdate);
+                });
+        //Tasks must be saved before adding file/processEvent to it to ensure foreign key constraint is respected
+        taskRepository.saveAll(tasksToSave);
+        newTasksWithStatusUpdate.forEach(taskWithStatusUpdate -> {
+                applyProcessFileToTask(savedProcessFile, fileEventType, isInput, taskWithStatusUpdate);
+                allTasks.add(taskWithStatusUpdate);
         }
-        return taskWithStatusUpdateSet;
+        );
+        return allTasks;
     }
 
-    private TaskWithStatusUpdate getTaskWithStatusUpdate(OffsetDateTime timestamp) {
-        return taskRepository.findByTimestamp(timestamp)
-                .map(task -> new TaskWithStatusUpdate(task, false))
-                .orElseGet(() -> new TaskWithStatusUpdate(taskRepository.save(new Task(timestamp)), true));
+    private void applyProcessFileToTask(final ProcessFile savedProcessFile,
+                                        final FileEventType fileEventType,
+                                        final boolean isInput,
+                                        final TaskWithStatusUpdate taskWithStatusUpdate) {
+        final Task task = taskWithStatusUpdate.getTask();
+        addFileEventToTask(task, fileEventType, savedProcessFile);
+        if (isInput) {
+            removeUnavailableProcessFileFromTaskRunHistory(savedProcessFile, task, fileEventType);
+        }
+        task.addProcessFile(savedProcessFile);
     }
 
     public Set<TaskWithStatusUpdate> removeProcessFileFromTasks(ProcessFile processFile) {
-        return taskRepository.findAllByTimestampBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
+        return taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(processFile.getStartingAvailabilityDate(), processFile.getEndingAvailabilityDate())
                 .parallelStream()
                 .map(task -> {
                     removeUnavailableProcessFileFromTaskRunHistory(processFile, task, FileEventType.DELETED);

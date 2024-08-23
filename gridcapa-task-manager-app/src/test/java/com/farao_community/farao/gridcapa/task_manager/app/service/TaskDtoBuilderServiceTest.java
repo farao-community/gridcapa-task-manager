@@ -315,8 +315,13 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<Task> findAllByTimestampBetween(final OffsetDateTime startingTimestamp,
-                                                   final OffsetDateTime endingTimestamp) {
+        public Set<Task> findAllByTimestampWithAtLeastOneProcessFileBetween(final OffsetDateTime startingTimestamp,
+                                                                            final OffsetDateTime endingTimestamp) {
+            return Set.of();
+        }
+
+        @Override
+        public Set<Task> findAllByTimestampBetween(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
             return Set.of();
         }
 
@@ -332,7 +337,7 @@ class TaskDtoBuilderServiceTest {
 
         @Override
         public Set<Task> findAllByTimestampBetweenAndStatusIn(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp, final Collection<TaskStatus> statuses) {
-            return findAllByTimestampBetween(startingTimestamp, endingTimestamp);
+            return findAllByTimestampWithAtLeastOneProcessFileBetween(startingTimestamp, endingTimestamp);
         }
 
         @Override
