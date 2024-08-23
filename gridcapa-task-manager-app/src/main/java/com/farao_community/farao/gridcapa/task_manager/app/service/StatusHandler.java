@@ -53,7 +53,7 @@ public class StatusHandler {
 
     public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
         synchronized (TASK_MANAGER_LOCK) { // use same lock to avoid parallel handling between status update and minioHandler
-            Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(taskStatusUpdate.getId());
+            Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
                 LOGGER.info("Receiving task status update for task id {} with status {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());

@@ -305,7 +305,7 @@ class TaskDtoBuilderServiceTest {
     private class TaskRepositoryMock implements TaskRepository {
 
         @Override
-        public Optional<Task> findByIdWithProcessFiles(UUID id) {
+        public Optional<Task> findByIdAndFetchProcessFiles(UUID id) {
             return Optional.empty();
         }
 
@@ -336,7 +336,7 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<Task> findAllWithSomeProcessEvent() {
+        public Set<Task> findAllWithAtLeastOneProcessEvent() {
             return null;
         }
 
