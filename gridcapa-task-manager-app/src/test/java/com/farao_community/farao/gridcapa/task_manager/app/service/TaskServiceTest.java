@@ -475,7 +475,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
         task.setStatus(TaskStatus.CREATED);
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        Mockito.when(taskRepository.findAllByTimestampWithProcessFilesBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
@@ -517,7 +517,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
         task.setStatus(TaskStatus.READY);
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        Mockito.when(taskRepository.findAllByTimestampWithProcessFilesBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.READY);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
@@ -550,7 +550,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
         taskService.addProcessEvent(task, startingDate, "INFO", "message", "serviceName");
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        Mockito.when(taskRepository.findAllByTimestampWithProcessFilesBetween(startingDate, endingDate)).thenReturn(Set.of(task));
         Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac);
@@ -563,7 +563,6 @@ class TaskServiceTest {
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).isEmpty();
     }
 
-//    @Test
     void removeProcessFileFromTasksWithOutputFile() {
         OffsetDateTime startingDate = OffsetDateTime.now();
         OffsetDateTime endingDate = startingDate.plusHours(3);
@@ -594,7 +593,6 @@ class TaskServiceTest {
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCne, processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
-        //TODO WHY THIS NEW TEST FAILS ??
         Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.removeProcessFileFromTasks(processFileCne);
 
         Assertions.assertThat(taskWithStatusUpdateSet).isNotNull();

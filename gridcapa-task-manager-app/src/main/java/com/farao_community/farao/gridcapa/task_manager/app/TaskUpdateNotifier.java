@@ -46,7 +46,7 @@ public class TaskUpdateNotifier {
 
     public void notify(Task task, boolean withStatusUpdate, boolean withEventsUpdate, boolean withNewInput) {
         String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        TaskDto taskDtoNoLogs = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
+        TaskDto taskDtoNoLogs = taskDtoBuilderService.createDtoFromEntityWithoutProcessEvents(task);
         streamBridge.send(bindingName, taskDtoNoLogs);
         if (withNewInput) {
             streamBridge.send(TASK_INPUT_UPDATED_BINDING, taskDtoNoLogs);

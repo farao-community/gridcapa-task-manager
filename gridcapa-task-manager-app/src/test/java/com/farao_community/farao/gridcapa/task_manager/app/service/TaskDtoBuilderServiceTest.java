@@ -81,7 +81,7 @@ class TaskDtoBuilderServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
         Mockito.when(taskRepository.findByTimestamp(timestamp)).thenReturn(Optional.empty());
 
-        TaskDto taskDto = taskDtoBuilderService.getTaskDto(timestamp);
+        TaskDto taskDto = taskDtoBuilderService.getTaskDtoWithProcessEvents(timestamp);
 
         Assertions.assertThat(taskDto).isNotNull();
         Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
@@ -95,7 +95,7 @@ class TaskDtoBuilderServiceTest {
         task.setStatus(TaskStatus.READY);
         Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(timestamp)).thenReturn(Optional.of(task));
 
-        TaskDto taskDto = taskDtoBuilderService.getTaskDto(timestamp);
+        TaskDto taskDto = taskDtoBuilderService.getTaskDtoWithProcessEvents(timestamp);
 
         Assertions.assertThat(taskDto).isNotNull();
         Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
@@ -182,7 +182,7 @@ class TaskDtoBuilderServiceTest {
         task.addProcessFile(processFileOutput);
         task.addProcessRun(new ProcessRun());
 
-        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntityNoLogs(task);
+        TaskDto taskDto = taskDtoBuilderService.createDtoFromEntityWithoutProcessEvents(task);
 
         Assertions.assertThat(taskDto).isNotNull();
         Assertions.assertThat(taskDto.getId()).isEqualTo(uuid);
