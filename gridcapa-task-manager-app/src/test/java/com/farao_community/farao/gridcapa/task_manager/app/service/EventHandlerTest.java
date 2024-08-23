@@ -7,6 +7,7 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
@@ -21,7 +22,6 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 class EventHandlerTest {
 
-    @Autowired
+    @MockBean
     private TaskUpdateNotifier taskUpdateNotifier;
 
     @MockBean
@@ -47,9 +47,13 @@ class EventHandlerTest {
     @Autowired
     private TaskRepository taskRepository;
 
+    @Autowired
+    private ProcessEventRepository processEventRepository;
+
     @AfterEach
     void cleanDatabase() {
         taskRepository.deleteAll();
+        processEventRepository.deleteAll();
     }
 
     @Test
@@ -83,9 +87,9 @@ class EventHandlerTest {
             }""";
         List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(1, updatedTask.getProcessEvents().size());
-        ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
+        final List<ProcessEvent> processEvents = processEventRepository.findAll();
+        assertEquals(1, processEvents.size());
+        ProcessEvent event = processEvents.get(0);
         assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
         assertEquals("INFO", event.getLevel());
         assertEquals("Hello from backend", event.getMessage());
@@ -108,9 +112,9 @@ class EventHandlerTest {
             }""";
         List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(1, updatedTask.getProcessEvents().size());
-        ProcessEvent event = updatedTask.getProcessEvents().iterator().next();
+        final List<ProcessEvent> processEvents = processEventRepository.findAll();
+        assertEquals(1, processEvents.size());
+        ProcessEvent event = processEvents.get(0);
         assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
         assertEquals("INFO", event.getLevel());
         assertEquals("[STEP-1] : Hello from backend", event.getMessage());
@@ -141,15 +145,14 @@ class EventHandlerTest {
             }""";
         List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent1.getBytes(), logEvent2.getBytes()));
         eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
-        Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(2, updatedTask.getProcessEvents().size());
-        Iterator<ProcessEvent> it = updatedTask.getProcessEvents().iterator();
-        ProcessEvent event1 = it.next();
-        ProcessEvent event2 = it.next();
+        final List<ProcessEvent> processEvents = processEventRepository.findAll();
+        assertEquals(2, processEvents.size());
+        ProcessEvent event0 = processEvents.get(0);
+        ProcessEvent event1 = processEvents.get(1);
 
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event2.getTimestamp());
-        assertEquals("INFO", event2.getLevel());
-        assertEquals("[STEP-1] : Hello from backend", event2.getMessage());
+        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event0.getTimestamp());
+        assertEquals("INFO", event0.getLevel());
+        assertEquals("[STEP-1] : Hello from backend", event0.getMessage());
 
         assertEquals(OffsetDateTime.parse("2021-12-30T16:31:34.030Z"), event1.getTimestamp());
         assertEquals("WARNING", event1.getLevel());

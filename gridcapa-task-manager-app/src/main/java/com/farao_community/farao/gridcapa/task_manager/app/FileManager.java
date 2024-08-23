@@ -59,7 +59,7 @@ public class FileManager {
     }
 
     public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
-        Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
             Task task = optTask.get();
             return getZippedFileGroup(task, fileGroup);
@@ -79,7 +79,7 @@ public class FileManager {
     }
 
     public ByteArrayOutputStream getLogs(OffsetDateTime timestamp) throws IOException {
-        Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
             Task task = optTask.get();
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -93,7 +93,7 @@ public class FileManager {
     }
 
     public ByteArrayOutputStream getRaoRunnerAppLogs(OffsetDateTime timestamp) throws IOException {
-        Optional<Task> optTask = taskRepository.findByTimestamp(timestamp);
+        Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
             Task task = optTask.get();
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();

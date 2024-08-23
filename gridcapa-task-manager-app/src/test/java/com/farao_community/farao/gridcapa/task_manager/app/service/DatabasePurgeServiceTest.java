@@ -6,8 +6,10 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,6 +33,9 @@ class DatabasePurgeServiceTest {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private ProcessEventRepository processEventRepository;
 
     @MockBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
@@ -91,13 +96,18 @@ class DatabasePurgeServiceTest {
         Flux<List<byte[]>> logEventBytesFlux = Flux.fromStream(Stream.of(logEventBytes));
         eventHandler.consumeTaskEventUpdate().accept(logEventBytesFlux);
 
-        assertEquals(2, taskRepository.findByTimestamp(offsetDateTimeTask1).orElseThrow().getProcessEvents().size());
-        assertEquals(2, taskRepository.findByTimestamp(offsetDateTimeTask2).orElseThrow().getProcessEvents().size());
+        final List<ProcessEvent> processEventsListBeforePurge = processEventRepository.findAll();
+        final List<ProcessEvent> task1ProcessEventBeforePurge = processEventsListBeforePurge.stream().filter(pe -> pe.getTask().getId().equals(task1.getId())).toList();
+        final List<ProcessEvent> task2ProcessEventBeforePurge = processEventsListBeforePurge.stream().filter(pe -> pe.getTask().getId().equals(task2.getId())).toList();
+        assertEquals(2, task1ProcessEventBeforePurge.size());
+        assertEquals(2, task2ProcessEventBeforePurge.size());
 
         databasePurgeService.scheduledDatabaseTaskEventsPurge();
-
-        assertEquals(0, taskRepository.findByTimestamp(offsetDateTimeTask1).orElseThrow().getProcessEvents().size());
-        assertEquals(1, taskRepository.findByTimestamp(offsetDateTimeTask2).orElseThrow().getProcessEvents().size());
-        assertEquals(1, taskRepository.findAllWithSomeProcessEvent().size());
+        final List<ProcessEvent> processEventsListAfterPurge = processEventRepository.findAll();
+        final List<ProcessEvent> task1ProcessEventAfterPurge = processEventsListAfterPurge.stream().filter(pe -> pe.getTask().getId().equals(task1.getId())).toList();
+        final List<ProcessEvent> task2ProcessEventAfterPurge = processEventsListAfterPurge.stream().filter(pe -> pe.getTask().getId().equals(task2.getId())).toList();
+        assertEquals(0, task1ProcessEventAfterPurge.size());
+        assertEquals(1, task2ProcessEventAfterPurge.size());
+        assertEquals(1, processEventsListAfterPurge.size());
     }
 }

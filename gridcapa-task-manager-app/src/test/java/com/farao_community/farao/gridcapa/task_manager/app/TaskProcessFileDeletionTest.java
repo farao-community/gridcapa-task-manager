@@ -9,6 +9,7 @@ package com.farao_community.farao.gridcapa.task_manager.app;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.service.MinioHandler;
@@ -44,6 +45,9 @@ class TaskProcessFileDeletionTest {
 
     @Autowired
     private ProcessFileRepository processFileRepository;
+
+    @MockBean
+    private ProcessEventRepository processEventRepository;
 
     @Autowired
     private MinioHandler minioHandler;

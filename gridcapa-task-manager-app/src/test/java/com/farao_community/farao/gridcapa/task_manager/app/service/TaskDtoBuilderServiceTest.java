@@ -93,7 +93,7 @@ class TaskDtoBuilderServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-10-11T10:18Z");
         Task task = new Task(timestamp);
         task.setStatus(TaskStatus.READY);
-        Mockito.when(taskRepository.findByTimestamp(timestamp)).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(timestamp)).thenReturn(Optional.of(task));
 
         TaskDto taskDto = taskDtoBuilderService.getTaskDto(timestamp);
 
@@ -136,7 +136,6 @@ class TaskDtoBuilderServiceTest {
         Task task = new Task(timestamp);
         task.setId(uuid);
         task.setStatus(status);
-        task.addProcessEvent(timestamp, "info", "message", "serviceName");
         task.addProcessFile(processFileInput);
         task.addProcessFile(processFileInput2);
         task.addProcessFile(processFileOutput);
@@ -148,7 +147,6 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getId()).isEqualTo(uuid);
         Assertions.assertThat(taskDto.getStatus()).isEqualTo(status);
         Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
-        Assertions.assertThat(taskDto.getProcessEvents()).hasSize(1);
         Assertions.assertThat(taskDto.getInputs()).hasSize(3);
         Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(2);
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
@@ -180,7 +178,6 @@ class TaskDtoBuilderServiceTest {
         Task task = new Task(timestamp);
         task.setId(uuid);
         task.setStatus(status);
-        task.addProcessEvent(timestamp, "info", "message", "serviceName");
         task.addProcessFile(processFileInput);
         task.addProcessFile(processFileOutput);
         task.addProcessRun(new ProcessRun());
@@ -191,7 +188,6 @@ class TaskDtoBuilderServiceTest {
         Assertions.assertThat(taskDto.getId()).isEqualTo(uuid);
         Assertions.assertThat(taskDto.getStatus()).isEqualTo(status);
         Assertions.assertThat(taskDto.getTimestamp()).isEqualTo(timestamp);
-        Assertions.assertThat(taskDto.getProcessEvents()).isEmpty();
         Assertions.assertThat(taskDto.getInputs()).hasSize(3);
         Assertions.assertThat(taskDto.getAvailableInputs()).hasSize(1);
         Assertions.assertThat(taskDto.getOutputs()).hasSize(1);
@@ -319,15 +315,14 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<Task> findAllByTimestampBetween(OffsetDateTime startingTimestamp, OffsetDateTime endingTimestamp) {
-            Set<Task> tasks = new HashSet<>();
-            OffsetDateTime time = startingTimestamp;
-            while (time.isBefore(endingTimestamp)) {
-                Task task = Mockito.mock(Task.class);
-                Mockito.when(task.getTimestamp()).thenReturn(time);
-                tasks.add(task);
-            }
-            return tasks;
+        public Set<Task> findAllByTimestampBetween(final OffsetDateTime startingTimestamp,
+                                                   final OffsetDateTime endingTimestamp) {
+            return Set.of();
+        }
+
+        @Override
+        public Optional<Task> findByTimestampAndFetchProcessEvents(final OffsetDateTime timestamp) {
+            return findByTimestamp(timestamp);
         }
 
         @Override

@@ -16,10 +16,12 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.FileRemovalStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
@@ -47,13 +50,17 @@ public class TaskService {
 
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
+    private final ProcessEventRepository processEventRepository;
 
     @Value("${spring.application.name}")
     private String serviceName;
 
-    public TaskService(TaskManagerConfigurationProperties taskManagerConfigurationProperties, TaskRepository taskRepository) {
+    public TaskService(TaskManagerConfigurationProperties taskManagerConfigurationProperties,
+                       TaskRepository taskRepository,
+                       ProcessEventRepository processEventRepository) {
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.taskRepository = taskRepository;
+        this.processEventRepository = processEventRepository;
     }
 
     ////////////////////////////
@@ -96,7 +103,7 @@ public class TaskService {
         if (optionalEventPrefix.isPresent()) {
             message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
         }
-        task.addProcessEvent(offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
+        addProcessEvent(task, offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
     }
 
     void addFileEventToTask(Task task, FileEventType fileEventType, ProcessFile processFile) {
@@ -107,7 +114,7 @@ public class TaskService {
         final boolean isManualUpload = processFile.getFileObjectKey().contains("MANUAL_UPLOAD");
         final String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename(), isManualUpload);
         OffsetDateTime now = OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
-        task.addProcessEvent(now, logLevel, message, serviceName);
+        addProcessEvent(task, now, logLevel, message, serviceName);
     }
 
     private static String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName, boolean isManualUpload) {
@@ -131,6 +138,13 @@ public class TaskService {
         }
     }
 
+    void addProcessEvent(final Task task,
+                         final OffsetDateTime timestamp,
+                         final String level,
+                         final String message,
+                         final String serviceName) {
+        processEventRepository.save(new ProcessEvent(task, timestamp, level, message, serviceName));
+    }
     //////////////////////////////
     // PROCESS FILES MANAGEMENT //
     //////////////////////////////
@@ -153,7 +167,9 @@ public class TaskService {
                 //if taskWithStatusUpdate is already false and the process file of type input, we need to check if the status should be updated
                 boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
                 taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
-                LOGGER.info("Update task status when processFile {} arrived to status {}", savedProcessFile.getFilename(), task.getStatus());
+                if (statusUpdateDueToFileArrival) {
+                    LOGGER.info("Update task status of task {} when processFile {} arrived to status {}", task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
+                }
             }
         }
         return taskWithStatusUpdateSet;
@@ -176,7 +192,7 @@ public class TaskService {
                         statusUpdated = checkAndUpdateTaskStatus(task, fileRemovalStatus.fileSelectionUpdated());
                     }
                     if (task.getProcessFiles().isEmpty()) {
-                        task.getProcessEvents().clear();
+                        processEventRepository.deleteByTask(task);
                     } else {
                         addFileEventToTask(task, FileEventType.DELETED, processFile);
                     }
@@ -202,7 +218,9 @@ public class TaskService {
 
         String message = String.format("Manual selection of another version of %s : %s", filetype, filename);
         OffsetDateTime now = OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
-        task.addProcessEvent(now, "INFO", message, serviceName);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LOGGER.info("Manual selection for timestamp {} of another version of {} : {}", timestamp.format(formatter), filetype, filename);
+        addProcessEvent(task, now, "INFO", message, serviceName);
 
         boolean doesStatusNeedReset = doesStatusNeedReset(task.getStatus());
         if (doesStatusNeedReset) {

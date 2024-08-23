@@ -52,8 +52,14 @@ public class TaskDtoBuilderService {
     }
 
     public TaskDto getTaskDto(OffsetDateTime timestamp) {
-        return taskRepository.findByTimestamp(timestamp)
+        return taskRepository.findByTimestampAndFetchProcessEvents(timestamp)
                 .map(this::createDtoFromEntity)
+                .orElse(getEmptyTask(timestamp));
+    }
+
+    public TaskDto getTaskDtoWithoutLogs(OffsetDateTime timestamp) {
+        return taskRepository.findByTimestamp(timestamp)
+                .map(this::createDtoFromEntityNoLogs)
                 .orElse(getEmptyTask(timestamp));
     }
 
@@ -76,7 +82,7 @@ public class TaskDtoBuilderService {
         }
 
         tasks.stream()
-                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .map(this::createDtoFromEntityNoLogs)
                 .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
         return taskMap.values().stream().toList();
@@ -84,7 +90,7 @@ public class TaskDtoBuilderService {
 
     public List<TaskDto> getListRunningTasksDto() {
         return taskRepository.findAllRunningAndPending().stream()
-                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .map(this::createDtoFromEntityNoLogs)
                 .toList();
     }
 

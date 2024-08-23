@@ -14,6 +14,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFileMinio;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -35,7 +36,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
@@ -67,6 +67,9 @@ class MinioHandlerTest {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private ProcessEventRepository processEventRepository;
 
     @Autowired
     private MinioHandler minioHandler;
@@ -105,9 +108,7 @@ class MinioHandlerTest {
         taskRepository.save(runningTask);
         minioHandler.updateTasks(event);
 
-        final Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        Assertions.assertFalse(task.getProcessEvents().isEmpty());
-        final ProcessEvent processEvent = task.getProcessEvents().first();
+        final ProcessEvent processEvent = processEventRepository.findAll().get(0);
         Assertions.assertEquals("A new version of CGM is waiting for process to end to be available : 'cgm-test'", processEvent.getMessage());
         Assertions.assertEquals("WARN", processEvent.getLevel());
         Assertions.assertEquals("task-manager", processEvent.getServiceName());
@@ -174,42 +175,38 @@ class MinioHandlerTest {
 
     @Test
     void testCreationEventsForTwoFilesWithDifferentTypesAndSameTs() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         Event eventCrac = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CRAC", "CSE/D2CC/CRACs/crac-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         minioHandler.updateTasks(eventCrac);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(2, task.getProcessEvents().size());
-        Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
-        ProcessEvent event = processEventIterator.next();
-        assertEquals("INFO", event.getLevel());
-        assertEquals("A new version of CRAC is available : 'crac-test'", event.getMessage());
-        event = processEventIterator.next();
+        final List<ProcessEvent> processEvents = processEventRepository.findAll();
+        assertEquals(2, processEvents.size());
+        ProcessEvent event = processEvents.get(0);
         assertEquals("INFO", event.getLevel());
         assertEquals("A new version of CGM is available : 'cgm-test'", event.getMessage());
+        event = processEvents.get(1);
+        assertEquals("INFO", event.getLevel());
+        assertEquals("A new version of CRAC is available : 'crac-test'", event.getMessage());
     }
 
     @Test
     void testUpdateEventsForTwoFilesWithSameTypeAndSameTs() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T21:00Z");
         Event eventCgm = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
         Event eventCgmNew = TaskManagerTestUtil.createEvent("CSE_D2CC", INPUT_FILE_GROUP_VALUE, "CGM", "CSE/D2CC/CGMs/cgm-new-test", "2021-09-30T21:00Z/2021-09-30T22:00Z");
 
         minioHandler.updateTasks(eventCgm);
         minioHandler.updateTasks(eventCgmNew);
 
-        Task task = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(2, task.getProcessEvents().size());
-        Iterator<ProcessEvent> processEventIterator = task.getProcessEvents().iterator();
-        ProcessEvent event1 = processEventIterator.next();
-        ProcessEvent event2 = processEventIterator.next();
-        assertTrue(event2.getTimestamp().isBefore(event1.getTimestamp()));
+        final List<ProcessEvent> processEvents = processEventRepository.findAll();
+        assertEquals(2, processEvents.size());
+        ProcessEvent event1 = processEvents.get(1);
+        ProcessEvent event0 = processEvents.get(0);
+        assertTrue(event0.getTimestamp().isBefore(event1.getTimestamp()));
         assertEquals("INFO", event1.getLevel());
-        assertEquals("INFO", event2.getLevel());
-        assertEquals("A new version of CGM is available : 'cgm-test'", event2.getMessage());
+        assertEquals("INFO", event0.getLevel());
+        assertEquals("A new version of CGM is available : 'cgm-test'", event0.getMessage());
         assertEquals("A new version of CGM is available : 'cgm-new-test'", event1.getMessage());
     }
 
@@ -217,8 +214,6 @@ class MinioHandlerTest {
     void testDeletionEventsOfTaskWithTwoDifferentFileTypes() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z").withOffsetSameInstant(ZoneOffset.UTC);
         Task task = new Task(taskTimestamp);
-
-        task.addProcessEvent(OffsetDateTime.now(), "INFO", "CGM available", "task-manager");
         final ProcessFile processFileCgm = new ProcessFile(
                 "CSE/D2CC/CGMs/cgm-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
@@ -228,8 +223,6 @@ class MinioHandlerTest {
                 OffsetDateTime.parse("2021-10-01T22:00Z"),
                 OffsetDateTime.now());
         task.addProcessFile(processFileCgm);
-
-        task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available", "task-manager");
         final ProcessFile processFileCrac = new ProcessFile(
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,
@@ -246,10 +239,9 @@ class MinioHandlerTest {
         minioHandler.removeProcessFile(eventCracDeletion);
 
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
-        assertEquals(3, updatedTask.getProcessEvents().size());
-
-        Iterator<ProcessEvent> processEventIterator = updatedTask.getProcessEvents().iterator();
-        ProcessEvent event = processEventIterator.next();
+        final List<ProcessEvent> processEvents = processEventRepository.findAll();
+        assertEquals(1, processEvents.size());
+        ProcessEvent event = processEvents.get(0);
         assertEquals("The CRAC : 'crac-test' is deleted", event.getMessage());
         assertEquals(1, updatedTask.getProcessFiles().size());
     }
@@ -258,7 +250,6 @@ class MinioHandlerTest {
     void testDeletionEventsWithTaskDeletion() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
         Task task = new Task(taskTimestamp);
-        task.addProcessEvent(OffsetDateTime.now(), "INFO", "Crac available", "task-manager");
         final ProcessFile processFileCrac = new ProcessFile(
                 "CSE/D2CC/CRACs/crac-test",
                 MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE,

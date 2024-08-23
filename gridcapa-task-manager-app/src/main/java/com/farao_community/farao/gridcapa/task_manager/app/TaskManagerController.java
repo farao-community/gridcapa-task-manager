@@ -96,7 +96,7 @@ public class TaskManagerController {
             return ResponseEntity.badRequest().build();
         }
         Optional<Task> optTask = statusHandler.handleTaskStatusUpdate(OffsetDateTime.parse(timestamp), taskStatus);
-        return optTask.map(task -> ResponseEntity.ok(builder.createDtoFromEntity(task)))
+        return optTask.map(task -> ResponseEntity.ok(builder.createDtoFromEntityNoLogs(task)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -105,7 +105,7 @@ public class TaskManagerController {
         try {
             synchronized (TASK_MANAGER_LOCK) {
                 Task task = taskService.addNewRunAndSaveTask(OffsetDateTime.parse(timestamp), inputFiles);
-                return ResponseEntity.ok(builder.createDtoFromEntity(task));
+                return ResponseEntity.ok(builder.createDtoFromEntityNoLogs(task));
             }
         } catch (final TaskNotFoundException notFoundException) {
             return ResponseEntity.notFound().build();
@@ -154,7 +154,7 @@ public class TaskManagerController {
         Optional<Task> optTask = Optional.empty();
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(timestamp);
 
-        TaskDto taskDto = builder.getTaskDto(offsetDateTime);
+        TaskDto taskDto = builder.getTaskDtoWithoutLogs(offsetDateTime);
         TaskStatus taskStatus = taskDto.getStatus();
         if (taskStatus == TaskStatus.SUCCESS || taskStatus == TaskStatus.ERROR) {
             optTask = statusHandler.handleTaskStatusUpdate(offsetDateTime, taskStatus);
@@ -191,7 +191,7 @@ public class TaskManagerController {
     public ResponseEntity<byte[]> getFile(@PathVariable String fileType, @PathVariable String timestamp) throws IOException {
         ResponseEntity<byte[]> result = ResponseEntity.notFound().build();
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(timestamp);
-        TaskDto task = builder.getTaskDto(offsetDateTime);
+        TaskDto task = builder.getTaskDtoWithoutLogs(offsetDateTime);
         List<ProcessFileDto> allFiles = new ArrayList<>();
         allFiles.addAll(task.getInputs());
         allFiles.addAll(task.getOutputs());

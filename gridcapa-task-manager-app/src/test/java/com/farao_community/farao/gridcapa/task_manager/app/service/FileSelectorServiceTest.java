@@ -4,6 +4,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundEx
 import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
@@ -22,6 +23,8 @@ import java.util.Optional;
 class FileSelectorServiceTest {
     @MockBean
     private TaskRepository taskRepository;
+    @MockBean
+    private ProcessEventRepository processEventRepository;
     @MockBean
     private TaskUpdateNotifier taskUpdateNotifier;
     @Autowired

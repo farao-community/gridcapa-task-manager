@@ -49,7 +49,7 @@ class FileManagerTest {
     void checkBytesForFileGroupGeneratedProperly() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(taskTimestamp)).thenReturn(Optional.of(task));
         assertNotNull(fileManager.getZippedGroup(taskTimestamp, MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
 
@@ -97,7 +97,7 @@ class FileManagerTest {
     void checkGetLogs() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskRepository.findByTimestamp(taskTimestamp)).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(taskTimestamp)).thenReturn(Optional.of(task));
         try {
             assertNotNull(fileManager.getLogs(taskTimestamp));
         } catch (IOException e) {
@@ -109,7 +109,7 @@ class FileManagerTest {
     void testGetRaoRunnerAppLogs() {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(timestamp);
-        Mockito.when(taskRepository.findByTimestamp(timestamp)).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(timestamp)).thenReturn(Optional.of(task));
         try {
             assertNotNull(fileManager.getRaoRunnerAppLogs(timestamp));
         } catch (IOException e) {
