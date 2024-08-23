@@ -167,7 +167,7 @@ public class TaskService {
                 boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
                 taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
                 if (statusUpdateDueToFileArrival) {
-                    LOGGER.info("Update task status of task {} when processFile {} arrived to status {}", task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
+                    LOGGER.info("Update task status of task with timestamp {} when processFile {} arrived to status {}", task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
                 }
             }
         }
