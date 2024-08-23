@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
@@ -218,8 +217,7 @@ public class TaskService {
 
         String message = String.format("Manual selection of another version of %s : %s", filetype, filename);
         OffsetDateTime now = OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LOGGER.info("Manual selection for timestamp {} of another version of {} : {}", timestamp.format(formatter), filetype, filename);
+        LOGGER.info("Manual selection for timestamp {} of another version of {} : {}", task.getTimestamp(), processFile.getFileType(), processFile.getFilename());
         addProcessEvent(task, now, "INFO", message, serviceName);
 
         boolean doesStatusNeedReset = doesStatusNeedReset(task.getStatus());
