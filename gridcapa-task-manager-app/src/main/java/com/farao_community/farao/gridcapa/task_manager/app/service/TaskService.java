@@ -150,7 +150,6 @@ public class TaskService {
     // PROCESS FILES MANAGEMENT //
     //////////////////////////////
 
-    //TODO test performance
     public Set<TaskWithStatusUpdate> addProcessFileToTasks(final ProcessFile savedProcessFile,
                                                            final FileEventType fileEventType,
                                                            final boolean isInput,

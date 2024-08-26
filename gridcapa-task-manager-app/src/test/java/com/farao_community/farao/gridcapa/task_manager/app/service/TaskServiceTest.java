@@ -41,9 +41,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
@@ -314,26 +317,28 @@ class TaskServiceTest {
         OffsetDateTime timestamp01 = OffsetDateTime.parse("2021-10-11T01:00Z");
         OffsetDateTime timestamp02 = OffsetDateTime.parse("2021-10-11T02:00Z");
         OffsetDateTime timestamp03 = OffsetDateTime.parse("2021-10-11T03:00Z");
+        OffsetDateTime timestamp04 = OffsetDateTime.parse("2021-10-11T03:00Z");
         ProcessFile processFile = new ProcessFile(
                 "path/to/cne-file.xml",
                 "output",
                 "CNE",
                 null,
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T04:00Z"),
+                timestamp01,
+                timestamp04,
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
         Task task01 = new Task(timestamp01);
         Task task02 = new Task(timestamp02);
         Task task03 = new Task(timestamp03);
-        Mockito.when(taskRepository.findByTimestamp(timestamp01)).thenReturn(Optional.of(task01));
-        Mockito.when(taskRepository.findByTimestamp(timestamp02)).thenReturn(Optional.of(task02));
-        Mockito.when(taskRepository.findByTimestamp(timestamp03)).thenReturn(Optional.of(task03));
+        when(taskRepository.findAllByTimestampBetween(timestamp01, timestamp04)).thenReturn(Set.of(task01, task02, task03));
 
         Assertions.assertThat(task01.getOutput("CNE")).isEmpty();
         Assertions.assertThat(task02.getOutput("CNE")).isEmpty();
         Assertions.assertThat(task03.getOutput("CNE")).isEmpty();
 
-        Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.addProcessFileToTasks(processFile, FileEventType.UPDATED, false, false);
+        Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.addProcessFileToTasks(processFile,
+                FileEventType.UPDATED,
+                false,
+                false);
 
         Assertions.assertThat(taskWithStatusUpdateSet).isNotEmpty();
         Assertions.assertThat(task01.getOutput("CNE")).contains(processFile);
@@ -345,91 +350,110 @@ class TaskServiceTest {
     void addProcessFileToTasksWithInputFileAndNoStatusUpdate() {
         OffsetDateTime timestamp01 = OffsetDateTime.parse("2021-10-11T01:00Z");
         OffsetDateTime timestamp02 = OffsetDateTime.parse("2021-10-11T02:00Z");
+        OffsetDateTime timestamp03 = OffsetDateTime.parse("2021-10-11T03:00Z");
+        OffsetDateTime timestamp04 = OffsetDateTime.parse("2021-10-11T04:00Z");
         ProcessFile processFileCgm = new ProcessFile(
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
                 "documentIdCgm",
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T03:00Z"),
+                timestamp01,
+                timestamp04,
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
         ProcessFile processFileCracOld = new ProcessFile(
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
                 "documentIdCrac",
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T03:00Z"),
+                timestamp01,
+                timestamp04,
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
         ProcessFile processFileCracNew = new ProcessFile(
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
                 "documentIdCrac",
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T03:00Z"),
+                timestamp01,
+                timestamp04,
                 OffsetDateTime.parse("2021-10-11T00:45Z"));
-        Task task01 = new Task(timestamp01);
-        ProcessRun processRun01 = new ProcessRun(List.of(processFileCgm));
+        //two existing task in database
+        final Task task01 = new Task(timestamp01);
+        final ProcessRun processRun01 = new ProcessRun(List.of(processFileCgm));
         task01.addProcessFile(processFileCgm);
         task01.addProcessRun(processRun01);
-        Task task02 = new Task(timestamp02);
-        ProcessRun processRun02 = new ProcessRun(List.of(processFileCracOld));
+        final Task task02 = new Task(timestamp02);
+        final ProcessRun processRun02 = new ProcessRun(List.of(processFileCracOld));
         task02.addProcessFile(processFileCracOld);
         task02.addProcessRun(processRun02);
-        Mockito.when(taskRepository.findByTimestamp(timestamp01)).thenReturn(Optional.of(task01));
-        Mockito.when(taskRepository.findByTimestamp(timestamp02)).thenReturn(Optional.of(task02));
+        //one missing
+        when(taskRepository.findAllByTimestampBetween(timestamp01, timestamp04)).thenReturn(Set.of(task01, task02));
 
         Assertions.assertThat(task01.getInput("CGM")).contains(processFileCgm);
         Assertions.assertThat(task02.getInput("CRAC")).contains(processFileCracOld);
 
-        Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.addProcessFileToTasks(processFileCracNew, FileEventType.UPDATED, true, false);
+        final Set<TaskWithStatusUpdate> result = taskService.addProcessFileToTasks(processFileCracNew, FileEventType.UPDATED, true, false);
 
-        Assertions.assertThat(taskWithStatusUpdateSet).isNotEmpty();
+        assertEquals(3, result.size());
         Assertions.assertThat(task01.getInput("CRAC")).contains(processFileCracNew);
         Assertions.assertThat(task01.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCgm);
         Assertions.assertThat(task02.getInput("CRAC")).contains(processFileCracNew);
         Assertions.assertThat(task02.getRunHistory().get(0).getInputFiles()).isEmpty();
+        // task 1 & 2 should not have seen their status updated
+        assertTrue(result.stream()
+                .filter(t -> t.getTask().getTimestamp().equals(timestamp01) || t.getTask().getTimestamp().equals(timestamp02))
+                .noneMatch(TaskWithStatusUpdate::isStatusUpdated));
+        //
+        final TaskWithStatusUpdate newlyCreatedTaskWithStatusUpdate = result.stream().filter(t -> t.getTask().getTimestamp().equals(timestamp03)).findFirst().get();
+        final Task newlyCreatedTask = newlyCreatedTaskWithStatusUpdate.getTask();
+        //
+        final ArgumentCaptor<List<Task>> tasksCaptor = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(taskRepository, times(1)).saveAll(tasksCaptor.capture());
+        //newly created task must have been persisted
+        assertEquals(timestamp03, tasksCaptor.getValue().get(0).getTimestamp());
+        Mockito.verify(processEventRepository, times(3)).save(any());
+        //newly created task have their boolean isStatusUpdated to true
+        assertTrue(newlyCreatedTaskWithStatusUpdate.isStatusUpdated());
+        assertEquals(processFileCracNew, newlyCreatedTask.getAvailableInputs("CRAC").stream().findFirst().get());
     }
 
     @Test
     void addProcessFileToTasksWithInputFileAndStatusUpdate() {
-        OffsetDateTime timestamp01 = OffsetDateTime.parse("2021-10-11T01:00Z");
-        OffsetDateTime timestamp02 = OffsetDateTime.parse("2021-10-11T02:00Z");
+        OffsetDateTime timestamp1 = OffsetDateTime.parse("2021-10-11T01:00Z");
+        OffsetDateTime timestamp2 = OffsetDateTime.parse("2021-10-11T02:00Z");
+        OffsetDateTime timestamp3 = OffsetDateTime.parse("2021-10-11T03:00Z");
         ProcessFile processFileCgm = new ProcessFile(
                 "path/to/cgm-file.xml",
                 "input",
                 "CGM",
                 "documentIdCgm",
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T03:00Z"),
+                timestamp1,
+                timestamp3,
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
         ProcessFile processFileCracOld = new ProcessFile(
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
                 "documentIdCrac",
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T03:00Z"),
+                timestamp1,
+                timestamp3,
                 OffsetDateTime.parse("2021-10-11T00:18Z"));
         ProcessFile processFileCracNew = new ProcessFile(
                 "path/to/crac-file.xml",
                 "input",
                 "CRAC",
                 "documentIdCrac",
-                OffsetDateTime.parse("2021-10-11T01:00Z"),
-                OffsetDateTime.parse("2021-10-11T03:00Z"),
+                timestamp1,
+                timestamp3,
                 OffsetDateTime.parse("2021-10-11T00:45Z"));
-        Task task01 = new Task(timestamp01);
+        Task task01 = new Task(timestamp1);
         ProcessRun processRun01 = new ProcessRun(List.of(processFileCgm));
         task01.addProcessFile(processFileCgm);
         task01.addProcessRun(processRun01);
-        Task task02 = new Task(timestamp02);
+        Task task02 = new Task(timestamp2);
         ProcessRun processRun02 = new ProcessRun(List.of(processFileCracOld));
         task02.addProcessFile(processFileCracOld);
         task02.addProcessRun(processRun02);
-        Mockito.when(taskRepository.findByTimestamp(timestamp01)).thenReturn(Optional.of(task01));
-        Mockito.when(taskRepository.findByTimestamp(timestamp02)).thenReturn(Optional.of(task02));
+        when(taskRepository.findAllByTimestampBetween(timestamp1, timestamp3)).thenReturn(Set.of(task01, task02));
 
         Assertions.assertThat(task01.getInput("CGM")).contains(processFileCgm);
         Assertions.assertThat(task02.getInput("CRAC")).contains(processFileCracOld);
@@ -475,7 +499,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
         task.setStatus(TaskStatus.CREATED);
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
@@ -517,7 +541,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
         task.setStatus(TaskStatus.READY);
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.READY);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
@@ -550,7 +574,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
         taskService.addProcessEvent(task, startingDate, "INFO", "message", "serviceName");
-        Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
         Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac);
@@ -588,7 +612,7 @@ class TaskServiceTest {
         task.addProcessFile(processFileCne);
         task.addProcessRun(processRun);
         task.setStatus(TaskStatus.SUCCESS);
-        Mockito.when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
+        when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCne, processFileGlsk);
@@ -606,7 +630,7 @@ class TaskServiceTest {
     @Test
     void selectFileThrowsFileNotFound() {
         OffsetDateTime timestamp = OffsetDateTime.now();
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
 
         Assertions.assertThatExceptionOfType(TaskNotFoundException.class)
                 .isThrownBy(() -> taskService.selectFile(timestamp, "type", "name"));
@@ -618,7 +642,7 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
         task.setStatus(taskStatus);
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         Assertions.assertThatExceptionOfType(TaskManagerException.class)
                 .isThrownBy(() -> taskService.selectFile(timestamp, "type", "name"))
@@ -630,7 +654,7 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
         task.setStatus(TaskStatus.READY);
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         Assertions.assertThatExceptionOfType(ProcessFileNotFoundException.class)
                 .isThrownBy(() -> taskService.selectFile(timestamp, "type", "name"));
@@ -648,7 +672,7 @@ class TaskServiceTest {
         task.addProcessFile(processFile2);
         ProcessFile processFile3 = new ProcessFile("file3", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile3);
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         Assertions.assertThat(task.getInput("CRAC")).contains(processFile3);
         Assertions.assertThat(task.getStatus()).isEqualTo(taskStatus);
@@ -666,7 +690,7 @@ class TaskServiceTest {
     @Test
     void addNewRunAndSaveTaskThrowsTaskNotFound() {
         OffsetDateTime timestamp = OffsetDateTime.now();
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
 
         List<ProcessFileDto> inputFileDtos = List.of();
         Assertions.assertThatExceptionOfType(TaskNotFoundException.class)
@@ -679,7 +703,7 @@ class TaskServiceTest {
         Task task = new Task();
         ProcessFile processFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile);
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         ProcessFileDto processFileDto = new ProcessFileDto("path/to/file", "CRAC", ProcessFileStatus.VALIDATED, "file2", "documentIdCrac", timestamp);
         List<ProcessFileDto> inputFileDtos = List.of(processFileDto);
@@ -695,8 +719,8 @@ class TaskServiceTest {
         task.addProcessFile(processFile1);
         ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile2);
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
-        Mockito.when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.save(task)).thenReturn(task);
 
         Assertions.assertThat(task.getRunHistory()).isEmpty();
 
@@ -715,13 +739,13 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = Mockito.mock(Task.class);
         ProcessFile processFile1 = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
-        Mockito.when(task.getInput("CGM")).thenReturn(Optional.of(processFile1));
-        Mockito.when(task.getAvailableInputs("CGM")).thenReturn(Set.of(processFile1));
+        when(task.getInput("CGM")).thenReturn(Optional.of(processFile1));
+        when(task.getAvailableInputs("CGM")).thenReturn(Set.of(processFile1));
         ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
-        Mockito.when(task.getInput("CRAC")).thenReturn(Optional.of(processFile2));
-        Mockito.when(task.getAvailableInputs("CRAC")).thenReturn(Set.of());
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
-        Mockito.when(taskRepository.save(task)).thenReturn(task);
+        when(task.getInput("CRAC")).thenReturn(Optional.of(processFile2));
+        when(task.getAvailableInputs("CRAC")).thenReturn(Set.of());
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.save(task)).thenReturn(task);
 
         ProcessFileDto processFileDto1 = new ProcessFileDto("path/to/file1", "CGM", ProcessFileStatus.VALIDATED, "file1", "documentIdCgm", timestamp);
         ProcessFileDto processFileDto2 = new ProcessFileDto("path/to/file2", "CRAC", ProcessFileStatus.VALIDATED, "file2", "documentIdCrac", timestamp);
@@ -743,8 +767,8 @@ class TaskServiceTest {
         task.addProcessFile(processFile1);
         ProcessFile processFile2 = new ProcessFile("file2", "input", "OPTIONAL_INPUT", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile2);
-        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
-        Mockito.when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
+        when(taskRepository.save(task)).thenReturn(task);
 
         Assertions.assertThat(task.getRunHistory()).isEmpty();
 
