@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -527,13 +526,6 @@ class TaskTest {
         task.addProcessFile(processFileOutput);
 
         Assertions.assertThat(task.getOutput("CNE")).contains(processFileOutput);
-    }
-
-    @Test
-    void getProcessEventsTest() {
-        assertTrue(task.getProcessEvents().isEmpty());
-        task.addProcessEvent(OffsetDateTime.now(), "WARN", "test", "serviceName");
-        assertEquals("WARN", task.getProcessEvents().iterator().next().getLevel());
     }
 
     @Test

@@ -81,7 +81,7 @@ public class EventHandler {
                 UUID taskUUID = UUID.fromString(event.getId());
                 Task task = storedTasks.get(taskUUID);
                 if (task == null) {
-                    Optional<Task> optionalTask = taskRepository.findByIdWithProcessFiles(UUID.fromString(event.getId()));
+                    Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(UUID.fromString(event.getId()));
                     if (optionalTask.isPresent()) {
                         task = optionalTask.get();
                         storedTasks.put(taskUUID, task);

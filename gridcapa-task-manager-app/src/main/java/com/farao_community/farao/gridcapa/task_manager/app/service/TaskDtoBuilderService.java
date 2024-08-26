@@ -51,9 +51,25 @@ public class TaskDtoBuilderService {
         this.localZone = ZoneId.of(this.properties.getProcess().getTimezone());
     }
 
-    public TaskDto getTaskDto(OffsetDateTime timestamp) {
-        return taskRepository.findByTimestamp(timestamp)
+    /**
+     * To use only if Process Events are required in the process. Otherwise, prefer the method getTaskDtoWithoutProcessEvents.
+     * @param timestamp
+     * @return
+     */
+    public TaskDto getTaskDtoWithProcessEvents(OffsetDateTime timestamp) {
+        return taskRepository.findByTimestampAndFetchProcessEvents(timestamp)
                 .map(this::createDtoFromEntity)
+                .orElse(getEmptyTask(timestamp));
+    }
+
+    /**
+     * To use preferably, as it does not fetch process event hence reducing memory used.
+     * @param timestamp
+     * @return
+     */
+    public TaskDto getTaskDtoWithoutProcessEvents(OffsetDateTime timestamp) {
+        return taskRepository.findByTimestamp(timestamp)
+                .map(this::createDtoFromEntityWithoutProcessEvents)
                 .orElse(getEmptyTask(timestamp));
     }
 
@@ -76,7 +92,7 @@ public class TaskDtoBuilderService {
         }
 
         tasks.stream()
-                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .map(this::createDtoFromEntityWithoutProcessEvents)
                 .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
         return taskMap.values().stream().toList();
@@ -84,7 +100,7 @@ public class TaskDtoBuilderService {
 
     public List<TaskDto> getListRunningTasksDto() {
         return taskRepository.findAllRunningAndPending().stream()
-                .map(t -> createDtoFromEntityWithOrWithoutEvents(t, false))
+                .map(this::createDtoFromEntityWithoutProcessEvents)
                 .toList();
     }
 
@@ -99,7 +115,7 @@ public class TaskDtoBuilderService {
         return createDtoFromEntityWithOrWithoutEvents(task, true);
     }
 
-    public TaskDto createDtoFromEntityNoLogs(Task task) {
+    public TaskDto createDtoFromEntityWithoutProcessEvents(Task task) {
         return createDtoFromEntityWithOrWithoutEvents(task, false);
     }
 

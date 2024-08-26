@@ -20,6 +20,7 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -40,6 +41,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
@@ -57,6 +62,8 @@ class TaskServiceTest {
     private ProcessFileRepository processFileRepository;
     @MockBean
     private TaskRepository taskRepository;
+    @MockBean
+    private ProcessEventRepository processEventRepository;
 
     @Autowired
     private TaskService taskService;
@@ -156,12 +163,13 @@ class TaskServiceTest {
 
         taskService.addProcessEventToTask(eventUpdate, task);
 
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        ProcessEvent processEvent = task.getProcessEvents().first();
-        Assertions.assertThat(processEvent.getTimestamp()).hasToString("2024-05-16T09:30Z");
-        Assertions.assertThat(processEvent.getLevel()).isEqualTo("WARN");
-        Assertions.assertThat(processEvent.getMessage()).isEqualTo("The cake is a lie");
-        Assertions.assertThat(processEvent.getServiceName()).isEqualTo("test-service");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getTimestamp()).hasToString("2024-05-16T09:30Z");
+        Assertions.assertThat(captor.getAllValues().get(0).getLevel()).isEqualTo("WARN");
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).isEqualTo("The cake is a lie");
+        Assertions.assertThat(captor.getAllValues().get(0).getServiceName()).isEqualTo("test-service");
     }
 
     @Test
@@ -173,12 +181,13 @@ class TaskServiceTest {
 
         taskService.addProcessEventToTask(eventUpdate, task);
 
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        ProcessEvent processEvent = task.getProcessEvents().first();
-        Assertions.assertThat(processEvent.getTimestamp()).hasToString("2024-05-16T09:30Z");
-        Assertions.assertThat(processEvent.getLevel()).isEqualTo("WARN");
-        Assertions.assertThat(processEvent.getMessage()).isEqualTo("[prefix] : The cake is a lie");
-        Assertions.assertThat(processEvent.getServiceName()).isEqualTo("test-service");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getTimestamp()).hasToString("2024-05-16T09:30Z");
+        Assertions.assertThat(captor.getAllValues().get(0).getLevel()).isEqualTo("WARN");
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).isEqualTo("[prefix] : The cake is a lie");
+        Assertions.assertThat(captor.getAllValues().get(0).getServiceName()).isEqualTo("test-service");
     }
 
     @Test
@@ -194,9 +203,10 @@ class TaskServiceTest {
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         taskService.addFileEventToTask(task, FileEventType.UPDATED, processFile);
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(task.getProcessEvents().first().getMessage()).startsWith("Manual upload of a");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("Manual upload of a");
     }
 
     @Test
@@ -212,9 +222,10 @@ class TaskServiceTest {
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         taskService.addFileEventToTask(task, FileEventType.WAITING, processFile);
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(task.getProcessEvents().first().getMessage()).startsWith("A new version of CGM is waiting for");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("A new version of CGM is waiting for");
     }
 
     @Test
@@ -230,9 +241,10 @@ class TaskServiceTest {
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         taskService.addFileEventToTask(task, FileEventType.UPDATED, processFile);
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(task.getProcessEvents().first().getMessage()).startsWith("A new version of CGM replaced");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("A new version of CGM replaced");
     }
 
     @Test
@@ -248,9 +260,10 @@ class TaskServiceTest {
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         taskService.addFileEventToTask(task, FileEventType.AVAILABLE, processFile);
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(task.getProcessEvents().first().getMessage()).startsWith("A new version of CGM is available");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("A new version of CGM is available");
     }
 
     @Test
@@ -266,10 +279,11 @@ class TaskServiceTest {
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         taskService.addFileEventToTask(task, FileEventType.DELETED, processFile);
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(task.getProcessEvents().first().getMessage()).startsWith("The CGM");
-        Assertions.assertThat(task.getProcessEvents().first().getMessage()).endsWith("is deleted");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("The CGM");
+        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).endsWith("is deleted");
     }
 
     @Test
@@ -285,9 +299,10 @@ class TaskServiceTest {
                 OffsetDateTime.parse("2021-10-11T10:18Z"));
 
         taskService.addFileEventToTask(task, FileEventType.UPDATED, processFile, "ERROR");
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
-        Assertions.assertThat(task.getProcessEvents().first().getLevel()).isEqualTo("ERROR");
+        ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
+        verify(processEventRepository, times(1)).save(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).hasSize(1);
+        Assertions.assertThat(captor.getAllValues().get(0).getLevel()).isEqualTo("ERROR");
     }
 
     //////////////////////////////
@@ -462,7 +477,6 @@ class TaskServiceTest {
         task.setStatus(TaskStatus.CREATED);
         Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
-        Assertions.assertThat(task.getProcessEvents()).isEmpty();
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac, processFileGlsk);
@@ -472,7 +486,7 @@ class TaskServiceTest {
         Assertions.assertThat(taskWithStatusUpdateSet).isNotNull();
         Assertions.assertThat(taskWithStatusUpdateSet).first().extracting("statusUpdated").isEqualTo(false);
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
+        Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
     }
@@ -506,7 +520,6 @@ class TaskServiceTest {
         Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.READY);
-        Assertions.assertThat(task.getProcessEvents()).isEmpty();
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac, processFileGlsk);
 
@@ -515,7 +528,7 @@ class TaskServiceTest {
         Assertions.assertThat(taskWithStatusUpdateSet).isNotNull();
         Assertions.assertThat(taskWithStatusUpdateSet).first().extracting("statusUpdated").isEqualTo(true);
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
+        Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
     }
@@ -536,10 +549,9 @@ class TaskServiceTest {
         Task task = new Task();
         task.addProcessFile(processFileCrac);
         task.addProcessRun(processRun);
-        task.addProcessEvent(startingDate, "INFO", "message", "serviceName");
+        taskService.addProcessEvent(task, startingDate, "INFO", "message", "serviceName");
         Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
-
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
+        Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac);
 
@@ -578,17 +590,15 @@ class TaskServiceTest {
         task.setStatus(TaskStatus.SUCCESS);
         Mockito.when(taskRepository.findAllByTimestampBetween(startingDate, endingDate)).thenReturn(Set.of(task));
 
-        Assertions.assertThat(task.getProcessEvents()).isEmpty();
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCne, processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
-
         Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.removeProcessFileFromTasks(processFileCne);
 
         Assertions.assertThat(taskWithStatusUpdateSet).isNotNull();
         Assertions.assertThat(taskWithStatusUpdateSet).first().extracting("statusUpdated").isEqualTo(false);
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
-        Assertions.assertThat(task.getProcessEvents()).hasSize(1);
+        Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileGlsk);
         Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
     }
@@ -596,7 +606,7 @@ class TaskServiceTest {
     @Test
     void selectFileThrowsFileNotFound() {
         OffsetDateTime timestamp = OffsetDateTime.now();
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.empty());
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
 
         Assertions.assertThatExceptionOfType(TaskNotFoundException.class)
                 .isThrownBy(() -> taskService.selectFile(timestamp, "type", "name"));
@@ -608,7 +618,7 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
         task.setStatus(taskStatus);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         Assertions.assertThatExceptionOfType(TaskManagerException.class)
                 .isThrownBy(() -> taskService.selectFile(timestamp, "type", "name"))
@@ -620,7 +630,7 @@ class TaskServiceTest {
         OffsetDateTime timestamp = OffsetDateTime.now();
         Task task = new Task();
         task.setStatus(TaskStatus.READY);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         Assertions.assertThatExceptionOfType(ProcessFileNotFoundException.class)
                 .isThrownBy(() -> taskService.selectFile(timestamp, "type", "name"));
@@ -638,7 +648,7 @@ class TaskServiceTest {
         task.addProcessFile(processFile2);
         ProcessFile processFile3 = new ProcessFile("file3", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile3);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         Assertions.assertThat(task.getInput("CRAC")).contains(processFile3);
         Assertions.assertThat(task.getStatus()).isEqualTo(taskStatus);
@@ -656,7 +666,7 @@ class TaskServiceTest {
     @Test
     void addNewRunAndSaveTaskThrowsTaskNotFound() {
         OffsetDateTime timestamp = OffsetDateTime.now();
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.empty());
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.empty());
 
         List<ProcessFileDto> inputFileDtos = List.of();
         Assertions.assertThatExceptionOfType(TaskNotFoundException.class)
@@ -669,7 +679,7 @@ class TaskServiceTest {
         Task task = new Task();
         ProcessFile processFile = new ProcessFile("file1", "input", "CGM", "documentIdCgm", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
 
         ProcessFileDto processFileDto = new ProcessFileDto("path/to/file", "CRAC", ProcessFileStatus.VALIDATED, "file2", "documentIdCrac", timestamp);
         List<ProcessFileDto> inputFileDtos = List.of(processFileDto);
@@ -685,7 +695,7 @@ class TaskServiceTest {
         task.addProcessFile(processFile1);
         ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile2);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
         Mockito.when(taskRepository.save(task)).thenReturn(task);
 
         Assertions.assertThat(task.getRunHistory()).isEmpty();
@@ -710,7 +720,7 @@ class TaskServiceTest {
         ProcessFile processFile2 = new ProcessFile("file2", "input", "CRAC", "documentIdCrac", timestamp, timestamp, timestamp);
         Mockito.when(task.getInput("CRAC")).thenReturn(Optional.of(processFile2));
         Mockito.when(task.getAvailableInputs("CRAC")).thenReturn(Set.of());
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
         Mockito.when(taskRepository.save(task)).thenReturn(task);
 
         ProcessFileDto processFileDto1 = new ProcessFileDto("path/to/file1", "CGM", ProcessFileStatus.VALIDATED, "file1", "documentIdCgm", timestamp);
@@ -733,7 +743,7 @@ class TaskServiceTest {
         task.addProcessFile(processFile1);
         ProcessFile processFile2 = new ProcessFile("file2", "input", "OPTIONAL_INPUT", "documentIdCrac", timestamp, timestamp, timestamp);
         task.addProcessFile(processFile2);
-        Mockito.when(taskRepository.findByTimestamp(Mockito.any())).thenReturn(Optional.of(task));
+        Mockito.when(taskRepository.findByTimestamp(any())).thenReturn(Optional.of(task));
         Mockito.when(taskRepository.save(task)).thenReturn(task);
 
         Assertions.assertThat(task.getRunHistory()).isEmpty();

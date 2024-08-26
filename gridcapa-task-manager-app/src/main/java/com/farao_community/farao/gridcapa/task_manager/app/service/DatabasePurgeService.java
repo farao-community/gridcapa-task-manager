@@ -45,7 +45,7 @@ public class DatabasePurgeService {
         OffsetDateTime dateTimeReference = dateTimeNow.minusDays(Long.valueOf(nbDays));
 
         List<Task> listTasksToSave = new ArrayList<>();
-        for (Task task : taskRepository.findAllWithSomeProcessEvent()) {
+        for (Task task : taskRepository.findAllWithAtLeastOneProcessEvent()) {
             List<ProcessEvent> listProcessEventsToRemove = task.getProcessEvents().stream()
                     .filter(processEvent -> processEvent.getTimestamp().isBefore(dateTimeReference))
                     .toList();

@@ -124,10 +124,6 @@ public class Task {
         return processEvents;
     }
 
-    public void addProcessEvent(OffsetDateTime timestamp, String level, String message, String serviceName) {
-        processEvents.add(new ProcessEvent(this, timestamp, level, message, serviceName));
-    }
-
     public SortedSet<ProcessFile> getProcessFiles() {
         return processFiles;
     }
