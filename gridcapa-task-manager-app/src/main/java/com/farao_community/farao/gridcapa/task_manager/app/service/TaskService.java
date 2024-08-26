@@ -144,6 +144,7 @@ public class TaskService {
                          final String serviceName) {
         processEventRepository.save(new ProcessEvent(task, timestamp, level, message, serviceName));
     }
+
     //////////////////////////////
     // PROCESS FILES MANAGEMENT //
     //////////////////////////////
