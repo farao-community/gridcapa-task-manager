@@ -15,6 +15,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -27,4 +28,9 @@ public interface ProcessEventRepository extends JpaRepository<ProcessEvent, UUID
     @Transactional
     @Query("DELETE FROM ProcessEvent pe WHERE pe.task = :task")
     void deleteByTask(@Param("task") Task task);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM ProcessEvent pe WHERE pe.timestamp < :threshold")
+    void deleteWhenOlderThan(@Param("threshold") OffsetDateTime threshold);
 }

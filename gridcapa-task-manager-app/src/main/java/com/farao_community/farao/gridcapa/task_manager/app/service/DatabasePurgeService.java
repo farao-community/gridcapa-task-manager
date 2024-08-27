@@ -1,14 +1,12 @@
 /*
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 
 /**
  * @author Jean-Pierre Arnould {@literal <jean-pierre.arnould at rte-france.com>}
@@ -36,27 +31,14 @@ public class DatabasePurgeService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabasePurgeService.class);
 
     @Autowired
-    private TaskRepository taskRepository;
+    private ProcessEventRepository processEventRepository;
 
     @Scheduled(cron = "${purge-task-events.cron}")
     @Transactional
     public void scheduledDatabaseTaskEventsPurge() {
         OffsetDateTime dateTimeNow = OffsetDateTime.now();
         OffsetDateTime dateTimeReference = dateTimeNow.minusDays(Long.valueOf(nbDays));
-
-        List<Task> listTasksToSave = new ArrayList<>();
-        for (Task task : taskRepository.findAllWithAtLeastOneProcessEvent()) {
-            List<ProcessEvent> listProcessEventsToRemove = task.getProcessEvents().stream()
-                    .filter(processEvent -> processEvent.getTimestamp().isBefore(dateTimeReference))
-                    .toList();
-            if (!listProcessEventsToRemove.isEmpty()) {
-                task.getProcessEvents().removeAll(listProcessEventsToRemove);
-                listTasksToSave.add(task);
-            }
-        }
-
-        taskRepository.saveAll(listTasksToSave);
-
+        processEventRepository.deleteWhenOlderThan(dateTimeReference);
         LOGGER.debug("Task events that are more than {} days old have been deleted from database ", nbDays);
     }
 }

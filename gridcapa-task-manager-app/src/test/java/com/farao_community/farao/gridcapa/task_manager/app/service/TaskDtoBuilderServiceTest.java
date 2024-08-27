@@ -13,12 +13,12 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -338,11 +338,6 @@ class TaskDtoBuilderServiceTest {
         @Override
         public Set<Task> findAllByTimestampBetweenAndStatusIn(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp, final Collection<TaskStatus> statuses) {
             return findAllByTimestampWithAtLeastOneProcessFileBetween(startingTimestamp, endingTimestamp);
-        }
-
-        @Override
-        public Set<Task> findAllWithAtLeastOneProcessEvent() {
-            return null;
         }
 
         @Override
