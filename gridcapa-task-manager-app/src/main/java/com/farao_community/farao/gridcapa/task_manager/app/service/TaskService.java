@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -163,49 +162,52 @@ public class TaskService {
                 .stream()
                 .collect(Collectors.toMap(Task::getTimestamp, task -> new TaskWithStatusUpdate(task, false)));
 
-        existingTasksInDatabase.values().forEach(taskWithStatusUpdate -> {
-            applyProcessFileToTask(savedProcessFile, fileEventType, isInput, taskWithStatusUpdate);
-            if (withStatusUpdate && isInput) {
-                final Task task = taskWithStatusUpdate.getTask();
-                final boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
-                taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
-
-                if (statusUpdateDueToFileArrival) {
-                    LOGGER.info("Update task status of task with timestamp {} when processFile {} arrived to status {}",
-                            task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
-                }
-            }
-            allTasks.add(taskWithStatusUpdate);
-        });
-
+        existingTasksInDatabase.values().forEach(taskWithStatusUpdate ->
+                addProcessFileToExistingTasks(savedProcessFile, fileEventType, isInput, withStatusUpdate, taskWithStatusUpdate, allTasks));
         //Deal with missing tasks
-        final List<Task> tasksToSave = new ArrayList<>();
-        final Set<TaskWithStatusUpdate> newTasksWithStatusUpdate = new HashSet<>();
-
-        Stream.iterate(start, time -> time.plusHours(1))
+        final List<Task> tasksToSave = Stream.iterate(start, time -> time.plusHours(1))
                 .limit(ChronoUnit.HOURS.between(start, end))
                 .filter(timestamp -> !existingTasksInDatabase.containsKey(timestamp))
-                .forEach(timestamp -> {
-                    final Task newTask = new Task(timestamp);
-                    final TaskWithStatusUpdate newTaskWithStatusUpdate = new TaskWithStatusUpdate(newTask, true);
-                    tasksToSave.add(newTask);
-                    newTasksWithStatusUpdate.add(newTaskWithStatusUpdate);
-                });
+                .map(Task::new)
+                .toList();
         //Tasks must be saved before adding file/processEvent to it to ensure foreign key constraint is respected
         taskRepository.saveAll(tasksToSave);
-        newTasksWithStatusUpdate.forEach(taskWithStatusUpdate -> {
-                applyProcessFileToTask(savedProcessFile, fileEventType, isInput, taskWithStatusUpdate);
-                allTasks.add(taskWithStatusUpdate);
-        }
-        );
+        tasksToSave.forEach(newTask -> addProcessFileToNewTask(savedProcessFile, fileEventType, isInput, newTask, allTasks));
         return allTasks;
+    }
+
+    private void addProcessFileToNewTask(final ProcessFile savedProcessFile,
+                                         final FileEventType fileEventType,
+                                         final boolean isInput,
+                                         final Task newTask,
+                                         final Set<TaskWithStatusUpdate> allTasks) {
+        applyProcessFileToTask(savedProcessFile, fileEventType, isInput, newTask);
+        allTasks.add(new TaskWithStatusUpdate(newTask, true));
+    }
+
+    private void addProcessFileToExistingTasks(final ProcessFile savedProcessFile,
+                                               final FileEventType fileEventType,
+                                               final boolean isInput,
+                                               final boolean withStatusUpdate,
+                                               final TaskWithStatusUpdate taskWithStatusUpdate,
+                                               final Set<TaskWithStatusUpdate> allTasks) {
+        final Task task = taskWithStatusUpdate.getTask();
+        applyProcessFileToTask(savedProcessFile, fileEventType, isInput, task);
+        if (withStatusUpdate && isInput) {
+            final boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
+            taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
+            if (statusUpdateDueToFileArrival) {
+                LOGGER.info("Update status of task with timestamp {} when processFile {} arrived to status {}",
+                        task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
+            }
+        }
+        allTasks.add(taskWithStatusUpdate);
     }
 
     private void applyProcessFileToTask(final ProcessFile savedProcessFile,
                                         final FileEventType fileEventType,
                                         final boolean isInput,
-                                        final TaskWithStatusUpdate taskWithStatusUpdate) {
-        final Task task = taskWithStatusUpdate.getTask();
+                                        final Task task) {
         addFileEventToTask(task, fileEventType, savedProcessFile);
         if (isInput) {
             removeUnavailableProcessFileFromTaskRunHistory(savedProcessFile, task, fileEventType);
