@@ -162,9 +162,41 @@ public class TaskService {
                 .stream()
                 .collect(Collectors.toMap(Task::getTimestamp, task -> new TaskWithStatusUpdate(task, false)));
 
-        existingTasksInDatabase.values().forEach(taskWithStatusUpdate ->
-                addProcessFileToExistingTasks(savedProcessFile, fileEventType, isInput, withStatusUpdate, taskWithStatusUpdate, allTasks));
+        addProcessFileToExistingTasks(savedProcessFile, fileEventType, isInput, withStatusUpdate, allTasks, existingTasksInDatabase);
+
         //Deal with missing tasks
+        addProcessFileToNewTasks(savedProcessFile, fileEventType, isInput, start, end, allTasks, existingTasksInDatabase);
+        return allTasks;
+    }
+
+    private void addProcessFileToExistingTasks(final ProcessFile savedProcessFile,
+                                               final FileEventType fileEventType,
+                                               final boolean isInput,
+                                               final boolean withStatusUpdate,
+                                               final Set<TaskWithStatusUpdate> allTasks,
+                                               final Map<OffsetDateTime, TaskWithStatusUpdate> existingTasksInDatabase) {
+        existingTasksInDatabase.values().forEach(taskWithStatusUpdate -> {
+            final Task task = taskWithStatusUpdate.getTask();
+            applyProcessFileToTask(savedProcessFile, fileEventType, isInput, task);
+            if (withStatusUpdate && isInput) {
+                final boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
+                taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
+                if (statusUpdateDueToFileArrival) {
+                    LOGGER.info("Update status of task with timestamp {} when processFile {} arrived to status {}",
+                            task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
+                }
+            }
+            allTasks.add(taskWithStatusUpdate);
+        });
+    }
+
+    private void addProcessFileToNewTasks(final ProcessFile savedProcessFile,
+                                          final FileEventType fileEventType,
+                                          final boolean isInput,
+                                          final OffsetDateTime start,
+                                          final OffsetDateTime end,
+                                          final Set<TaskWithStatusUpdate> allTasks,
+                                          final Map<OffsetDateTime, TaskWithStatusUpdate> existingTasksInDatabase) {
         final List<Task> tasksToSave = Stream.iterate(start, time -> time.plusHours(1))
                 .limit(ChronoUnit.HOURS.between(start, end))
                 .filter(timestamp -> !existingTasksInDatabase.containsKey(timestamp))
@@ -172,36 +204,11 @@ public class TaskService {
                 .toList();
         //Tasks must be saved before adding file/processEvent to it to ensure foreign key constraint is respected
         taskRepository.saveAll(tasksToSave);
-        tasksToSave.forEach(newTask -> addProcessFileToNewTask(savedProcessFile, fileEventType, isInput, newTask, allTasks));
-        return allTasks;
-    }
 
-    private void addProcessFileToNewTask(final ProcessFile savedProcessFile,
-                                         final FileEventType fileEventType,
-                                         final boolean isInput,
-                                         final Task newTask,
-                                         final Set<TaskWithStatusUpdate> allTasks) {
-        applyProcessFileToTask(savedProcessFile, fileEventType, isInput, newTask);
-        allTasks.add(new TaskWithStatusUpdate(newTask, true));
-    }
-
-    private void addProcessFileToExistingTasks(final ProcessFile savedProcessFile,
-                                               final FileEventType fileEventType,
-                                               final boolean isInput,
-                                               final boolean withStatusUpdate,
-                                               final TaskWithStatusUpdate taskWithStatusUpdate,
-                                               final Set<TaskWithStatusUpdate> allTasks) {
-        final Task task = taskWithStatusUpdate.getTask();
-        applyProcessFileToTask(savedProcessFile, fileEventType, isInput, task);
-        if (withStatusUpdate && isInput) {
-            final boolean statusUpdateDueToFileArrival = checkAndUpdateTaskStatus(task, true);
-            taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
-            if (statusUpdateDueToFileArrival) {
-                LOGGER.info("Update status of task with timestamp {} when processFile {} arrived to status {}",
-                        task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
-            }
-        }
-        allTasks.add(taskWithStatusUpdate);
+        tasksToSave.forEach(newTask -> {
+            applyProcessFileToTask(savedProcessFile, fileEventType, isInput, newTask);
+            allTasks.add(new TaskWithStatusUpdate(newTask, true));
+        });
     }
 
     private void applyProcessFileToTask(final ProcessFile savedProcessFile,
