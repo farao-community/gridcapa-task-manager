@@ -198,6 +198,6 @@ public class TaskDtoBuilderService {
         List<ProcessFileDto> processFileDtos = processRun.getInputFiles().stream()
                 .map(this::createDtoFromEntity)
                 .toList();
-        return new ProcessRunDto(processRun.getExecutionDate(), processFileDtos);
+        return new ProcessRunDto(processRun.getId(), processRun.getExecutionDate(), processFileDtos);
     }
 }

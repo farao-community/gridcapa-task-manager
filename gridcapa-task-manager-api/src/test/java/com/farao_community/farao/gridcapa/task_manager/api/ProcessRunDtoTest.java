@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,9 +24,10 @@ class ProcessRunDtoTest {
         ProcessFileDto processFileDto = new ProcessFileDto(null, null, null, null, null, null);
         OffsetDateTime now = OffsetDateTime.now();
         List<ProcessFileDto> inputFiles = List.of(processFileDto);
+        UUID id = UUID.randomUUID();
+        ProcessRunDto processRunDto = new ProcessRunDto(id, now, inputFiles);
 
-        ProcessRunDto processRunDto = new ProcessRunDto(now, inputFiles);
-
+        assertEquals(id, processRunDto.getId());
         assertEquals(now, processRunDto.getExecutionDate());
         assertEquals(inputFiles, processRunDto.getInputs());
     }
