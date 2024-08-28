@@ -3,6 +3,10 @@ spring:
     change-log: classpath:/db/changelog-master.xml
   jpa:
     properties:
+      order_insert: true
+      order_updates: true
+      jdbc:
+        batch_size: 50
       hibernate:
         timezone:
           default_storage: NORMALIZE_UTC

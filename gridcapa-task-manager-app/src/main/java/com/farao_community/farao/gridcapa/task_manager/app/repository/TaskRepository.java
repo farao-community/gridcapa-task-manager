@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -36,6 +36,11 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @Query("SELECT task FROM Task task JOIN FETCH task.processFiles " +
             "WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
+    Set<Task> findAllByTimestampWithAtLeastOneProcessFileBetween(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
+                                                                 @Param("endingTimestamp") OffsetDateTime endingTimestamp);
+
+    @Query("SELECT task FROM Task task LEFT JOIN FETCH task.processFiles " +
+            "WHERE task.timestamp >= :startingTimestamp AND task.timestamp < :endingTimestamp")
     Set<Task> findAllByTimestampBetween(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
 
@@ -55,8 +60,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             "WHERE task.timestamp >= :startingTimestamp AND task.timestamp <= :endingTimestamp")
     Set<Task> findAllByTimestampBetweenForBusinessDayView(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
-
-    @Query("SELECT task FROM Task task INNER JOIN task.processEvents")
-    Set<Task> findAllWithAtLeastOneProcessEvent();
 
 }
