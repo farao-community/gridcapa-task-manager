@@ -12,9 +12,10 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.service.TaskDtoBuilderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class TaskUpdateNotifierTest {
 
     @Mock
@@ -53,7 +55,6 @@ class TaskUpdateNotifierTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         task = mock(Task.class);
         taskDto = mock(TaskDto.class);
         when(taskDtoBuilderService.createDtoFromEntityWithoutProcessEvents(any(Task.class))).thenReturn(taskDto);
@@ -105,6 +106,23 @@ class TaskUpdateNotifierTest {
 
         // Then
         verify(streamBridge, never()).send(anyString(), any());
+        verify(stompBridge, times(2)).convertAndSend(anyString(), eq(taskDto));
+        verify(stompBridge, times(1)).convertAndSend(contains("/events"), eq(true));
+    }
+
+    @Test
+    void testNotifyWithUpdates() {
+        // Given
+        final boolean withStatusUpdate = true;
+        final boolean withEventsUpdate = true;
+        final boolean withNewInput = true;
+
+        // When
+        taskUpdateNotifier.notify(task, withStatusUpdate, withEventsUpdate, withNewInput);
+
+        // Then
+        verify(streamBridge, times(1)).send("task-input-updated", taskDto);
+        verify(streamBridge, times(1)).send("task-status-updated", taskDto);
         verify(stompBridge, times(2)).convertAndSend(anyString(), eq(taskDto));
         verify(stompBridge, times(1)).convertAndSend(contains("/events"), eq(true));
     }
