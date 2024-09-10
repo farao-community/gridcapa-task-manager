@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -23,7 +23,6 @@ import java.util.Set;
  */
 @Service
 public class TaskUpdateNotifier {
-    private static final String TASK_UPDATED_BINDING = "task-updated";
     private static final String TASK_STATUS_UPDATED_BINDING = "task-status-updated";
     private static final String TASK_INPUT_UPDATED_BINDING = "task-input-updated";
 
@@ -44,14 +43,15 @@ public class TaskUpdateNotifier {
         this.notify(task, withStatusUpdate, withEventsUpdate, false);
     }
 
-    public void notify(Task task, boolean withStatusUpdate, boolean withEventsUpdate, boolean withNewInput) {
-        String bindingName = withStatusUpdate ? TASK_STATUS_UPDATED_BINDING : TASK_UPDATED_BINDING;
-        TaskDto taskDtoNoLogs = taskDtoBuilderService.createDtoFromEntityWithoutProcessEvents(task);
-        streamBridge.send(bindingName, taskDtoNoLogs);
+    public void notify(final Task task, final boolean withStatusUpdate, final boolean withEventsUpdate, final boolean withNewInput) {
+        final TaskDto taskDtoNoLogs = taskDtoBuilderService.createDtoFromEntityWithoutProcessEvents(task);
+        if (withStatusUpdate) {
+            streamBridge.send(TASK_STATUS_UPDATED_BINDING, taskDtoNoLogs);
+        }
         if (withNewInput) {
             streamBridge.send(TASK_INPUT_UPDATED_BINDING, taskDtoNoLogs);
         }
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskDtoNoLogs); // to actualize status/files in the timestamp view
         stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskDtoNoLogs); // to actualize status/files in the business date view
         if (withEventsUpdate) {
