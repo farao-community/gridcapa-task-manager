@@ -26,10 +26,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.*;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -225,9 +232,6 @@ public class FileManager {
         String path = String.format("%s/MANUAL_UPLOAD/%s/%s", taskManagerConfigurationProperties.getProcess().getManualUploadBasePath(), timestamp.format(ZIP_DATE_TIME_FORMATTER), fileName);
         try (InputStream in = file.getInputStream()) {
             minioAdapter.uploadInputForTimestamp(path, in, processTag, fileType, timestamp);
-            String logFileName = fileName != null ? fileName.replaceAll("[\n\r]", "_") : "NULL";
-            String logTimestamp = timestamp.toString().replaceAll("[\n\r]", "_");
-            businessLogger.info("Manually uploaded file : {}, for timestamp {}", logFileName, logTimestamp);
         } catch (IOException e) {
             throw new TaskManagerException(String.format("Exception occurred while uploading file to minio : %s", file.getName()), e);
         }
