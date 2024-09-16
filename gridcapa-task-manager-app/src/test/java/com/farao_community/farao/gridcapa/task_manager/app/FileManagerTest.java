@@ -20,12 +20,22 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
@@ -49,7 +59,7 @@ class FileManagerTest {
     void checkBytesForFileGroupGeneratedProperly() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(taskTimestamp)).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestampAndFetchProcessEvents(taskTimestamp)).thenReturn(Optional.of(task));
         assertNotNull(fileManager.getZippedGroup(taskTimestamp, MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
 
@@ -63,7 +73,7 @@ class FileManagerTest {
     void checkBytesForFileGroupGeneratedProperlyFromId() throws Exception {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
+        when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
         assertNotNull(fileManager.getZippedGroupById(task.getId().toString(), MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE));
     }
 
@@ -97,7 +107,7 @@ class FileManagerTest {
     void checkGetLogs() {
         OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(taskTimestamp);
-        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(taskTimestamp)).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestampAndFetchProcessEvents(taskTimestamp)).thenReturn(Optional.of(task));
         try {
             assertNotNull(fileManager.getLogs(taskTimestamp));
         } catch (IOException e) {
@@ -109,7 +119,7 @@ class FileManagerTest {
     void testGetRaoRunnerAppLogs() {
         OffsetDateTime timestamp = OffsetDateTime.parse("2021-09-30T23:00Z");
         Task task = new Task(timestamp);
-        Mockito.when(taskRepository.findByTimestampAndFetchProcessEvents(timestamp)).thenReturn(Optional.of(task));
+        when(taskRepository.findByTimestampAndFetchProcessEvents(timestamp)).thenReturn(Optional.of(task));
         try {
             assertNotNull(fileManager.getRaoRunnerAppLogs(timestamp));
         } catch (IOException e) {
@@ -125,16 +135,30 @@ class FileManagerTest {
 
     @Test
     void checkUploadFileToMinioInErrorIOException() throws IOException {
-        MultipartFile file = Mockito.mock(MultipartFile.class);
+        MultipartFile file = mock(MultipartFile.class);
         Mockito.doThrow(new IOException()).when(file).getInputStream();
         OffsetDateTime timestamp = OffsetDateTime.now();
         assertThrows(TaskManagerException.class, () -> fileManager.uploadFileToMinio(timestamp, file, "CGM", "TEST"));
     }
 
     @Test
-    void checkUploadFileToMinio() {
-        MultipartFile file = Mockito.mock(MultipartFile.class);
-        fileManager.uploadFileToMinio(OffsetDateTime.now(), file, "CRAC", "TEST");
-        Mockito.verify(businessLogger, Mockito.atLeastOnce()).info(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    void testUploadFileToMinio() throws IOException {
+        // Given
+        final OffsetDateTime timestamp = OffsetDateTime.parse("2024-09-16T14:30Z");
+        final String fileType = "text/plain";
+        final String fileName = "testfile.txt";
+        final String processTag = "CSE_D2CC";
+        final String expectedPath = "cse/d2cc/MANUAL_UPLOAD/2024-09-16_1430/testfile.txt";
+
+        final MultipartFile file = mock(MultipartFile.class);
+        final InputStream inputStream = new ByteArrayInputStream("file content".getBytes());
+
+        when(file.getInputStream()).thenReturn(inputStream);
+
+        // When
+        fileManager.uploadFileToMinio(timestamp, file, fileType, fileName);
+
+        // Then
+        verify(minioAdapter).uploadInputForTimestamp(expectedPath, inputStream, processTag, fileType, timestamp);
     }
 }
