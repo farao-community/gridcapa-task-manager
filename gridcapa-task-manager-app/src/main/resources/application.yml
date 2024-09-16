@@ -15,7 +15,7 @@ spring:
   cloud:
     function:
       definition: consumeMinioEvent;consumeTaskStatusUpdate;consumeTaskEventUpdate
-  http:
+  servlet:
     multipart:
       enabled: true
       max-file-size: 100MB
