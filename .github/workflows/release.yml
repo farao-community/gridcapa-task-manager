@@ -67,29 +67,29 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           tags: v${{ github.event.inputs.releaseVersion }}
 
-      - name: Change Maven version to next version
-        run: mvn --batch-mode versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.nextVersion }}-SNAPSHOT
-
-      - name: Commit next version
-        uses: stefanzweifel/git-auto-commit-action@master
-        with:
-          branch: next-release-v${{ github.event.inputs.nextVersion }}
-          create_branch: true
-          commit_message: Prepare next release ${{ github.event.inputs.nextVersion }}
-          skip_fetch: true
-          skip_checkout: true
-
-      - name: Merge automatically into source branch
-        uses: devmasx/merge-branch@master
-        with:
-          type: now
-          from_branch: next-release-v${{ github.event.inputs.nextVersion }}
-          target_branch: ${{ github.ref_name }}
-          message: Automatic merge after release ${{ github.event.inputs.releaseVersion }}
-          github_token: ${{ secrets.REPO_ACCESS_TOKEN }}
-
-      - name: Delete merged branch
-        uses: dawidd6/action-delete-branch@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branches: next-release-v${{ github.event.inputs.nextVersion }}
+#      - name: Change Maven version to next version
+#        run: mvn --batch-mode versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.nextVersion }}-SNAPSHOT
+#
+#      - name: Commit next version
+#        uses: stefanzweifel/git-auto-commit-action@master
+#        with:
+#          branch: next-release-v${{ github.event.inputs.nextVersion }}
+#          create_branch: true
+#          commit_message: Prepare next release ${{ github.event.inputs.nextVersion }}
+#          skip_fetch: true
+#          skip_checkout: true
+#
+#      - name: Merge automatically into source branch
+#        uses: devmasx/merge-branch@master
+#        with:
+#          type: now
+#          from_branch: next-release-v${{ github.event.inputs.nextVersion }}
+#          target_branch: ${{ github.ref_name }}
+#          message: Automatic merge after release ${{ github.event.inputs.releaseVersion }}
+#          github_token: ${{ secrets.REPO_ACCESS_TOKEN }}
+#
+#      - name: Delete merged branch
+#        uses: dawidd6/action-delete-branch@v3
+#        with:
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          branches: next-release-v${{ github.event.inputs.nextVersion }}
