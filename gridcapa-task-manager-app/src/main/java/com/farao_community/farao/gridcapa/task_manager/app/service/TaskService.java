@@ -119,15 +119,12 @@ public class TaskService {
 
     private static String getFileEventMessage(FileEventType fileEventType, String fileType, String fileName, boolean isManualUpload) {
         final String logPrefix = buildFileEventPrefix(isManualUpload);
-        if (fileEventType == FileEventType.WAITING) {
-            return String.format("%s new version of %s is waiting for process to end to be available : '%s'", logPrefix, fileType, fileName);
-        } else if (fileEventType == FileEventType.UPDATED) {
-            return String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
-        } else if (fileEventType == FileEventType.AVAILABLE) {
-            return String.format("%s new version of %s is available : '%s'", logPrefix, fileType, fileName);
-        } else {
-            return String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
-        }
+        return switch (fileEventType) {
+            case WAITING -> String.format("%s new version of %s is waiting for process to end to be available : '%s'", logPrefix, fileType, fileName);
+            case UPDATED -> String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
+            case AVAILABLE -> String.format("%s new version of %s is available : '%s'", logPrefix, fileType, fileName);
+            default -> String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
+        };
     }
 
     private static String buildFileEventPrefix(final boolean isManualUpload) {

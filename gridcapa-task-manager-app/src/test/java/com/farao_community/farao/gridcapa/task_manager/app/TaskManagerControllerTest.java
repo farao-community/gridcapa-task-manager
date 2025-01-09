@@ -40,10 +40,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -231,7 +229,6 @@ class TaskManagerControllerTest {
         String timestamp = "2021-09-01T23:30Z";
         OffsetDateTime taskTimestamp = OffsetDateTime.parse(timestamp);
         String fileType = "CRAC";
-        String fakeUrl = "http://fakeUrl";
         Task task = new Task(taskTimestamp);
         final ProcessFile pf = new ProcessFile("FAKE", "input", fileType, "documentIdCrac", taskTimestamp, taskTimestamp, taskTimestamp);
         task.addProcessFile(pf);
@@ -332,7 +329,6 @@ class TaskManagerControllerTest {
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
-        Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
         Set<Task> tasks = new HashSet<>();
         while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
             Task task = new Task(startTimestamp.atZoneSameInstant(ZoneId.of("Z")).toOffsetDateTime());

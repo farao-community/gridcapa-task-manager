@@ -42,7 +42,7 @@ class ProcessFileDtoTest {
         ProcessFileDto diffFilenameDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "other", "documentId", now);
         ProcessFileDto diffDateDto = new ProcessFileDto("path/to/filename", "FILETYPE", ProcessFileStatus.VALIDATED, "filename", "documentId", now.minusMinutes(1));
 
-        assertFalse(referenceDto.equals(null)); // do not use assertNotEquals, which does not call equals method in this case
+        assertFalse(referenceDto.equals(null)); // NOSONAR: do not use assertNotEquals, which does not call equals method in this case
         assertNotEquals(referenceDto, new Object());
         assertEquals(referenceDto, referenceDto);
         assertEquals(equalDto, referenceDto);

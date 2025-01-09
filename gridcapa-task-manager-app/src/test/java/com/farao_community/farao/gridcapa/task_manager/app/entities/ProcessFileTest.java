@@ -74,15 +74,6 @@ class ProcessFileTest {
 
     @Test
     void isNotOutputTest() {
-        ProcessFile processFileInput = new ProcessFile(
-                "cgm-name",
-                "input",
-                "CGM",
-                "documentIdCgm",
-                OffsetDateTime.parse("2021-10-11T00:00Z"),
-                OffsetDateTime.parse("2021-10-12T00:00Z"),
-                OffsetDateTime.parse("2021-10-11T10:18Z"));
-
         ProcessFile processFileArtifact = new ProcessFile(
                 "file-name",
                 "artifact",

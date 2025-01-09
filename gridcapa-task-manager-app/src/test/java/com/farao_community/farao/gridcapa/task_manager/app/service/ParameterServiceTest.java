@@ -101,7 +101,6 @@ class ParameterServiceTest {
     @Test
     void setParameterValueNotFoundTest() {
         String id = "1515L";
-        String value = "Amazing value";
         Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.empty());
 
         List<ParameterDto> parameterDtos = List.of(new ParameterDto("unknown", null, 1, null, null, 2, null, null));
