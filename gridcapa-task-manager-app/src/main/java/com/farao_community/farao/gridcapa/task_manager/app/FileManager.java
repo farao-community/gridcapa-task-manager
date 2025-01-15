@@ -24,6 +24,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
@@ -206,9 +208,9 @@ public class FileManager {
             if (taskManagerConfigurationProperties.getWhitelist().stream().noneMatch(urlString::startsWith)) {
                 throw new TaskManagerException(String.format("URL '%s' is not part of application's whitelisted url's.", urlString));
             }
-            URL url = new URL(urlString);
+            URL url = new URI(urlString).toURL();
             return url.openStream(); // NOSONAR Usage of whitelist not triggered by Sonar quality assessment, even if listed as a solution to the vulnerability
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             businessLogger.error("Error while retrieving content of file \"{}\", link may have expired.", getFileNameFromUrl(urlString));
             throw new TaskManagerException(String.format("Exception occurred while retrieving file content from %s", urlString), e);
         }
@@ -216,9 +218,9 @@ public class FileManager {
 
     private String getFileNameFromUrl(String stringUrl) {
         try {
-            URL url = new URL(stringUrl);
+            URL url = new URI(stringUrl).toURL();
             return FilenameUtils.getName(url.getPath());
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             throw new TaskManagerException(String.format("Exception occurred while retrieving file name from : %s", stringUrl), e);
         }
     }

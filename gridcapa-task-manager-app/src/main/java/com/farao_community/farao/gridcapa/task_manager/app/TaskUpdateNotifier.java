@@ -52,10 +52,11 @@ public class TaskUpdateNotifier {
             streamBridge.send(TASK_INPUT_UPDATED_BINDING, taskDtoNoLogs);
         }
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()), taskDtoNoLogs); // to actualize status/files in the timestamp view
-        stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()).substring(0, 10), taskDtoNoLogs); // to actualize status/files in the business date view
+        final String websocketNotifyUpdateBaseUrl = websocketConfig.getNotify() + "/update/";
+        stompBridge.convertAndSend(websocketNotifyUpdateBaseUrl + fmt.format(task.getTimestamp()), taskDtoNoLogs); // to actualize status/files in the timestamp view
+        stompBridge.convertAndSend(websocketNotifyUpdateBaseUrl + fmt.format(task.getTimestamp()).substring(0, 10), taskDtoNoLogs); // to actualize status/files in the business date view
         if (withEventsUpdate) {
-            stompBridge.convertAndSend(websocketConfig.getNotify() + "/update/" + fmt.format(task.getTimestamp()) + "/events", true); // to actualize event logs in the timestamp view
+            stompBridge.convertAndSend(websocketNotifyUpdateBaseUrl + fmt.format(task.getTimestamp()) + "/events", true); // to actualize event logs in the timestamp view
         }
     }
 

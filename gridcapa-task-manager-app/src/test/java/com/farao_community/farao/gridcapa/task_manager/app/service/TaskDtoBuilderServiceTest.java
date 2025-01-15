@@ -267,15 +267,15 @@ class TaskDtoBuilderServiceTest {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
         Mockito.when(processProperties.getTimezone()).thenReturn("CET");
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
-        TaskRepository taskRepository = new TaskRepositoryMock();
+        TaskRepository customTaskRepository = new TaskRepositoryMock();
         ParameterService parameterService = Mockito.mock(ParameterService.class);
         ParameterDto param = new ParameterDto(null, null, 1, null, null, 2, null, null);
         Mockito.when(parameterService.getParameters()).thenReturn(List.of(param, param, param));
-        TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
+        TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 11, 9);
-        List<TaskDto> listTasksDto = taskDtoBuilderService.getListTasksDto(localDate);
+        List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
         assertEquals(24, listTasksDto.size());
-        assertEquals(3, listTasksDto.get(0).getParameters().size());
+        assertEquals(3, listTasksDto.getFirst().getParameters().size());
     }
 
     @Test
@@ -283,11 +283,11 @@ class TaskDtoBuilderServiceTest {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
         Mockito.when(processProperties.getTimezone()).thenReturn("CET");
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
-        TaskRepository taskRepository = new TaskRepositoryMock();
+        TaskRepository customTaskRepository = new TaskRepositoryMock();
         ParameterService parameterService = Mockito.mock(ParameterService.class);
-        TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
+        TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 3, 26);
-        assertEquals(23, taskDtoBuilderService.getListTasksDto(localDate).size());
+        assertEquals(23, customTaskDtoBuilderService.getListTasksDto(localDate).size());
     }
 
     @Test
@@ -295,11 +295,11 @@ class TaskDtoBuilderServiceTest {
         TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
         Mockito.when(processProperties.getTimezone()).thenReturn("CET");
         TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
-        TaskRepository taskRepository = new TaskRepositoryMock();
+        TaskRepository customTaskRepository = new TaskRepositoryMock();
         ParameterService parameterService = Mockito.mock(ParameterService.class);
-        TaskDtoBuilderService taskDtoBuilderService = new TaskDtoBuilderService(properties, taskRepository, parameterService);
+        TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
         LocalDate localDate = LocalDate.of(2023, 10, 29);
-        assertEquals(25, taskDtoBuilderService.getListTasksDto(localDate).size());
+        assertEquals(25, customTaskDtoBuilderService.getListTasksDto(localDate).size());
     }
 
     private class TaskRepositoryMock implements TaskRepository {
@@ -380,27 +380,27 @@ class TaskDtoBuilderServiceTest {
 
         @Override
         public void deleteById(UUID uuid) {
-
+            // this is a mock
         }
 
         @Override
         public void delete(Task entity) {
-
+            // this is a mock
         }
 
         @Override
         public void deleteAllById(Iterable<? extends UUID> uuids) {
-
+            // this is a mock
         }
 
         @Override
         public void deleteAll(Iterable<? extends Task> entities) {
-
+            // this is a mock
         }
 
         @Override
         public void deleteAll() {
-
+            // this is a mock
         }
 
         @Override
@@ -425,7 +425,7 @@ class TaskDtoBuilderServiceTest {
 
         @Override
         public void flush() {
-
+            // this is a mock
         }
 
         @Override
@@ -439,23 +439,18 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public void deleteInBatch(final Iterable<Task> entities) {
-            TaskRepository.super.deleteInBatch(entities);
-        }
-
-        @Override
         public void deleteAllInBatch(Iterable<Task> entities) {
-
+            // this is a mock
         }
 
         @Override
         public void deleteAllByIdInBatch(Iterable<UUID> uuids) {
-
+            // this is a mock
         }
 
         @Override
         public void deleteAllInBatch() {
-
+            // this is a mock
         }
 
         @Override

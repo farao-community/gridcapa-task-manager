@@ -24,7 +24,6 @@ import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEve
 import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessFileRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,8 +52,6 @@ import static org.mockito.Mockito.when;
  */
 @SpringBootTest
 class TaskServiceTest {
-    private static final String INPUT_FILE_GROUP_VALUE = MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
-
     @MockBean
     private TaskUpdateNotifier taskUpdateNotifier;
     @MockBean

@@ -81,7 +81,6 @@ public class MinioHandler {
         });
     }
 
-    @Transactional
     public void handleMinioEvent(NotificationRecords notificationRecords) {
         notificationRecords.events().forEach(event -> {
             LOGGER.debug("s3 event received");
@@ -101,7 +100,6 @@ public class MinioHandler {
         });
     }
 
-    @Transactional
     public void updateTasks(Event event) {
         synchronized (TASK_MANAGER_LOCK) {
             if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag().equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
@@ -249,7 +247,6 @@ public class MinioHandler {
         return (timestamp.equals(startingAvailabilityDate) || timestamp.isAfter(startingAvailabilityDate)) && timestamp.isBefore(endingAvailabilityDate);
     }
 
-    @Transactional
     public void removeProcessFile(Event event) {
         synchronized (TASK_MANAGER_LOCK) {
             String objectKey = URLDecoder.decode(event.objectName(), StandardCharsets.UTF_8);
@@ -269,7 +266,7 @@ public class MinioHandler {
 
     private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet, boolean withNewInput) {
         LOGGER.debug("Saving related tasks in DB");
-        taskRepository.saveAllAndFlush(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).collect(Collectors.toList()));
+        taskRepository.saveAllAndFlush(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).toList());
         LOGGER.debug("Notifying on web-sockets");
         if (withNewInput) {
             taskUpdateNotifier.notifyNewInput(taskWithStatusUpdateSet);
