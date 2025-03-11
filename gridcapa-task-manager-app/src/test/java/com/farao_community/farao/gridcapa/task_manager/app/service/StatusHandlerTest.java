@@ -12,6 +12,8 @@ import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -21,6 +23,7 @@ import java.time.OffsetDateTime;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.times;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -39,6 +42,9 @@ class StatusHandlerTest {
 
     @Autowired
     private StatusHandler statusHandler;
+
+    @MockBean
+    private Logger businessLogger;
 
     @AfterEach
     void cleanDatabase() {
@@ -66,6 +72,7 @@ class StatusHandlerTest {
         statusHandler.handleTaskStatusUpdate(taskTimestamp, RUNNING);
 
         Task updatedTask = taskRepository.findByTimestamp(taskTimestamp).orElseThrow();
+        Mockito.verify(businessLogger, times(1)).info("Task status has been updated to {}.", RUNNING);
         assertEquals(RUNNING, updatedTask.getStatus());
     }
 }

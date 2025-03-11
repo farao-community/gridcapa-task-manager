@@ -8,11 +8,12 @@ package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -33,11 +34,16 @@ public class StatusHandler {
     private final MinioHandler minioHandler;
     private final TaskRepository taskRepository;
     private final TaskUpdateNotifier taskUpdateNotifier;
+    private final Logger businessLogger;
 
-    public StatusHandler(MinioHandler minioHandler, TaskRepository taskRepository, TaskUpdateNotifier taskUpdateNotifier) {
+    public StatusHandler(final MinioHandler minioHandler,
+                         final TaskRepository taskRepository,
+                         final TaskUpdateNotifier taskUpdateNotifier,
+                         final Logger businessLogger) {
         this.minioHandler = minioHandler;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
+        this.businessLogger = businessLogger;
     }
 
     @Bean
@@ -83,10 +89,15 @@ public class StatusHandler {
         }
     }
 
-    private void updateTaskStatus(Task task, TaskStatus taskStatus) {
+    private void updateTaskStatus(final Task task,
+                                  final TaskStatus taskStatus) {
         task.setStatus(taskStatus);
-        Task savedTask = taskRepository.saveAndFlush(task);
+        final Task savedTask = taskRepository.saveAndFlush(task);
         taskUpdateNotifier.notify(savedTask, true, false);
         LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
+        if (taskStatus.isOver() || TaskStatus.RUNNING.equals(task.getStatus())) {
+            MDC.put("gridcapa-task-id", task.getId().toString());
+            businessLogger.info("Task status has been updated to {}.", task.getStatus());
+        }
     }
 }
