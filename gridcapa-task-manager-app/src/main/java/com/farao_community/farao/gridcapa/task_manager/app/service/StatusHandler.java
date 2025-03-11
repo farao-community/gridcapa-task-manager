@@ -39,11 +39,11 @@ public class StatusHandler {
     public StatusHandler(final MinioHandler minioHandler,
                          final TaskRepository taskRepository,
                          final TaskUpdateNotifier taskUpdateNotifier,
-                         final Logger businessLogger1) {
+                         final Logger businessLogger) {
         this.minioHandler = minioHandler;
         this.taskRepository = taskRepository;
         this.taskUpdateNotifier = taskUpdateNotifier;
-        this.businessLogger = businessLogger1;
+        this.businessLogger = businessLogger;
     }
 
     @Bean
