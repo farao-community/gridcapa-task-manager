@@ -32,8 +32,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -52,17 +52,17 @@ import static org.mockito.Mockito.when;
  */
 @SpringBootTest
 class TaskServiceTest {
-    @MockBean
+    @MockitoBean
     private TaskUpdateNotifier taskUpdateNotifier;
-    @MockBean
+    @MockitoBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
-    @MockBean
+    @MockitoBean
     private MinioAdapter minioAdapter;
-    @MockBean
+    @MockitoBean
     private ProcessFileRepository processFileRepository;
-    @MockBean
+    @MockitoBean
     private TaskRepository taskRepository;
-    @MockBean
+    @MockitoBean
     private ProcessEventRepository processEventRepository;
 
     @Autowired

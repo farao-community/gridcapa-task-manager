@@ -61,8 +61,7 @@ public class Task {
 
     @OneToMany(
             mappedBy = "task",
-            cascade = {CascadeType.MERGE},
-            orphanRemoval = true
+            cascade = {CascadeType.MERGE, CascadeType.REMOVE}
     )
     @SortComparator(ReverseEventComparator.class)
     private final SortedSet<ProcessEvent> processEvents = Collections.synchronizedSortedSet(new TreeSet<>());

@@ -27,9 +27,9 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
@@ -61,19 +61,19 @@ import static org.mockito.ArgumentMatchers.eq;
 @SpringBootTest
 class TaskManagerControllerTest {
 
-    @MockBean
+    @MockitoBean
     private TaskRepository taskRepository;
 
-    @MockBean
+    @MockitoBean
     private StatusHandler statusHandler;
 
-    @MockBean
+    @MockitoBean
     private FileManager fileManager;
 
-    @MockBean
+    @MockitoBean
     private FileSelectorService fileSelectorService;
 
-    @MockBean
+    @MockitoBean
     private Logger businessLogger;
 
     @Autowired
@@ -88,10 +88,10 @@ class TaskManagerControllerTest {
     @Autowired
     private TaskManagerConfigurationProperties properties;
 
-    @MockBean
+    @MockitoBean
     private ParameterService parameterService;
 
-    @MockBean
+    @MockitoBean
     private TaskService taskService;
 
     @Test

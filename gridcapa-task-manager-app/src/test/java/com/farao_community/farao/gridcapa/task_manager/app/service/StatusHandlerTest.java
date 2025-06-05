@@ -16,8 +16,8 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.OffsetDateTime;
 
@@ -34,7 +34,7 @@ class StatusHandlerTest {
     @Autowired
     private TaskUpdateNotifier taskUpdateNotifier;
 
-    @MockBean
+    @MockitoBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
 
     @Autowired
@@ -43,7 +43,7 @@ class StatusHandlerTest {
     @Autowired
     private StatusHandler statusHandler;
 
-    @MockBean
+    @MockitoBean
     private Logger businessLogger;
 
     @AfterEach

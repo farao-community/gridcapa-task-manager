@@ -17,7 +17,7 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -43,13 +43,13 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class FileManagerTest {
 
-    @MockBean
+    @MockitoBean
     private TaskRepository taskRepository;
 
-    @MockBean
+    @MockitoBean
     private MinioAdapter minioAdapter;
 
-    @MockBean
+    @MockitoBean
     private Logger businessLogger;
 
     @Autowired

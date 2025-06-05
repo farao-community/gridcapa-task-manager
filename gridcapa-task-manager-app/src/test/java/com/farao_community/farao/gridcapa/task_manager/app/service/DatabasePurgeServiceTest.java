@@ -13,8 +13,8 @@ import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskReposi
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
@@ -37,7 +37,7 @@ class DatabasePurgeServiceTest {
     @Autowired
     private ProcessEventRepository processEventRepository;
 
-    @MockBean
+    @MockitoBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
 
     @Autowired
