@@ -28,8 +28,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
@@ -56,10 +56,10 @@ class MinioHandlerTest {
     @Autowired
     private TaskUpdateNotifier taskUpdateNotifier;
 
-    @MockBean
+    @MockitoBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
 
-    @MockBean
+    @MockitoBean
     private MinioAdapter minioAdapter;
 
     @Autowired

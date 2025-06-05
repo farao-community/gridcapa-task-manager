@@ -14,18 +14,18 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @SpringBootTest
 class FileSelectorServiceTest {
-    @MockBean
+    @MockitoBean
     private TaskRepository taskRepository;
-    @MockBean
+    @MockitoBean
     private ProcessEventRepository processEventRepository;
-    @MockBean
+    @MockitoBean
     private TaskUpdateNotifier taskUpdateNotifier;
     @Autowired
     private FileSelectorService fileSelectorService;

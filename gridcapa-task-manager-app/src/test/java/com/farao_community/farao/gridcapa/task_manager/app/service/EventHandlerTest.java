@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
@@ -35,10 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 class EventHandlerTest {
 
-    @MockBean
+    @MockitoBean
     private TaskUpdateNotifier taskUpdateNotifier;
 
-    @MockBean
+    @MockitoBean
     private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
 
     @Autowired
