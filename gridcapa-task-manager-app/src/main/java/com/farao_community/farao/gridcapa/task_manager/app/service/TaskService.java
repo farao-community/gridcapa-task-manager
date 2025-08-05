@@ -63,9 +63,9 @@ public class TaskService {
         this.processEventRepository = processEventRepository;
     }
 
-    ////////////////////////////
+    // ////////////////////// //
     // TASK STATUS MANAGEMENT //
-    ////////////////////////////
+    // ////////////////////// //
 
     /**
      * We compare the size of inputs list from process files of the task and the size of inputs from configuration.
@@ -92,9 +92,9 @@ public class TaskService {
         return initialTaskStatus != task.getStatus();
     }
 
-    //////////////////////////////
+    // //////////////////////// //
     // PROCESS EVENT MANAGEMENT //
-    //////////////////////////////
+    // //////////////////////// //
 
     public void addProcessEventToTask(TaskLogEventUpdate loggerEvent, Task task) {
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
@@ -143,9 +143,9 @@ public class TaskService {
         processEventRepository.save(new ProcessEvent(task, timestamp, level, message, serviceName));
     }
 
-    //////////////////////////////
+    // //////////////////////// //
     // PROCESS FILES MANAGEMENT //
-    //////////////////////////////
+    // //////////////////////// //
 
     public Set<TaskWithStatusUpdate> addProcessFileToTasks(final ProcessFile savedProcessFile,
                                                            final FileEventType fileEventType,
@@ -275,9 +275,9 @@ public class TaskService {
         return status == TaskStatus.RUNNING || status == TaskStatus.PENDING || status == TaskStatus.STOPPING;
     }
 
-    ////////////////////////////
+    // ////////////////////// //
     // RUN HISTORY MANAGEMENT //
-    ////////////////////////////
+    // ////////////////////// //
 
     public Task addNewRunAndSaveTask(OffsetDateTime timestamp, List<ProcessFileDto> inputFileDtos) {
         final Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);

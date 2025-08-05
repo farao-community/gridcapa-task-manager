@@ -25,7 +25,7 @@ class TaskTest {
     private Task task;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         task = new Task(OffsetDateTime.parse("2021-01-01T00:00Z"));
     }
 

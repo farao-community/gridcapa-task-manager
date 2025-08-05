@@ -82,7 +82,7 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Override
     public int compareTo(ProcessEvent o) {
-        if (this.timestamp.compareTo(o.getTimestamp()) == 0) {
+        if (this.timestamp.isEqual(o.getTimestamp())) {
             return this.message.compareTo(o.getMessage());
         }
         return this.timestamp.compareTo(o.getTimestamp());
