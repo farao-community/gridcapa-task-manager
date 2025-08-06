@@ -68,9 +68,9 @@ class TaskServiceTest {
     @Autowired
     private TaskService taskService;
 
-    ////////////////////////////
+    // ////////////////////// //
     // TASK STATUS MANAGEMENT //
-    ////////////////////////////
+    // ////////////////////// //
 
     @Test
     void checkAndUpdateTaskStatusWithNoInputFile() {
@@ -150,9 +150,9 @@ class TaskServiceTest {
         Assertions.assertThat(statusChanged).isTrue();
     }
 
-    //////////////////////////////
+    // //////////////////////// //
     // PROCESS EVENT MANAGEMENT //
-    //////////////////////////////
+    // //////////////////////// //
 
     @Test
     void addProcessEventToTaskWithoutPrefix() {
@@ -166,10 +166,10 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getTimestamp()).hasToString("2024-05-16T09:30Z");
-        Assertions.assertThat(captor.getAllValues().get(0).getLevel()).isEqualTo("WARN");
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).isEqualTo("The cake is a lie");
-        Assertions.assertThat(captor.getAllValues().get(0).getServiceName()).isEqualTo("test-service");
+        Assertions.assertThat(captor.getAllValues().getFirst().getTimestamp()).hasToString("2024-05-16T09:30Z");
+        Assertions.assertThat(captor.getAllValues().getFirst().getLevel()).isEqualTo("WARN");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).isEqualTo("The cake is a lie");
+        Assertions.assertThat(captor.getAllValues().getFirst().getServiceName()).isEqualTo("test-service");
     }
 
     @Test
@@ -184,10 +184,10 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getTimestamp()).hasToString("2024-05-16T09:30Z");
-        Assertions.assertThat(captor.getAllValues().get(0).getLevel()).isEqualTo("WARN");
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).isEqualTo("[prefix] : The cake is a lie");
-        Assertions.assertThat(captor.getAllValues().get(0).getServiceName()).isEqualTo("test-service");
+        Assertions.assertThat(captor.getAllValues().getFirst().getTimestamp()).hasToString("2024-05-16T09:30Z");
+        Assertions.assertThat(captor.getAllValues().getFirst().getLevel()).isEqualTo("WARN");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).isEqualTo("[prefix] : The cake is a lie");
+        Assertions.assertThat(captor.getAllValues().getFirst().getServiceName()).isEqualTo("test-service");
     }
 
     @Test
@@ -206,7 +206,7 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("Manual upload of a");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).startsWith("Manual upload of a");
     }
 
     @Test
@@ -225,7 +225,7 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("A new version of CGM is waiting for");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).startsWith("A new version of CGM is waiting for");
     }
 
     @Test
@@ -244,7 +244,7 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("A new version of CGM replaced");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).startsWith("A new version of CGM replaced");
     }
 
     @Test
@@ -263,7 +263,7 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("A new version of CGM is available");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).startsWith("A new version of CGM is available");
     }
 
     @Test
@@ -282,8 +282,8 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).startsWith("The CGM");
-        Assertions.assertThat(captor.getAllValues().get(0).getMessage()).endsWith("is deleted");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).startsWith("The CGM");
+        Assertions.assertThat(captor.getAllValues().getFirst().getMessage()).endsWith("is deleted");
     }
 
     @Test
@@ -302,12 +302,12 @@ class TaskServiceTest {
         ArgumentCaptor<ProcessEvent> captor = ArgumentCaptor.forClass(ProcessEvent.class);
         verify(processEventRepository, times(1)).save(captor.capture());
         Assertions.assertThat(captor.getAllValues()).hasSize(1);
-        Assertions.assertThat(captor.getAllValues().get(0).getLevel()).isEqualTo("ERROR");
+        Assertions.assertThat(captor.getAllValues().getFirst().getLevel()).isEqualTo("ERROR");
     }
 
-    //////////////////////////////
+    // //////////////////////// //
     // PROCESS FILES MANAGEMENT //
-    //////////////////////////////
+    // //////////////////////// //
 
     @Test
     void addProcessFileToTasksWithOutputFileAndNoStatusUpdate() {
@@ -392,9 +392,9 @@ class TaskServiceTest {
 
         assertEquals(3, result.size());
         Assertions.assertThat(task01.getInput("CRAC")).contains(processFileCracNew);
-        Assertions.assertThat(task01.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCgm);
+        Assertions.assertThat(task01.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileCgm);
         Assertions.assertThat(task02.getInput("CRAC")).contains(processFileCracNew);
-        Assertions.assertThat(task02.getRunHistory().get(0).getInputFiles()).isEmpty();
+        Assertions.assertThat(task02.getRunHistory().getFirst().getInputFiles()).isEmpty();
         // task 1 & 2 should not have seen their status updated
         assertTrue(result.stream()
                 .filter(t -> t.getTask().getTimestamp().equals(timestamp01) || t.getTask().getTimestamp().equals(timestamp02))
@@ -406,7 +406,7 @@ class TaskServiceTest {
         final ArgumentCaptor<List<Task>> tasksCaptor = ArgumentCaptor.forClass(List.class);
         Mockito.verify(taskRepository, times(1)).saveAll(tasksCaptor.capture());
         //newly created task must have been persisted
-        assertEquals(timestamp03, tasksCaptor.getValue().get(0).getTimestamp());
+        assertEquals(timestamp03, tasksCaptor.getValue().getFirst().getTimestamp());
         Mockito.verify(processEventRepository, times(3)).save(any());
         //newly created task have their boolean isStatusUpdated to true
         assertTrue(newlyCreatedTaskWithStatusUpdate.isStatusUpdated());
@@ -500,7 +500,7 @@ class TaskServiceTest {
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac, processFileGlsk);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileCrac, processFileGlsk);
 
         Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.removeProcessFileFromTasks(processFileCrac);
 
@@ -509,7 +509,7 @@ class TaskServiceTest {
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
         Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileGlsk);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileGlsk);
     }
 
     @Test
@@ -542,7 +542,7 @@ class TaskServiceTest {
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.READY);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac, processFileGlsk);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac, processFileGlsk);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileCrac, processFileGlsk);
 
         Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.removeProcessFileFromTasks(processFileCrac);
 
@@ -551,7 +551,7 @@ class TaskServiceTest {
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.CREATED);
         Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileGlsk);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileGlsk);
     }
 
     @Test
@@ -574,14 +574,14 @@ class TaskServiceTest {
         when(taskRepository.findAllByTimestampWithAtLeastOneProcessFileBetween(startingDate, endingDate)).thenReturn(Set.of(task));
         Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCrac);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileCrac);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileCrac);
 
         Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.removeProcessFileFromTasks(processFileCrac);
 
         Assertions.assertThat(taskWithStatusUpdateSet).isNotNull();
         Assertions.assertThat(task.getProcessEvents()).isEmpty();
         Assertions.assertThat(task.getProcessFiles()).isEmpty();
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).isEmpty();
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).isEmpty();
     }
 
     void removeProcessFileFromTasksWithOutputFile() {
@@ -613,7 +613,7 @@ class TaskServiceTest {
 
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileCne, processFileGlsk);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileGlsk);
         Set<TaskWithStatusUpdate> taskWithStatusUpdateSet = taskService.removeProcessFileFromTasks(processFileCne);
 
         Assertions.assertThat(taskWithStatusUpdateSet).isNotNull();
@@ -621,7 +621,7 @@ class TaskServiceTest {
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.SUCCESS);
         Mockito.verify(processEventRepository, Mockito.times(1)).save(any());
         Assertions.assertThat(task.getProcessFiles()).containsExactly(processFileGlsk);
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFileGlsk);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFileGlsk);
     }
 
     @Test
@@ -680,9 +680,9 @@ class TaskServiceTest {
         Assertions.assertThat(task.getStatus()).isEqualTo(TaskStatus.READY);
     }
 
-    ////////////////////////////
+    // ////////////////////// //
     // RUN HISTORY MANAGEMENT //
-    ////////////////////////////
+    // ////////////////////// //
 
     @Test
     void addNewRunAndSaveTaskThrowsTaskNotFound() {
@@ -728,7 +728,7 @@ class TaskServiceTest {
         Task savedTask = taskService.addNewRunAndSaveTask(timestamp, inputFileDtos);
 
         Assertions.assertThat(savedTask.getRunHistory()).hasSize(1);
-        Assertions.assertThat(savedTask.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);
+        Assertions.assertThat(savedTask.getRunHistory().getFirst().getInputFiles()).containsExactly(processFile1, processFile2);
     }
 
     @Test
@@ -776,7 +776,7 @@ class TaskServiceTest {
         Task savedTask = taskService.addNewRunAndSaveTask(timestamp, inputFileDtos);
 
         Assertions.assertThat(savedTask.getRunHistory()).hasSize(1);
-        Assertions.assertThat(savedTask.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1);
+        Assertions.assertThat(savedTask.getRunHistory().getFirst().getInputFiles()).containsExactly(processFile1);
     }
 
     @ParameterizedTest
@@ -790,11 +790,11 @@ class TaskServiceTest {
         task.addProcessFile(processFile2);
         task.addProcessRun(processRun);
 
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFile1, processFile2);
 
         TaskService.removeUnavailableProcessFileFromTaskRunHistory(processFile1, task, fileEventType);
 
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFile1, processFile2);
     }
 
     @ParameterizedTest
@@ -808,10 +808,10 @@ class TaskServiceTest {
         task.addProcessFile(processFile2);
         task.addProcessRun(processRun);
 
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFile1, processFile2);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFile1, processFile2);
 
         TaskService.removeUnavailableProcessFileFromTaskRunHistory(processFile1, task, fileEventType);
 
-        Assertions.assertThat(task.getRunHistory().get(0).getInputFiles()).containsExactly(processFile2);
+        Assertions.assertThat(task.getRunHistory().getFirst().getInputFiles()).containsExactly(processFile2);
     }
 }
