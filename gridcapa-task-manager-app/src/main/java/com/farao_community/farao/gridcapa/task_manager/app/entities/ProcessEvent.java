@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -82,10 +83,9 @@ public class ProcessEvent implements Comparable<ProcessEvent> {
 
     @Override
     public int compareTo(ProcessEvent o) {
-        if (this.timestamp.isEqual(o.getTimestamp())) {
-            return this.message.compareTo(o.getMessage());
-        }
-        return this.timestamp.compareTo(o.getTimestamp());
+        return Comparator.comparing(ProcessEvent::getTimestamp)
+                .thenComparing(ProcessEvent::getMessage)
+                .compare(this, o);
     }
 
     @Override
