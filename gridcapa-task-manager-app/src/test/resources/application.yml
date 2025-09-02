@@ -36,7 +36,7 @@ stomp:
   allowed-origin: http://localhost,http://127.0.0.1
   heartbeat-client: 0
   heartbeat-server: 10000
-  starting-ws-endpoint: /web/notify
+  starting-ws-endpoint: /ws/tasks/notify
   notify: /task
   receive-request: /app
 

@@ -29,3 +29,9 @@ purge-task-events:
   cron: 0 0 12 * * *
   nb-days: 7
 
+stomp:
+  heartbeat-client: 0
+  heartbeat-server: 25000
+  starting-ws-endpoint: /ws/tasks/notify
+  notify: /task
+  receive-request: /app
