@@ -14,7 +14,6 @@ import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
@@ -27,21 +26,22 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.temporal.ChronoUnit.HOURS;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -60,15 +60,18 @@ public class FileManager {
     private final Logger businessLogger;
     private final MinioAdapter minioAdapter;
 
-    public FileManager(TaskRepository taskRepository, TaskManagerConfigurationProperties taskManagerConfigurationProperties, Logger businessLogger, MinioAdapter minioAdapter) {
+    public FileManager(final TaskRepository taskRepository,
+                       final TaskManagerConfigurationProperties taskManagerConfigurationProperties,
+                       final Logger businessLogger,
+                       final MinioAdapter minioAdapter) {
         this.taskRepository = taskRepository;
         this.taskManagerConfigurationProperties = taskManagerConfigurationProperties;
         this.businessLogger = businessLogger;
         this.minioAdapter = minioAdapter;
     }
 
-    public ByteArrayOutputStream getZippedGroup(OffsetDateTime timestamp, String fileGroup) throws IOException {
-        Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
+    public ByteArrayOutputStream getZippedGroup(final OffsetDateTime timestamp, final String fileGroup) throws IOException {
+        final Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
             Task task = optTask.get();
             return getZippedFileGroup(task, fileGroup);
@@ -77,7 +80,7 @@ public class FileManager {
         }
     }
 
-    public ByteArrayOutputStream getZippedGroupById(String id, String fileGroup) throws IOException {
+    public ByteArrayOutputStream getZippedGroupById(final String id, final String fileGroup) throws IOException {
         Optional<Task> optTask = taskRepository.findById(UUID.fromString(id));
         if (optTask.isPresent()) {
             Task task = optTask.get();
@@ -87,14 +90,14 @@ public class FileManager {
         }
     }
 
-    public ByteArrayOutputStream getLogs(OffsetDateTime timestamp) throws IOException {
+    public ByteArrayOutputStream getLogs(final OffsetDateTime timestamp) throws IOException {
         Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
             Task task = optTask.get();
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                 ZipOutputStream zos = new ZipOutputStream(baos)) {
+            try (final ByteArrayOutputStream os = new ByteArrayOutputStream();
+                 final ZipOutputStream zos = new ZipOutputStream(os)) {
                 addLogsFileToArchive(task, zos);
-                return baos;
+                return os;
             }
         } else {
             throw new TaskNotFoundException();
@@ -102,30 +105,33 @@ public class FileManager {
     }
 
     public ByteArrayOutputStream getRaoRunnerAppLogs(OffsetDateTime timestamp) throws IOException {
-        Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
+        final Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
-            Task task = optTask.get();
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                 ZipOutputStream zos = new ZipOutputStream(baos)) {
+            final Task task = optTask.get();
+            try (final ByteArrayOutputStream os = new ByteArrayOutputStream();
+                 final ZipOutputStream zos = new ZipOutputStream(os)) {
                 zos.putNextEntry(new ZipEntry(generateLogFileName(timestamp)));
                 writeToZipOutputStream(zos, getRaoRunnerAppLogsFile(task));
-                return baos;
+                return os;
             }
         } else {
             throw new TaskNotFoundException();
         }
     }
 
-    private String generateLogFileName(OffsetDateTime timestamp) {
-        ZonedDateTime timestampInEuropeZone = timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()));
+    private String generateLogFileName(final OffsetDateTime timestamp) {
+        final ZonedDateTime timestampInEuropeZone = timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()));
         String dateAndTime = timestampInEuropeZone.format(LOG_FILENAME_DATE_TIME_FORMATTER);
         String output = dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
-        return handle25TimestampCase(output, timestamp);
+        return handleWinterDst(output, timestamp);
     }
 
-    private String handle25TimestampCase(String filename, OffsetDateTime timestamp) {
-        ZoneOffset previousOffset = OffsetDateTime.from(timestamp.toInstant().minus(1, ChronoUnit.HOURS).atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))).getOffset();
-        ZoneOffset currentOffset = OffsetDateTime.from(timestamp.toInstant().atZone(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))).getOffset();
+    private String handleWinterDst(final String filename, final OffsetDateTime timestamp) {
+        final ZoneId zoneId = ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone());
+        final ZoneOffset previousOffset = OffsetDateTime.from(timestamp.toInstant().minus(1, HOURS)
+                                                            .atZone(zoneId)).getOffset();
+        final ZoneOffset currentOffset = OffsetDateTime.from(timestamp.toInstant()
+                                                                 .atZone(zoneId)).getOffset();
         if (previousOffset == ZoneOffset.ofHours(2) && currentOffset == ZoneOffset.ofHours(1)) {
             return filename.replace("_0", "_B");
         } else {
@@ -133,82 +139,86 @@ public class FileManager {
         }
     }
 
-    String getZipName(OffsetDateTime timestamp, String fileGroup) {
-        return timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone())).format(ZIP_DATE_TIME_FORMATTER) + "_" + fileGroup + ZIP_EXTENSION;
+    public String getZipName(final OffsetDateTime timestamp, final String fileGroup) {
+        return timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()))
+                   .format(ZIP_DATE_TIME_FORMATTER) + "_" + fileGroup + ZIP_EXTENSION;
     }
 
-    private ByteArrayOutputStream getZippedFileGroup(Task task, String fileGroup) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-            Set<ProcessFile> groupProcessFiles = getProcessFiles(task, fileGroup);
-            for (ProcessFile processFile : groupProcessFiles) {
+    private ByteArrayOutputStream getZippedFileGroup(final Task task, final String fileGroup) throws IOException {
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (final ZipOutputStream zos = new ZipOutputStream(os)) {
+            final Set<ProcessFile> groupProcessFiles = getProcessFiles(task, fileGroup);
+            for (final ProcessFile processFile : groupProcessFiles) {
                 writeZipEntry(zos, processFile);
             }
-            if (isExportLogsEnabledAndFileGroupIsGridcapaOutput(fileGroup)) {
+            if (areLogsExportable(fileGroup)) {
                 addLogsFileToArchive(task, zos);
             }
-            return baos;
+            return os;
         }
     }
 
-    boolean isExportLogsEnabledAndFileGroupIsGridcapaOutput(String fileGroup) {
+    protected boolean areLogsExportable(final String fileGroup) {
         return taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() &&
-            fileGroup.equalsIgnoreCase(MinioAdapterConstants.DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
+            fileGroup.equalsIgnoreCase(DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }
 
-    private Set<ProcessFile> getProcessFiles(Task task, String fileGroup) {
+    private Set<ProcessFile> getProcessFiles(final Task task, final String fileGroup) {
         return task.getProcessFiles().stream()
             .filter(processFile -> processFile.getFileGroup().equals(fileGroup))
             .collect(Collectors.toSet());
     }
 
-    private void addLogsFileToArchive(Task task, ZipOutputStream zos) throws IOException {
+    private void addLogsFileToArchive(final Task task, final ZipOutputStream zos) throws IOException {
         zos.putNextEntry(new ZipEntry(RAO_LOGS_FILENAME));
         writeToZipOutputStream(zos, getLogsFile(task));
     }
 
-    private void writeZipEntry(ZipOutputStream zos, ProcessFile processFile) throws IOException {
-        try (InputStream is = openUrlStream(minioAdapter.generatePreSignedUrl(processFile.getFileObjectKey()))) {
+    private void writeZipEntry(final ZipOutputStream zos, final ProcessFile processFile) throws IOException {
+        try (final InputStream is = openUrlStream(minioAdapter.generatePreSignedUrl(processFile.getFileObjectKey()))) {
             zos.putNextEntry(new ZipEntry(processFile.getFilename()));
             writeToZipOutputStream(zos, is);
         }
     }
 
-    private void writeToZipOutputStream(ZipOutputStream zos, InputStream is) throws IOException {
-        byte[] buffer = new byte[1024];
+    private void writeToZipOutputStream(final ZipOutputStream zos, final InputStream is) throws IOException {
+        final byte[] buffer = new byte[1024];
         int len;
         while ((len = is.read(buffer)) > 0) {
             zos.write(buffer, 0, len);
         }
     }
 
-    private InputStream getLogsFile(Task task) {
-        SortedSet<ProcessEvent> events = task.getProcessEvents();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (ProcessEvent event : events) {
-            baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
-        }
-        return new ByteArrayInputStream(baos.toByteArray());
+    private InputStream getLogsFile(final Task task) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        task.getProcessEvents()
+            .stream()
+            .map(ProcessEvent::toString)
+            .map(s -> s.getBytes(UTF_8))
+            .forEach(os::writeBytes);
+
+        return new ByteArrayInputStream(os.toByteArray());
     }
 
-    private InputStream getRaoRunnerAppLogsFile(Task task) {
-        SortedSet<ProcessEvent> events = task.getProcessEvents();
-        TreeSet<ProcessEvent> treeSet =  new TreeSet<>(events);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (ProcessEvent event :  treeSet.descendingSet()) {
-            if (event.getServiceName().equals("rao-runner-app")) {
-                baos.writeBytes(event.toString().getBytes(StandardCharsets.UTF_8));
-            }
-        }
-        return new ByteArrayInputStream(baos.toByteArray());
+    private InputStream getRaoRunnerAppLogsFile(final Task task) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        new TreeSet<>(task.getProcessEvents()).descendingSet()
+            .stream()
+            .filter(e -> e.getServiceName().equals("rao-runner-app"))
+            .map(ProcessEvent::toString)
+            .map(s -> s.getBytes(UTF_8))
+            .forEach(os::writeBytes);
+
+        return new ByteArrayInputStream(os.toByteArray());
     }
 
-    public InputStream openUrlStream(String urlString) {
+    public InputStream openUrlStream(final String urlString) {
         try {
             if (taskManagerConfigurationProperties.getWhitelist().stream().noneMatch(urlString::startsWith)) {
                 throw new TaskManagerException(String.format("URL '%s' is not part of application's whitelisted url's.", urlString));
             }
-            URL url = new URI(urlString).toURL();
+            final URL url = new URI(urlString).toURL();
             return url.openStream(); // NOSONAR Usage of whitelist not triggered by Sonar quality assessment, even if listed as a solution to the vulnerability
         } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             businessLogger.error("Error while retrieving content of file \"{}\", link may have expired.", getFileNameFromUrl(urlString));
@@ -216,23 +226,27 @@ public class FileManager {
         }
     }
 
-    private String getFileNameFromUrl(String stringUrl) {
+    private String getFileNameFromUrl(final String stringUrl) {
         try {
-            URL url = new URI(stringUrl).toURL();
+            final URL url = new URI(stringUrl).toURL();
             return FilenameUtils.getName(url.getPath());
         } catch (IOException | URISyntaxException | IllegalArgumentException e) {
             throw new TaskManagerException(String.format("Exception occurred while retrieving file name from : %s", stringUrl), e);
         }
     }
 
-    public String generatePresignedUrl(String minioUrl) {
+    public String generatePresignedUrl(final String minioUrl) {
         return minioAdapter.generatePreSignedUrlFromFullMinioPath(minioUrl, 1);
     }
 
-    public void uploadFileToMinio(OffsetDateTime timestamp, MultipartFile file, String fileType, String fileName) {
-        String processTag = taskManagerConfigurationProperties.getProcess().getTag();
-        String path = String.format("%s/MANUAL_UPLOAD/%s/%s", taskManagerConfigurationProperties.getProcess().getManualUploadBasePath(), timestamp.format(ZIP_DATE_TIME_FORMATTER), fileName);
-        try (InputStream in = file.getInputStream()) {
+    public void uploadFileToMinio(final OffsetDateTime timestamp, final MultipartFile file,
+                                  final String fileType, final String fileName) {
+        final String processTag = taskManagerConfigurationProperties.getProcess().getTag();
+        final String path = String.format("%s/MANUAL_UPLOAD/%s/%s",
+                                    taskManagerConfigurationProperties.getProcess().getManualUploadBasePath(),
+                                    timestamp.format(ZIP_DATE_TIME_FORMATTER),
+                                    fileName);
+        try (final InputStream in = file.getInputStream()) {
             minioAdapter.uploadInputForTimestamp(path, in, processTag, fileType, timestamp);
         } catch (IOException e) {
             throw new TaskManagerException(String.format("Exception occurred while uploading file to minio : %s", file.getName()), e);

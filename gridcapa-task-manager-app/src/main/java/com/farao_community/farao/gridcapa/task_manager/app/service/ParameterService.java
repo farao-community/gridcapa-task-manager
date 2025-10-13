@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.farao_community.farao.gridcapa.task_manager.app.entities.Parameter.ParameterType.INT;
+
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  * @author Marc Schwitzguebel {@literal <marc.schwitzguebel at rte-france.com>}
@@ -43,20 +45,20 @@ public class ParameterService {
             .toList();
     }
 
-    public List<ParameterDto> setParameterValues(List<ParameterDto> parameterDtos) {
+    public List<ParameterDto> persistAndUpdateParameterValues(final List<ParameterDto> parameterDtos) {
         List<Parameter> parametersToSave = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
-        for (ParameterDto parameterDto : parameterDtos) {
-            String id = parameterDto.getId();
-            String value = parameterDto.getValue();
-            Optional<Parameter> parameterOpt = parameterRepository.findById(id);
+        for (final ParameterDto parameterDto : parameterDtos) {
+            final String id = parameterDto.getId();
+            final String value = parameterDto.getValue();
+            final Optional<Parameter> parameterOpt = parameterRepository.findById(id);
             if (parameterOpt.isEmpty()) {
                 LOGGER.info("Parameter {} not found", id); //NOSONAR We really want to log this piece of information
-                return List.of();
+                return new ArrayList<>(0);
             } else {
                 LOGGER.info("Setting parameter {} to value {}", id, value); //NOSONAR We really want to log this piece of information
-                Parameter parameter = parameterOpt.get();
+                final Parameter parameter = parameterOpt.get();
                 validateParameterValue(parameter, value, errors);
                 parameter.setParameterValue(value);
                 parametersToSave.add(parameter);
@@ -64,17 +66,21 @@ public class ParameterService {
         }
 
         if (!errors.isEmpty()) {
-            String message = String.format("Validation of parameters failed. Failure reasons are: [\"%s\"].", String.join("\" ; \"", errors));
+            final String message = String.format("Validation of parameters failed. Failure reasons are: [\"%s\"].", String.join("\" ; \"", errors));
             throw new TaskManagerException(message);
         }
 
-        return parameterRepository.saveAll(parametersToSave).stream()
-            .map(this::convertToDtoAndFillDefaultValue)
-            .toList();
+        return parameterRepository
+                   .saveAll(parametersToSave)
+                   .stream()
+                   .map(this::convertToDtoAndFillDefaultValue)
+                   .toList();
     }
 
-    private void validateParameterValue(Parameter parameter, String value, List<String> errors) {
-        if (parameter.getParameterType() == Parameter.ParameterType.INT) {
+    private void validateParameterValue(final Parameter parameter,
+                                        final String value,
+                                        final List<String> errors) {
+        if (parameter.getParameterType() == INT) {
             try {
                 Integer.parseInt(value);
             } catch (NumberFormatException e) {
@@ -83,9 +89,12 @@ public class ParameterService {
         }
     }
 
-    private ParameterDto convertToDtoAndFillDefaultValue(Parameter param) {
+    private ParameterDto convertToDtoAndFillDefaultValue(final Parameter param) {
         String defaultValue = runnerParameters.getRunnerParameter(param.getId())
             .orElseThrow(() -> new TaskManagerException("No default value for given parameter"));
-        return new ParameterDto(param.getId(), param.getName(), param.getDisplayOrder(), param.getParameterType().name(), param.getSectionTitle(), param.getSectionOrder(), param.getParameterValue(), defaultValue);
+        return new ParameterDto(param.getId(), param.getName(),
+                                param.getDisplayOrder(), param.getParameterType().name(),
+                                param.getSectionTitle(), param.getSectionOrder(),
+                                param.getParameterValue(), defaultValue);
     }
 }

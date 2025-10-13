@@ -57,7 +57,7 @@ public class EventHandler {
         });
     }
 
-    List<TaskLogEventUpdate> mapMessagesToListEvents(List<byte[]> messages) {
+    List<TaskLogEventUpdate> mapMessagesToListEvents(final List<byte[]> messages) {
         return messages.stream()
             .map(String::new)
             .map(this::mapMessageToEvent)
@@ -65,20 +65,20 @@ public class EventHandler {
             .toList();
     }
 
-    TaskLogEventUpdate mapMessageToEvent(String messages) {
+    TaskLogEventUpdate mapMessageToEvent(final String messages) {
         try {
             return new ObjectMapper().readValue(messages, TaskLogEventUpdate.class);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             LOGGER.warn("Couldn't parse log event, Impossible to match the event with concerned task", e);
             return null;
         }
     }
 
-    void handleTaskEventBatchUpdate(List<TaskLogEventUpdate> events) {
+    void handleTaskEventBatchUpdate(final List<TaskLogEventUpdate> events) {
         synchronized (TASK_MANAGER_LOCK) {
-            Map<UUID, Task> storedTasks = new HashMap<>();
-            for (TaskLogEventUpdate event : events) {
-                UUID taskUUID = UUID.fromString(event.getId());
+            final Map<UUID, Task> storedTasks = new HashMap<>();
+            for (final TaskLogEventUpdate event : events) {
+                final UUID taskUUID = UUID.fromString(event.getId());
                 Task task = storedTasks.get(taskUUID);
                 if (task == null) {
                     Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(UUID.fromString(event.getId()));
@@ -93,9 +93,9 @@ public class EventHandler {
                     taskService.addProcessEventToTask(event, task);
                 }
             }
-            Collection<Task> tasksToSave = storedTasks.values();
+            final Collection<Task> tasksToSave = storedTasks.values();
             taskRepository.saveAll(tasksToSave);
-            for (Task task : tasksToSave) {
+            for (final Task task : tasksToSave) {
                 taskUpdateNotifier.notify(task, false, true);
                 LOGGER.debug("Task events have been added on {}", task.getTimestamp());
             }

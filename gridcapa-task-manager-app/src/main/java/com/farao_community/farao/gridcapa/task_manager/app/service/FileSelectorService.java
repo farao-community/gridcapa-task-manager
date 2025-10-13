@@ -7,13 +7,14 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
-import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+
+import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
 
 /**
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
@@ -35,7 +36,7 @@ public class FileSelectorService {
     }
 
     public void selectFile(final OffsetDateTime timestamp, final String filetype, final String filename) {
-        synchronized (TaskManagerConfigurationProperties.TASK_MANAGER_LOCK) {
+        synchronized (TASK_MANAGER_LOCK) {
             TaskWithStatusUpdate taskWithStatusUpdate = taskService.selectFile(timestamp, filetype, filename);
             Task task = taskRepository.save(taskWithStatusUpdate.getTask());
             taskUpdateNotifier.notify(task, taskWithStatusUpdate.isStatusUpdated(), false);

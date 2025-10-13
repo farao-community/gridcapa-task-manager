@@ -88,7 +88,7 @@ class ParameterServiceTest {
         Mockito.when(parameterRepository.saveAll(Mockito.anyList())).thenReturn(List.of(newParameter));
 
         ParameterDto newParameterDto = new ParameterDto(newParameter.getId(), newParameter.getName(), newParameter.getDisplayOrder(), newParameter.getParameterType().name(), newParameter.getSectionTitle(), newParameter.getSectionOrder(), newParameter.getParameterValue(), "");
-        List<ParameterDto> parameterDto = parameterService.setParameterValues(List.of(newParameterDto));
+        List<ParameterDto> parameterDto = parameterService.persistAndUpdateParameterValues(List.of(newParameterDto));
 
         Assertions.assertThat(parameterDto)
             .isNotNull()
@@ -104,7 +104,7 @@ class ParameterServiceTest {
         Mockito.when(parameterRepository.findById(id)).thenReturn(Optional.empty());
 
         List<ParameterDto> parameterDtos = List.of(new ParameterDto("unknown", null, 1, null, null, 2, null, null));
-        List<ParameterDto> parameterDto = parameterService.setParameterValues(parameterDtos);
+        List<ParameterDto> parameterDto = parameterService.persistAndUpdateParameterValues(parameterDtos);
 
         Assertions.assertThat(parameterDto)
             .isNotNull()
