@@ -27,12 +27,19 @@ import reactor.core.publisher.Flux;
 
 import java.net.URLDecoder;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
-import static com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType.*;
+import static com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType.AVAILABLE;
+import static com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType.UPDATED;
+import static com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType.WAITING;
 import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -56,7 +63,7 @@ public class MinioHandler {
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
     private final TaskRepository taskRepository;
     private final TaskService taskService;
-    private final TaskUpdateNotifier taskUpdateNotifier;
+    private final TaskUpdateNotifier     taskUpdateNotifier;
     private final List<ProcessFileMinio> waitingFilesList = new ArrayList<>();
 
     public MinioHandler(final ProcessFileRepository processFileRepository,
@@ -137,8 +144,8 @@ public class MinioHandler {
     }
 
     private ProcessFileMinio buildProcessFileMinioFromEvent(Event event) {
-        final Map<String, String> metadata = event.userMetadata();
-        final String validityInterval = metadata.get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
+        final Map<String, String> metadata         = event.userMetadata();
+        final String              validityInterval = metadata.get(FILE_VALIDITY_INTERVAL_METADATA_KEY);
         final String objectKey = URLDecoder.decode(event.objectName(), UTF_8);
         if (!isEmpty(validityInterval))  {
             String fileGroup = metadata.get(FILE_GROUP_METADATA_KEY);

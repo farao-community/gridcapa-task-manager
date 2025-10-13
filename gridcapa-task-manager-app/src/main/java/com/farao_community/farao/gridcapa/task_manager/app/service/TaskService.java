@@ -6,9 +6,20 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
-import com.farao_community.farao.gridcapa.task_manager.api.*;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileDto;
+import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileNotFoundException;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskManagerException;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskNotFoundException;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.*;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.FileRemovalStatus;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.TaskWithStatusUpdate;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.slf4j.Logger;
@@ -18,12 +29,24 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus.VALIDATED;
-import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.*;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.CREATED;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.ERROR;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.INTERRUPTED;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.NOT_CREATED;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.PENDING;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.READY;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.STOPPING;
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.SUCCESS;
 import static com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType.DELETED;
 import static com.farao_community.farao.gridcapa.task_manager.app.entities.FileEventType.UPDATED;
 
@@ -218,7 +241,7 @@ public class TaskService {
                 .map(task -> {
                     removeUnavailableProcessFileFromTaskRunHistory(processFile, task, DELETED);
                     final FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFile);
-                    boolean statusUpdated = false;
+                    boolean                 statusUpdated     = false;
                     if (processFile.isInputFile()) {
                         statusUpdated = checkAndUpdateTaskStatus(task, fileRemovalStatus.fileSelectionUpdated());
                     }
