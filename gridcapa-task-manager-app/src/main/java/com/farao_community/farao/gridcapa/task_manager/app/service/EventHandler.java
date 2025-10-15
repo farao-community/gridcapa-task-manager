@@ -7,9 +7,9 @@
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -57,15 +58,15 @@ public class EventHandler {
         });
     }
 
-    List<TaskLogEventUpdate> mapMessagesToListEvents(final List<byte[]> messages) {
+    protected List<TaskLogEventUpdate> mapMessagesToListEvents(final List<byte[]> messages) {
         return messages.stream()
-            .map(String::new)
+            .map(bytes -> new String(bytes, UTF_8))
             .map(this::mapMessageToEvent)
             .filter(Objects::nonNull)
             .toList();
     }
 
-    TaskLogEventUpdate mapMessageToEvent(final String messages) {
+    protected TaskLogEventUpdate mapMessageToEvent(final String messages) {
         try {
             return new ObjectMapper().readValue(messages, TaskLogEventUpdate.class);
         } catch (final JsonProcessingException e) {

@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -54,6 +55,8 @@ public class FileManager {
     private static final String ZIP_EXTENSION = ".zip";
     private static final String TXT_EXTENSION = ".txt";
     private static final String RAO_LOGS_FILENAME = "rao_logs.txt";
+    public static final int OFFSET_BEFORE_WINTER_DST = 2;
+    public static final int OFFSET_AFTER_WINTER_DST = 1;
 
     private final TaskRepository taskRepository;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
@@ -128,11 +131,13 @@ public class FileManager {
 
     private String handleWinterDst(final String filename, final OffsetDateTime timestamp) {
         final ZoneId zoneId = ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone());
-        final ZoneOffset previousOffset = OffsetDateTime.from(timestamp.toInstant().minus(1, HOURS)
+        final Instant instant = timestamp.toInstant();
+        final ZoneOffset previousOffset = OffsetDateTime.from(instant.minus(1, HOURS)
                                                             .atZone(zoneId)).getOffset();
-        final ZoneOffset currentOffset = OffsetDateTime.from(timestamp.toInstant()
-                                                                 .atZone(zoneId)).getOffset();
-        if (previousOffset == ZoneOffset.ofHours(2) && currentOffset == ZoneOffset.ofHours(1)) {
+        final ZoneOffset currentOffset = OffsetDateTime.from(instant.atZone(zoneId)).getOffset();
+
+        if (previousOffset.equals(ZoneOffset.ofHours(OFFSET_BEFORE_WINTER_DST))
+                && currentOffset.equals(ZoneOffset.ofHours(OFFSET_AFTER_WINTER_DST))) {
             return filename.replace("_0", "_B");
         } else {
             return filename;
@@ -190,7 +195,7 @@ public class FileManager {
     }
 
     private InputStream getLogsFile(final Task task) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
         task.getProcessEvents()
             .stream()
             .map(ProcessEvent::toString)

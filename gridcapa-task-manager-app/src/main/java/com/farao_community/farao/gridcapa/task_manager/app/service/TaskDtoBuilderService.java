@@ -77,7 +77,7 @@ public class TaskDtoBuilderService {
                 .orElse(getEmptyTask(timestamp));
     }
 
-    public List<TaskDto> geTasksDtos(final LocalDate businessDate) {
+    public List<TaskDto> getTasksDtos(final LocalDate businessDate) {
         final LocalDateTime startLdt = businessDate.atTime(0, 30);
         final LocalDateTime endLdt = businessDate.atTime(23, 30);
         final ZoneOffset startOffset = localZone.getRules().getOffset(startLdt);

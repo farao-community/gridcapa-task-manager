@@ -90,7 +90,7 @@ public class MinioHandler {
         });
     }
 
-    public void handleMinioEvent(NotificationRecords notificationRecords) {
+    public void handleMinioEvent(final NotificationRecords notificationRecords) {
         notificationRecords.events().forEach(event -> {
             LOGGER.debug("s3 event received");
             switch (event.eventType()) {
@@ -111,8 +111,9 @@ public class MinioHandler {
 
     public void updateTasks(final Event event) {
         synchronized (TASK_MANAGER_LOCK) {
-            if (!event.userMetadata().isEmpty() && taskManagerConfigurationProperties.getProcess().getTag()
-                                                       .equals(event.userMetadata().get(FILE_TARGET_PROCESS_METADATA_KEY))) {
+            final Map<String, String> metadata = event.userMetadata();
+            if (!metadata.isEmpty() && taskManagerConfigurationProperties.getProcess().getTag()
+                                                       .equals(metadata.get(FILE_TARGET_PROCESS_METADATA_KEY))) {
                 final ProcessFileMinio processFileMinio = buildProcessFileMinioFromEvent(event);
                 if (processFileMinio != null) {
                     ProcessFile processFile = processFileMinio.getProcessFile();
