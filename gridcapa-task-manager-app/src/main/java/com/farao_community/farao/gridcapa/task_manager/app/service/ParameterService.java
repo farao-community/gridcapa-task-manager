@@ -55,7 +55,7 @@ public class ParameterService {
             final Optional<Parameter> parameterOpt = parameterRepository.findById(id);
             if (parameterOpt.isEmpty()) {
                 LOGGER.info("Parameter {} not found", id); //NOSONAR We really want to log this piece of information
-                return new ArrayList<>(0);
+                return List.of();
             } else {
                 LOGGER.info("Setting parameter {} to value {}", id, value); //NOSONAR We really want to log this piece of information
                 final Parameter parameter = parameterOpt.get();

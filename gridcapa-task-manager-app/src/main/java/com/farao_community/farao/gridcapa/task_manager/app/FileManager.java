@@ -55,8 +55,8 @@ public class FileManager {
     private static final String ZIP_EXTENSION = ".zip";
     private static final String TXT_EXTENSION = ".txt";
     private static final String RAO_LOGS_FILENAME = "rao_logs.txt";
-    public static final int OFFSET_BEFORE_WINTER_DST = 2;
-    public static final int OFFSET_AFTER_WINTER_DST = 1;
+    private static final ZoneOffset OFFSET_BEFORE_WINTER_DST = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_AFTER_WINTER_DST = ZoneOffset.ofHours(1);
 
     private final TaskRepository taskRepository;
     private final TaskManagerConfigurationProperties taskManagerConfigurationProperties;
@@ -76,7 +76,7 @@ public class FileManager {
     public ByteArrayOutputStream getZippedGroup(final OffsetDateTime timestamp, final String fileGroup) throws IOException {
         final Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
-            Task task = optTask.get();
+            final Task task = optTask.get();
             return getZippedFileGroup(task, fileGroup);
         } else {
             throw new TaskNotFoundException();
@@ -84,9 +84,9 @@ public class FileManager {
     }
 
     public ByteArrayOutputStream getZippedGroupById(final String id, final String fileGroup) throws IOException {
-        Optional<Task> optTask = taskRepository.findById(UUID.fromString(id));
+        final Optional<Task> optTask = taskRepository.findById(UUID.fromString(id));
         if (optTask.isPresent()) {
-            Task task = optTask.get();
+            final Task task = optTask.get();
             return getZippedFileGroup(task, fileGroup);
         } else {
             throw new TaskNotFoundException();
@@ -94,28 +94,28 @@ public class FileManager {
     }
 
     public ByteArrayOutputStream getLogs(final OffsetDateTime timestamp) throws IOException {
-        Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
+        final Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
-            Task task = optTask.get();
-            try (final ByteArrayOutputStream os = new ByteArrayOutputStream();
-                 final ZipOutputStream zos = new ZipOutputStream(os)) {
+            final Task task = optTask.get();
+            try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 final ZipOutputStream zos = new ZipOutputStream(baos)) {
                 addLogsFileToArchive(task, zos);
-                return os;
+                return baos;
             }
         } else {
             throw new TaskNotFoundException();
         }
     }
 
-    public ByteArrayOutputStream getRaoRunnerAppLogs(OffsetDateTime timestamp) throws IOException {
+    public ByteArrayOutputStream getRaoRunnerAppLogs(final OffsetDateTime timestamp) throws IOException {
         final Optional<Task> optTask = taskRepository.findByTimestampAndFetchProcessEvents(timestamp);
         if (optTask.isPresent()) {
             final Task task = optTask.get();
-            try (final ByteArrayOutputStream os = new ByteArrayOutputStream();
-                 final ZipOutputStream zos = new ZipOutputStream(os)) {
+            try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 final ZipOutputStream zos = new ZipOutputStream(baos)) {
                 zos.putNextEntry(new ZipEntry(generateLogFileName(timestamp)));
                 writeToZipOutputStream(zos, getRaoRunnerAppLogsFile(task));
-                return os;
+                return baos;
             }
         } else {
             throw new TaskNotFoundException();
@@ -124,20 +124,19 @@ public class FileManager {
 
     private String generateLogFileName(final OffsetDateTime timestamp) {
         final ZonedDateTime timestampInEuropeZone = timestamp.atZoneSameInstant(ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone()));
-        String dateAndTime = timestampInEuropeZone.format(LOG_FILENAME_DATE_TIME_FORMATTER);
-        String output = dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
+        final String dateAndTime = timestampInEuropeZone.format(LOG_FILENAME_DATE_TIME_FORMATTER);
+        final String output = dateAndTime + "_RAO-LOGS-1" + TXT_EXTENSION;
         return handleWinterDst(output, timestamp);
     }
 
     private String handleWinterDst(final String filename, final OffsetDateTime timestamp) {
         final ZoneId zoneId = ZoneId.of(taskManagerConfigurationProperties.getProcess().getTimezone());
         final Instant instant = timestamp.toInstant();
-        final ZoneOffset previousOffset = OffsetDateTime.from(instant.minus(1, HOURS)
-                                                            .atZone(zoneId)).getOffset();
+        final ZoneOffset previousOffset = OffsetDateTime.from(instant.minus(1, HOURS).atZone(zoneId)).getOffset();
         final ZoneOffset currentOffset = OffsetDateTime.from(instant.atZone(zoneId)).getOffset();
 
-        if (previousOffset.equals(ZoneOffset.ofHours(OFFSET_BEFORE_WINTER_DST))
-                && currentOffset.equals(ZoneOffset.ofHours(OFFSET_AFTER_WINTER_DST))) {
+        if (previousOffset.equals(OFFSET_BEFORE_WINTER_DST)
+                && currentOffset.equals(OFFSET_AFTER_WINTER_DST)) {
             return filename.replace("_0", "_B");
         } else {
             return filename;
@@ -150,8 +149,8 @@ public class FileManager {
     }
 
     private ByteArrayOutputStream getZippedFileGroup(final Task task, final String fileGroup) throws IOException {
-        final ByteArrayOutputStream os = new ByteArrayOutputStream();
-        try (final ZipOutputStream zos = new ZipOutputStream(os)) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (final ZipOutputStream zos = new ZipOutputStream(baos)) {
             final Set<ProcessFile> groupProcessFiles = getProcessFiles(task, fileGroup);
             for (final ProcessFile processFile : groupProcessFiles) {
                 writeZipEntry(zos, processFile);
@@ -159,7 +158,7 @@ public class FileManager {
             if (areLogsExportable(fileGroup)) {
                 addLogsFileToArchive(task, zos);
             }
-            return os;
+            return baos;
         }
     }
 
@@ -195,27 +194,27 @@ public class FileManager {
     }
 
     private InputStream getLogsFile(final Task task) {
-        final ByteArrayOutputStream os = new ByteArrayOutputStream();
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         task.getProcessEvents()
             .stream()
             .map(ProcessEvent::toString)
             .map(s -> s.getBytes(UTF_8))
-            .forEach(os::writeBytes);
+            .forEach(baos::writeBytes);
 
-        return new ByteArrayInputStream(os.toByteArray());
+        return new ByteArrayInputStream(baos.toByteArray());
     }
 
     private InputStream getRaoRunnerAppLogsFile(final Task task) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         new TreeSet<>(task.getProcessEvents()).descendingSet()
             .stream()
             .filter(e -> e.getServiceName().equals("rao-runner-app"))
             .map(ProcessEvent::toString)
             .map(s -> s.getBytes(UTF_8))
-            .forEach(os::writeBytes);
+            .forEach(baos::writeBytes);
 
-        return new ByteArrayInputStream(os.toByteArray());
+        return new ByteArrayInputStream(baos.toByteArray());
     }
 
     public InputStream openUrlStream(final String urlString) {

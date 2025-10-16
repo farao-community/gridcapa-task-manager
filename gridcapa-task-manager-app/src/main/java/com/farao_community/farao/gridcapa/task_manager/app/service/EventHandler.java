@@ -28,7 +28,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -60,7 +59,7 @@ public class EventHandler {
 
     protected List<TaskLogEventUpdate> mapMessagesToListEvents(final List<byte[]> messages) {
         return messages.stream()
-            .map(bytes -> new String(bytes, UTF_8))
+            .map(String::new)
             .map(this::mapMessageToEvent)
             .filter(Objects::nonNull)
             .toList();

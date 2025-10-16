@@ -88,7 +88,8 @@ public class TaskService {
      * @param task:                      Task on which to evaluate the status.
      * @param inputFileSelectionChanged: boolean indicating whether an input file has been changed
      */
-    boolean checkAndUpdateTaskStatus(Task task, boolean inputFileSelectionChanged) {
+    boolean checkAndUpdateTaskStatus(Task task,
+                                     boolean inputFileSelectionChanged) {
         final TaskStatus initialTaskStatus = task.getStatus();
         List<String> inputFileTypes = task.getProcessFiles().stream()
                 .filter(ProcessFile::isInputFile)
@@ -108,7 +109,8 @@ public class TaskService {
     // PROCESS EVENT MANAGEMENT //
     // //////////////////////// //
 
-    public void addProcessEventToTask(final TaskLogEventUpdate loggerEvent, final Task task) {
+    public void addProcessEventToTask(final TaskLogEventUpdate loggerEvent,
+                                      final Task task) {
         final OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
         String message = loggerEvent.getMessage();
         Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
@@ -118,24 +120,32 @@ public class TaskService {
         addProcessEvent(task, offsetDateTime, loggerEvent.getLevel(), message, loggerEvent.getServiceName());
     }
 
-    void addFileEventToTask(final Task task, final FileEventType fileEventType, final ProcessFile processFile) {
+    void addFileEventToTask(final Task task,
+                            final FileEventType fileEventType,
+                            final ProcessFile processFile) {
         addFileEventToTask(task, fileEventType, processFile, FILE_EVENT_DEFAULT_LEVEL);
     }
 
-    public void addFileEventToTask(final Task task, final FileEventType fileEventType,
-                                   final ProcessFile processFile, final String logLevel) {
+    public void addFileEventToTask(final Task task,
+                                   final FileEventType fileEventType,
+                                   final ProcessFile processFile,
+                                   final String logLevel) {
         final boolean isManualUpload = processFile.getFileObjectKey().contains("MANUAL_UPLOAD");
         final String message = getFileEventMessage(fileEventType, processFile.getFileType(), processFile.getFilename(), isManualUpload);
         final OffsetDateTime now = OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
         addProcessEvent(task, now, logLevel, message, serviceName);
     }
 
-    private static String getFileEventMessage(final FileEventType fileEventType, final String fileType,
-                                              final String fileName, final boolean isManualUpload) {
+    private static String getFileEventMessage(final FileEventType fileEventType,
+                                              final String fileType,
+                                              final String fileName,
+                                              final boolean isManualUpload) {
         final String logPrefix = buildFileEventPrefix(isManualUpload);
         return switch (fileEventType) {
-            case WAITING -> String.format("%s new version of %s is waiting for process to end to be available : '%s'", logPrefix, fileType, fileName);
-            case UPDATED -> String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
+            case WAITING ->
+                    String.format("%s new version of %s is waiting for process to end to be available : '%s'", logPrefix, fileType, fileName);
+            case UPDATED ->
+                    String.format("%s new version of %s replaced previously available one : '%s'", logPrefix, fileType, fileName);
             case AVAILABLE -> String.format("%s new version of %s is available : '%s'", logPrefix, fileType, fileName);
             default -> String.format("The %s : '%s' is %s", fileType, fileName, fileEventType.toString().toLowerCase());
         };
@@ -195,7 +205,7 @@ public class TaskService {
                 taskWithStatusUpdate.setStatusUpdated(statusUpdateDueToFileArrival);
                 if (statusUpdateDueToFileArrival) {
                     LOGGER.info("Update status of task with timestamp {} when processFile {} arrived to status {}",
-                            task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
+                                task.getTimestamp(), savedProcessFile.getFilename(), task.getStatus());
                 }
             }
             allTasks.add(taskWithStatusUpdate);
@@ -241,7 +251,7 @@ public class TaskService {
                 .map(task -> {
                     removeUnavailableProcessFileFromTaskRunHistory(processFile, task, DELETED);
                     final FileRemovalStatus fileRemovalStatus = task.removeProcessFile(processFile);
-                    boolean                 statusUpdated     = false;
+                    boolean statusUpdated = false;
                     if (processFile.isInputFile()) {
                         statusUpdated = checkAndUpdateTaskStatus(task, fileRemovalStatus.fileSelectionUpdated());
                     }
@@ -275,7 +285,7 @@ public class TaskService {
         LOGGER.info("Manual selection for timestamp {} of another version of {} : {}", task.getTimestamp(), processFile.getFileType(), processFile.getFilename());
         addProcessEvent(task, now, "INFO", message, serviceName);
 
-        boolean statusNeedsReset = statusNeedsReset(task.getStatus());
+        final boolean statusNeedsReset = statusNeedsReset(task.getStatus());
         if (statusNeedsReset) {
             task.setStatus(READY);
         }
@@ -294,7 +304,8 @@ public class TaskService {
     // RUN HISTORY MANAGEMENT //
     // ////////////////////// //
 
-    public Task addNewRunAndSaveTask(final OffsetDateTime timestamp, final List<ProcessFileDto> inputFileDtos) {
+    public Task addNewRunAndSaveTask(final OffsetDateTime timestamp,
+                                     final List<ProcessFileDto> inputFileDtos) {
         final Task task = taskRepository.findByTimestamp(timestamp).orElseThrow(TaskNotFoundException::new);
         final List<ProcessFile> inputFiles = inputFileDtos.stream()
                 .filter(dto -> dto.getProcessFileStatus() == VALIDATED)
@@ -305,7 +316,8 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    private static ProcessFile getProcessFileFromTaskMatchingDto(final Task task, final ProcessFileDto processFileDto) {
+    private static ProcessFile getProcessFileFromTaskMatchingDto(final Task task,
+                                                                 final ProcessFileDto processFileDto) {
         final String type = processFileDto.getFileType();
         return Stream.concat(task.getAvailableInputs(type).stream(),
                              task.getInput(type).stream())
@@ -314,16 +326,20 @@ public class TaskService {
                 .orElseThrow(ProcessFileNotFoundException::new);
     }
 
-    static void removeUnavailableProcessFileFromTaskRunHistory(final ProcessFile processFile,
+    protected static void removeUnavailableProcessFileFromTaskRunHistory(final ProcessFile processFile,
                                                                final Task task,
                                                                final FileEventType fileEventType) {
         if (fileEventType == UPDATED || fileEventType == DELETED) {
             task.getRunHistory()
-                .stream()
-                .filter(run -> run.getInputFiles().stream()
-                                          .anyMatch(runFile -> runFile.getFilename()
-                                                                   .equals(processFile.getFilename())))
-                .forEach(run -> run.removeInputFileByFilename(processFile.getFilename()));
+                    .stream()
+                    .filter(run -> isFileInRun(processFile, run))
+                    .forEach(run -> run.removeInputFileByFilename(processFile.getFilename()));
         }
+    }
+
+    static boolean isFileInRun(final ProcessFile file, final ProcessRun run) {
+        return run.getInputFiles()
+                .stream()
+                .anyMatch(runFile -> runFile.getFilename().equals(file.getFilename()));
     }
 }

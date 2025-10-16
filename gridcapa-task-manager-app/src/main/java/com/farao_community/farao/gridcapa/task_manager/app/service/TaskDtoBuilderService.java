@@ -12,12 +12,12 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskParameterDto;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -57,6 +57,7 @@ public class TaskDtoBuilderService {
 
     /**
      * To use only if Process Events are required in the process. Otherwise, prefer the method getTaskDtoWithoutProcessEvents.
+     *
      * @param timestamp
      * @return
      */
@@ -68,6 +69,7 @@ public class TaskDtoBuilderService {
 
     /**
      * To use preferably, as it does not fetch process event hence reducing memory used.
+     *
      * @param timestamp
      * @return
      */
@@ -123,27 +125,30 @@ public class TaskDtoBuilderService {
         return createDtoFromEntityGivenEvents(task, false);
     }
 
-    private TaskDto createDtoFromEntityGivenEvents(final Task task, final boolean withEvents) {
+    private TaskDto createDtoFromEntityGivenEvents(final Task task,
+                                                   final boolean withEvents) {
 
-        final Function<String, Stream<ProcessFileDto>>mapInputFile = str ->  task.getInput(str)
-                                                                            .stream()
-                                                                            .map(this::createDtoFromEntity);
+        final Function<String, Stream<ProcessFileDto>> mapInputFile = str -> task.getInput(str)
+                .stream()
+                .map(this::createDtoFromEntity);
 
-        final Function<String, ProcessFileDto> mapEmptiableInputFile = str ->  task.getInput(str)
-                                                                            .map(this::createDtoFromEntity)
-                                                                                     .orElseGet(() -> ProcessFileDto.emptyProcessFile(str));
+        final Function<String, ProcessFileDto> mapInputFileOrElseEmpty = str -> task.getInput(str)
+                .map(this::createDtoFromEntity)
+                .orElseGet(() -> ProcessFileDto.emptyProcessFile(str));
 
         List<ProcessFileDto> inputs = properties.getProcess().getInputs().stream()
-                .map(mapEmptiableInputFile)
+                .map(mapInputFileOrElseEmpty)
                 .collect(Collectors.toList());
 
         List<ProcessFileDto> availableInputs = properties.getProcess().getInputs()
                 .stream()
-                .flatMap(mapInputFile)
+                .flatMap(str -> task.getAvailableInputs(str)
+                            .stream()
+                            .map(this::createDtoFromEntity))
                 .collect(Collectors.toList());
 
         List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
-                .map(mapEmptiableInputFile)
+                .map(mapInputFileOrElseEmpty)
                 .toList();
         inputs.addAll(optionalInputs);
 
@@ -194,17 +199,17 @@ public class TaskDtoBuilderService {
 
     protected ProcessEventDto createDtoFromEntity(final ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-                processEvent.getLevel(),
-                processEvent.getMessage(),
-                processEvent.getServiceName());
+                                   processEvent.getLevel(),
+                                   processEvent.getMessage(),
+                                   processEvent.getServiceName());
     }
 
     protected ProcessRunDto createDtoFromEntity(final ProcessRun processRun) {
         final List<ProcessFileDto> processFileDtos = processRun
-                                                   .getInputFiles()
-                                                   .stream()
-                                                   .map(this::createDtoFromEntity)
-                                                   .toList();
+                .getInputFiles()
+                .stream()
+                .map(this::createDtoFromEntity)
+                .toList();
         return new ProcessRunDto(processRun.getId(), processRun.getExecutionDate(), processFileDtos);
     }
 }
