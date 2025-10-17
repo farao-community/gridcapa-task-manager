@@ -168,7 +168,7 @@ public class MinioHandler {
         }
     }
 
-    protected ProcessFileMinio getProcessFileMinio(final OffsetDateTime startTime,
+    ProcessFileMinio getProcessFileMinio(final OffsetDateTime startTime,
                                                    final OffsetDateTime endTime,
                                                    final String objectKey,
                                                    final String fileType,

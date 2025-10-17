@@ -187,7 +187,7 @@ public class TaskDtoBuilderService {
                 taskParameterDtos);
     }
 
-    protected ProcessFileDto createDtoFromEntity(final ProcessFile processFile) {
+    ProcessFileDto createDtoFromEntity(final ProcessFile processFile) {
         return new ProcessFileDto(
                 processFile.getFileObjectKey(),
                 processFile.getFileType(),
@@ -197,14 +197,14 @@ public class TaskDtoBuilderService {
                 processFile.getLastModificationDate());
     }
 
-    protected ProcessEventDto createDtoFromEntity(final ProcessEvent processEvent) {
+    ProcessEventDto createDtoFromEntity(final ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
                                    processEvent.getLevel(),
                                    processEvent.getMessage(),
                                    processEvent.getServiceName());
     }
 
-    protected ProcessRunDto createDtoFromEntity(final ProcessRun processRun) {
+    ProcessRunDto createDtoFromEntity(final ProcessRun processRun) {
         final List<ProcessFileDto> processFileDtos = processRun
                 .getInputFiles()
                 .stream()

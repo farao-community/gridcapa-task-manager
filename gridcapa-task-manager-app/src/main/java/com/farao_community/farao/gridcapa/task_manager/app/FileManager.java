@@ -162,7 +162,7 @@ public class FileManager {
         }
     }
 
-    protected boolean areLogsExportable(final String fileGroup) {
+    boolean areLogsExportable(final String fileGroup) {
         return taskManagerConfigurationProperties.getProcess().isExportLogsEnabled() &&
             fileGroup.equalsIgnoreCase(DEFAULT_GRIDCAPA_OUTPUT_GROUP_METADATA_VALUE);
     }

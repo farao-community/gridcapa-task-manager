@@ -57,7 +57,7 @@ public class EventHandler {
         });
     }
 
-    protected List<TaskLogEventUpdate> mapMessagesToListEvents(final List<byte[]> messages) {
+    List<TaskLogEventUpdate> mapMessagesToListEvents(final List<byte[]> messages) {
         return messages.stream()
             .map(String::new)
             .map(this::mapMessageToEvent)
@@ -65,7 +65,7 @@ public class EventHandler {
             .toList();
     }
 
-    protected TaskLogEventUpdate mapMessageToEvent(final String messages) {
+    TaskLogEventUpdate mapMessageToEvent(final String messages) {
         try {
             return new ObjectMapper().readValue(messages, TaskLogEventUpdate.class);
         } catch (final JsonProcessingException e) {

@@ -326,7 +326,7 @@ public class TaskService {
                 .orElseThrow(ProcessFileNotFoundException::new);
     }
 
-    protected static void removeUnavailableProcessFileFromTaskRunHistory(final ProcessFile processFile,
+    static void removeUnavailableProcessFileFromTaskRunHistory(final ProcessFile processFile,
                                                                final Task task,
                                                                final FileEventType fileEventType) {
         if (fileEventType == UPDATED || fileEventType == DELETED) {
