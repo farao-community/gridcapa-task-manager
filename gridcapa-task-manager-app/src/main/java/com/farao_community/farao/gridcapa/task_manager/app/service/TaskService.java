@@ -88,10 +88,10 @@ public class TaskService {
      * @param task:                      Task on which to evaluate the status.
      * @param inputFileSelectionChanged: boolean indicating whether an input file has been changed
      */
-    boolean checkAndUpdateTaskStatus(Task task,
-                                     boolean inputFileSelectionChanged) {
+    boolean checkAndUpdateTaskStatus(final Task task,
+                                     final boolean inputFileSelectionChanged) {
         final TaskStatus initialTaskStatus = task.getStatus();
-        List<String> inputFileTypes = task.getProcessFiles().stream()
+        final List<String> inputFileTypes = task.getProcessFiles().stream()
                 .filter(ProcessFile::isInputFile)
                 .map(ProcessFile::getFileType)
                 .toList();
@@ -113,7 +113,7 @@ public class TaskService {
                                       final Task task) {
         final OffsetDateTime offsetDateTime = OffsetDateTime.parse(loggerEvent.getTimestamp());
         String message = loggerEvent.getMessage();
-        Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
+        final Optional<String> optionalEventPrefix = loggerEvent.getEventPrefix();
         if (optionalEventPrefix.isPresent()) {
             message = "[" + optionalEventPrefix.get() + "] : " + loggerEvent.getMessage();
         }

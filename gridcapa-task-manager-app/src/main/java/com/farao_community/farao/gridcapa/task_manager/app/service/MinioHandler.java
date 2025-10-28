@@ -169,11 +169,11 @@ public class MinioHandler {
     }
 
     ProcessFileMinio getProcessFileMinio(final OffsetDateTime startTime,
-                                                   final OffsetDateTime endTime,
-                                                   final String objectKey,
-                                                   final String fileType,
-                                                   final String fileGroup,
-                                                   final String documentId) {
+                                         final OffsetDateTime endTime,
+                                         final String objectKey,
+                                         final String fileType,
+                                         final String fileGroup,
+                                         final String documentId) {
         /*
         This implies that only one file per type and group can exist. If another one is imported it would just
         replace the previous one.
@@ -205,8 +205,8 @@ public class MinioHandler {
         return OffsetDateTime.now(taskManagerConfigurationProperties.getProcessTimezone());
     }
 
-    private void addWaitingFileAndNotifyTasks(ProcessFileMinio processFileMinio,
-                                              Set<Task> runningOrPendingTasks) {
+    private void addWaitingFileAndNotifyTasks(final ProcessFileMinio processFileMinio,
+                                              final Set<Task> runningOrPendingTasks) {
         for (final Task task : runningOrPendingTasks) {
             removeWaitingFileWithSameTypeAndValidity(processFileMinio);
             waitingFilesList.add(processFileMinio);
@@ -241,12 +241,12 @@ public class MinioHandler {
             for (int i = 0; i < nbOfWaitingFiles - 1; i++) {
                 ProcessFileMinio processFileMinio = waitingProcessFilesToAdd.get(i);
                 ProcessFile processFile = processFileRepository.save(processFileMinio.getProcessFile());
-                Set<TaskWithStatusUpdate> tasksWithStatusUpdate = taskService.addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), true, false);
+                final Set<TaskWithStatusUpdate> tasksWithStatusUpdate = taskService.addProcessFileToTasks(processFile, processFileMinio.getFileEventType(), true, false);
                 saveAndNotifyTasks(tasksWithStatusUpdate, processFile.isInputFile());
                 waitingFilesList.remove(processFileMinio);
                 logDeletion(processFile.getFilename());
             }
-            ProcessFileMinio lastProcessFileMinio = waitingProcessFilesToAdd.get(nbOfWaitingFiles - 1);
+            final ProcessFileMinio lastProcessFileMinio = waitingProcessFilesToAdd.get(nbOfWaitingFiles - 1);
             final ProcessFile lastProcessFile = processFileRepository.save(lastProcessFileMinio.getProcessFile());
             final Set<TaskWithStatusUpdate> tasksWithStatusUpdate = taskService.addProcessFileToTasks(lastProcessFile,
                                                                                                       lastProcessFileMinio.getFileEventType(),
@@ -281,7 +281,7 @@ public class MinioHandler {
 
     public void removeProcessFile(final Event event) {
         synchronized (TASK_MANAGER_LOCK) {
-            String objectKey = URLDecoder.decode(event.objectName(), UTF_8);
+            final String objectKey = URLDecoder.decode(event.objectName(), UTF_8);
             LOGGER.info("Removing MinIO object {}", objectKey);
             final Optional<ProcessFile> optionalProcessFile = processFileRepository.findByFileObjectKey(objectKey);
             if (optionalProcessFile.isPresent()) {
@@ -296,8 +296,8 @@ public class MinioHandler {
         }
     }
 
-    private void saveAndNotifyTasks(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet,
-                                    boolean withNewInput) {
+    private void saveAndNotifyTasks(final Set<TaskWithStatusUpdate> taskWithStatusUpdateSet,
+                                    final boolean withNewInput) {
         LOGGER.debug("Saving related tasks in DB");
         taskRepository.saveAllAndFlush(taskWithStatusUpdateSet.stream().map(TaskWithStatusUpdate::getTask).toList());
         LOGGER.debug("Notifying on web-sockets");

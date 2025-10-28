@@ -46,8 +46,8 @@ public class ParameterService {
     }
 
     public List<ParameterDto> persistAndUpdateParameterValues(final List<ParameterDto> parameterDtos) {
-        List<Parameter> parametersToSave = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
+        final List<Parameter> parametersToSave = new ArrayList<>();
+        final List<String> errors = new ArrayList<>();
 
         for (final ParameterDto parameterDto : parameterDtos) {
             final String id = parameterDto.getId();
@@ -90,7 +90,7 @@ public class ParameterService {
     }
 
     private ParameterDto convertToDtoAndFillDefaultValue(final Parameter param) {
-        String defaultValue = runnerParameters.getRunnerParameter(param.getId())
+        final String defaultValue = runnerParameters.getRunnerParameter(param.getId())
             .orElseThrow(() -> new TaskManagerException("No default value for given parameter"));
         return new ParameterDto(param.getId(), param.getName(),
                                 param.getDisplayOrder(), param.getParameterType().name(),
