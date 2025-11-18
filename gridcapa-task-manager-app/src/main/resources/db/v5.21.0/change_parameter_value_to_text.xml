@@ -9,7 +9,7 @@
                    http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd
                    http://www.liquibase.org/xml/ns/dbchangelog
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet id="add_document_id_to_process_file" author="MSC">
+    <changeSet id="change_parameter_value_to_text" author="MSC">
         <modifyDataType tableName="parameter"
                         columnName="parameter_value"
                         newDataType="TEXT"/>
