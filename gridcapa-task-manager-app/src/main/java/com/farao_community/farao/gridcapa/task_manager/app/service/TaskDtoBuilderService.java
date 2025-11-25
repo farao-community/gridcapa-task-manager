@@ -12,6 +12,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
@@ -96,6 +97,17 @@ public class TaskDtoBuilderService {
                 .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
 
         return taskMap.values().stream().toList();
+    }
+
+    public boolean getTasksStatusAllOverForPostProcessing(LocalDate businessDate) {
+        LocalDateTime businessDateStartTime = businessDate.atTime(0, 0);
+        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
+        ZoneOffset zoneOffSetStart = localZone.getRules().getOffset(businessDateStartTime);
+        ZoneOffset zoneOffSetEnd = localZone.getRules().getOffset(businessDateEndTime);
+        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSetStart);
+        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSetEnd);
+        List<TaskStatus> statuses = taskRepository.findTaskStatusByTimestampBetweenForPostProcessor(startTimestamp, endTimestamp);
+        return statuses.stream().allMatch(TaskStatus::isOver);
     }
 
     public List<TaskDto> getListRunningTasksDto() {
