@@ -74,13 +74,9 @@ public class TaskDtoBuilderService {
                 .orElse(getEmptyTask(timestamp));
     }
 
-    public List<TaskDto> getListTasksDto(LocalDate businessDate) {
-        LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
-        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
-        ZoneOffset zoneOffSetStart = localZone.getRules().getOffset(businessDateStartTime);
-        ZoneOffset zoneOffSetEnd = localZone.getRules().getOffset(businessDateEndTime);
-        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSetStart);
-        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSetEnd);
+    public List<TaskDto> getListTasksDto(final LocalDate businessDate) {
+        final OffsetDateTime startTimestamp = getDateAtOffset(businessDate.atTime(0, 30));
+        final OffsetDateTime endTimestamp = getDateAtOffset(businessDate.atTime(23, 30));
 
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
@@ -99,14 +95,10 @@ public class TaskDtoBuilderService {
         return taskMap.values().stream().toList();
     }
 
-    public boolean getTasksStatusAllOverForPostProcessing(LocalDate businessDate) {
-        LocalDateTime businessDateStartTime = businessDate.atTime(0, 0);
-        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
-        ZoneOffset zoneOffSetStart = localZone.getRules().getOffset(businessDateStartTime);
-        ZoneOffset zoneOffSetEnd = localZone.getRules().getOffset(businessDateEndTime);
-        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSetStart);
-        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSetEnd);
-        List<TaskStatus> statuses = taskRepository.findTaskStatusByTimestampBetweenForPostProcessor(startTimestamp, endTimestamp);
+    public boolean areAllTasksOverForBusinessDate(final LocalDate businessDate) {
+        final OffsetDateTime startTimestamp = getDateAtOffset(businessDate.atTime(0, 0));
+        final OffsetDateTime endTimestamp = getDateAtOffset(businessDate.atTime(23, 59));
+        final List<TaskStatus> statuses = taskRepository.findTaskStatusByTimestampBetween(startTimestamp, endTimestamp);
         return statuses.stream().allMatch(TaskStatus::isOver);
     }
 
@@ -129,6 +121,11 @@ public class TaskDtoBuilderService {
 
     public TaskDto createDtoFromEntityWithoutProcessEvents(Task task) {
         return createDtoFromEntityWithOrWithoutEvents(task, false);
+    }
+
+    private OffsetDateTime getDateAtOffset(final LocalDateTime localDateTime) {
+        final ZoneOffset zoneOffset = localZone.getRules().getOffset(localDateTime);
+        return localDateTime.atOffset(zoneOffset);
     }
 
     private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {

@@ -28,10 +28,10 @@ class TaskRepositoryTest {
     }
 
     @Test
-    void findTaskStatusByTimestampBetweenForPostProcessorTest() {
+    void findTaskStatusByTimestampBetweenTest() {
         final OffsetDateTime offsetDateTimeBegin = OffsetDateTime.parse("2025-10-25T22:00Z");
         final OffsetDateTime offsetDateTimeEnd = OffsetDateTime.parse("2025-10-26T22:30Z");
-        final List<TaskStatus> emptyResult = taskRepository.findTaskStatusByTimestampBetweenForPostProcessor(offsetDateTimeBegin, offsetDateTimeEnd);
+        final List<TaskStatus> emptyResult = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
         org.assertj.core.api.Assertions.assertThat(emptyResult)
                 .isNotNull()
                 .isEmpty();
@@ -41,7 +41,7 @@ class TaskRepositoryTest {
         taskRepository.save(new Task(offsetDateTimeEnd));
         taskRepository.save(new Task(offsetDateTimeBegin));
         taskRepository.save(new Task(offsetDateTimeAfter));
-        final List<TaskStatus> result = taskRepository.findTaskStatusByTimestampBetweenForPostProcessor(offsetDateTimeBegin, offsetDateTimeEnd);
+        final List<TaskStatus> result = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
         org.assertj.core.api.Assertions.assertThat(result)
                 .isNotNull()
                 .isNotEmpty()
