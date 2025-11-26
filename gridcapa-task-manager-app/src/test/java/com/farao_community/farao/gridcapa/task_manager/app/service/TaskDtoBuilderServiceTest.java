@@ -36,6 +36,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -313,7 +314,7 @@ class TaskDtoBuilderServiceTest {
         final TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
         final LocalDate localDate = LocalDate.of(2025, 11, 26);
         final List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
-        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted((t1, t2) -> t1.getTimestamp().compareTo(t2.getTimestamp())).toList();
+        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted(Comparator.comparing(TaskDto::getTimestamp)).toList();
         Assertions.assertThat(sortedTasksDto)
                 .isNotEmpty()
                 .hasSize(24)
@@ -332,7 +333,7 @@ class TaskDtoBuilderServiceTest {
         final TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
         final LocalDate localDate = LocalDate.of(2025, 11, 26);
         final List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
-        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted((t1, t2) -> t1.getTimestamp().compareTo(t2.getTimestamp())).toList();
+        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted(Comparator.comparing(TaskDto::getTimestamp)).toList();
         Assertions.assertThat(sortedTasksDto)
                 .isNotEmpty()
                 .hasSize(24)
@@ -342,13 +343,14 @@ class TaskDtoBuilderServiceTest {
 
     @Test
     void testAreAllTasksOverForBusinessDate() {
+        final LocalDate localDate = LocalDate.of(2025, 11, 26);
         final Set<TaskStatus> statusesKO = Set.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS, TaskStatus.CREATED);
         Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesKO);
-        Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(LocalDate.now()))
+        Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(localDate))
                 .isFalse();
         final Set<TaskStatus> statusesOK = Set.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS);
         Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesOK);
-        Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(LocalDate.now()))
+        Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(localDate))
                 .isTrue();
     }
 
