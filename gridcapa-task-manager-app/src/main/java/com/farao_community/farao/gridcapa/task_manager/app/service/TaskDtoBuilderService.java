@@ -101,7 +101,7 @@ public class TaskDtoBuilderService {
     public boolean areAllTasksOverForBusinessDate(final LocalDate businessDate) {
         final OffsetDateTime startTimestamp = getDateAtOffset(businessDate.atTime(0, 0));
         final OffsetDateTime endTimestamp = getDateAtOffset(businessDate.atTime(23, 59));
-        final List<TaskStatus> statuses = taskRepository.findTaskStatusByTimestampBetween(startTimestamp, endTimestamp);
+        final Set<TaskStatus> statuses = taskRepository.findTaskStatusByTimestampBetween(startTimestamp, endTimestamp);
         return statuses.stream().allMatch(TaskStatus::isOver);
     }
 

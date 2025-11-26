@@ -40,9 +40,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -313,7 +314,7 @@ class TaskManagerControllerTest {
     @Test
     void testAreAllTasksFromBusinessDateOverShouldReturnFalse() {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
-        Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(List.of(TaskStatus.CREATED));
+        Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(Set.of(TaskStatus.CREATED));
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(false, response.getBody());
@@ -326,7 +327,7 @@ class TaskManagerControllerTest {
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
-        List<TaskStatus> taskStatuses = new ArrayList<>();
+        Set<TaskStatus> taskStatuses = new HashSet<>();
         while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
             taskStatuses.add(TaskStatus.ERROR);
             startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();

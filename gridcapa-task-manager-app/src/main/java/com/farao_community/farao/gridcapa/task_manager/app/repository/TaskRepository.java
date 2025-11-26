@@ -15,7 +15,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -62,8 +61,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     Set<Task> findAllByTimestampBetweenForBusinessDayView(@Param("startingTimestamp") OffsetDateTime startingTimestamp,
                                         @Param("endingTimestamp") OffsetDateTime endingTimestamp);
 
-    @Query("SELECT task.status FROM Task task " +
+    @Query("SELECT DISTINCT task.status FROM Task task " +
            "WHERE task.timestamp >= :startingTimestamp AND task.timestamp <= :endingTimestamp")
-    List<TaskStatus> findTaskStatusByTimestampBetween(@Param("startingTimestamp") final OffsetDateTime startingTimestamp,
+    Set<TaskStatus> findTaskStatusByTimestampBetween(@Param("startingTimestamp") final OffsetDateTime startingTimestamp,
                                                       @Param("endingTimestamp") final OffsetDateTime endingTimestamp);
 }

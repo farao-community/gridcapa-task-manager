@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @SpringBootTest
 class TaskRepositoryTest {
@@ -30,8 +30,9 @@ class TaskRepositoryTest {
     @Test
     void findTaskStatusByTimestampBetweenTest() {
         final OffsetDateTime offsetDateTimeBegin = OffsetDateTime.parse("2025-10-25T22:00Z");
+        final OffsetDateTime offsetDateTimeMiddle = OffsetDateTime.parse("2025-10-26T12:30Z");
         final OffsetDateTime offsetDateTimeEnd = OffsetDateTime.parse("2025-10-26T22:30Z");
-        final List<TaskStatus> emptyResult = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
+        final Set<TaskStatus> emptyResult = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
         org.assertj.core.api.Assertions.assertThat(emptyResult)
                 .isNotNull()
                 .isEmpty();
@@ -41,10 +42,20 @@ class TaskRepositoryTest {
         taskRepository.save(new Task(offsetDateTimeEnd));
         taskRepository.save(new Task(offsetDateTimeBegin));
         taskRepository.save(new Task(offsetDateTimeAfter));
-        final List<TaskStatus> result = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
+        final Set<TaskStatus> result = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
         org.assertj.core.api.Assertions.assertThat(result)
                 .isNotNull()
                 .isNotEmpty()
+                .hasSize(1);
+
+        final Task middle = new Task(offsetDateTimeMiddle);
+        middle.setStatus(TaskStatus.SUCCESS);
+        taskRepository.save(middle);
+        final Set<TaskStatus> result2 = taskRepository.findTaskStatusByTimestampBetween(offsetDateTimeBegin, offsetDateTimeEnd);
+        org.assertj.core.api.Assertions.assertThat(result2)
+                .isNotNull()
+                .isNotEmpty()
                 .hasSize(2);
+
     }
 }

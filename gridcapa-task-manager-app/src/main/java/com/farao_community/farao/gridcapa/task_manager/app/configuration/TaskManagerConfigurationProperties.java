@@ -21,7 +21,7 @@ public class TaskManagerConfigurationProperties {
     private final List<String> whitelist;
     public static final Object TASK_MANAGER_LOCK = new Object();
 
-    public TaskManagerConfigurationProperties(ProcessProperties process, List<String> whitelist) {
+    public TaskManagerConfigurationProperties(final ProcessProperties process, final List<String> whitelist) {
         this.process = process;
         this.whitelist = whitelist;
     }
@@ -49,7 +49,15 @@ public class TaskManagerConfigurationProperties {
         private final boolean isOnTheHourProcess;
         private final String manualUploadBasePath;
 
-        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, final List<String> availableInputs, List<String> outputs, boolean enableExportLogs, boolean isOnTheHourProcess, String manualUploadBasePath) {
+        public ProcessProperties(final String tag,
+                                 final String timezone,
+                                 final List<String> inputs,
+                                 final List<String> optionalInputs,
+                                 final List<String> availableInputs,
+                                 final List<String> outputs,
+                                 final boolean enableExportLogs,
+                                 final boolean isOnTheHourProcess,
+                                 final String manualUploadBasePath) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
