@@ -355,12 +355,12 @@ class TaskDtoBuilderServiceTest {
     private class TaskRepositoryMock implements TaskRepository {
 
         @Override
-        public Optional<Task> findByIdAndFetchProcessFiles(UUID id) {
+        public Optional<Task> findByIdAndFetchProcessFiles(final UUID id) {
             return Optional.empty();
         }
 
         @Override
-        public Optional<Task> findByTimestamp(OffsetDateTime timestamp) {
+        public Optional<Task> findByTimestamp(final OffsetDateTime timestamp) {
             return Optional.empty();
         }
 
@@ -391,7 +391,7 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<Task> findAllByTimestampBetweenForBusinessDayView(OffsetDateTime startingTimestamp, OffsetDateTime endingTimestamp) {
+        public Set<Task> findAllByTimestampBetweenForBusinessDayView(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
             Set<Task> tasks = new HashSet<>();
             OffsetDateTime time = startingTimestamp;
             while (!time.isAfter(endingTimestamp)) {
@@ -404,7 +404,7 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<TaskStatus> findTaskStatusByTimestampBetween(OffsetDateTime startingTimestamp, OffsetDateTime endingTimestamp) {
+        public Set<TaskStatus> findTaskStatusByTimestampBetween(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
             return Set.of();
         }
 
