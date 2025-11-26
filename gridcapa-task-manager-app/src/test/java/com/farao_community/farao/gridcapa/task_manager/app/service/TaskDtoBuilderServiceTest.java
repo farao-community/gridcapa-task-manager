@@ -303,6 +303,44 @@ class TaskDtoBuilderServiceTest {
     }
 
     @Test
+    void testGetListTasksDto24TSOnTheHour() {
+        final TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
+        Mockito.when(processProperties.getTimezone()).thenReturn("CET");
+        Mockito.when(processProperties.isOnTheHourProcess()).thenReturn(true);
+        final TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
+        final TaskRepository customTaskRepository = new TaskRepositoryMock();
+        final ParameterService parameterService = Mockito.mock(ParameterService.class);
+        final TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
+        final LocalDate localDate = LocalDate.of(2025, 11, 26);
+        final List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
+        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted((t1, t2) -> t1.getTimestamp().compareTo(t2.getTimestamp())).toList();
+        Assertions.assertThat(sortedTasksDto)
+                .isNotEmpty()
+                .hasSize(24)
+                .first()
+                .hasFieldOrPropertyWithValue("timestamp", OffsetDateTime.parse("2025-11-25T23:00Z"));
+    }
+
+    @Test
+    void testGetListTasksDto24TSOnTheHalfHour() {
+        final TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
+        Mockito.when(processProperties.getTimezone()).thenReturn("CET");
+        Mockito.when(processProperties.isOnTheHourProcess()).thenReturn(false);
+        final TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
+        final TaskRepository customTaskRepository = new TaskRepositoryMock();
+        final ParameterService parameterService = Mockito.mock(ParameterService.class);
+        final TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
+        final LocalDate localDate = LocalDate.of(2025, 11, 26);
+        final List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
+        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted((t1, t2) -> t1.getTimestamp().compareTo(t2.getTimestamp())).toList();
+        Assertions.assertThat(sortedTasksDto)
+                .isNotEmpty()
+                .hasSize(24)
+                .first()
+                .hasFieldOrPropertyWithValue("timestamp", OffsetDateTime.parse("2025-11-25T23:30Z"));
+    }
+
+    @Test
     void testAreAllTasksOverForBusinessDate() {
         final List<TaskStatus> statusesKO = List.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS, TaskStatus.CREATED);
         Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesKO);
