@@ -75,12 +75,10 @@ public class TaskDtoBuilderService {
     }
 
     public List<TaskDto> getListTasksDto(final LocalDate businessDate) {
-
         final OffsetDateTime startTimestamp = properties.getProcess().isOnTheHourProcess()
                 ? getDateAtOffset(businessDate.atTime(0, 0))
                 : getDateAtOffset(businessDate.atTime(0, 30));
         final OffsetDateTime endTimestamp = getDateAtOffset(businessDate.atTime(23, 59));
-
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
         for (OffsetDateTime loopTimestamp = startTimestamp;
@@ -90,11 +88,9 @@ public class TaskDtoBuilderService {
             OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(UTC_ZONE).toOffsetDateTime();
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
-
         tasks.stream()
                 .map(this::createDtoFromEntityWithoutProcessEvents)
                 .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
-
         return taskMap.values().stream().toList();
     }
 
