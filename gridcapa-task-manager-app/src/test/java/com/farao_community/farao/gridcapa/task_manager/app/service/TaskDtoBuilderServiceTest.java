@@ -345,11 +345,11 @@ class TaskDtoBuilderServiceTest {
     void testAreAllTasksOverForBusinessDate() {
         final LocalDate localDate = LocalDate.of(2025, 11, 26);
         final Set<TaskStatus> statusesKO = Set.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS, TaskStatus.CREATED);
-        Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesKO);
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesKO);
         Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(localDate))
                 .isFalse();
         final Set<TaskStatus> statusesOK = Set.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS);
-        Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesOK);
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesOK);
         Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(localDate))
                 .isTrue();
     }
@@ -406,7 +406,7 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<TaskStatus> findTaskStatusByTimestampBetween(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
+        public Set<TaskStatus> findTaskStatusesByTimestampBetween(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
             return Set.of();
         }
 

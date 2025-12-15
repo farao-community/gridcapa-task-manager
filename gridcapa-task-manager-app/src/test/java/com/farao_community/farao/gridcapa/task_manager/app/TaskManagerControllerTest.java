@@ -314,7 +314,7 @@ class TaskManagerControllerTest {
     @Test
     void testAreAllTasksFromBusinessDateOverShouldReturnFalse() {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
-        Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(Set.of(TaskStatus.CREATED));
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(Set.of(TaskStatus.CREATED));
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(false, response.getBody());
@@ -332,7 +332,7 @@ class TaskManagerControllerTest {
             taskStatuses.add(TaskStatus.ERROR);
             startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
         }
-        Mockito.when(taskRepository.findTaskStatusByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(taskStatuses);
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(taskStatuses);
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(true, response.getBody());
