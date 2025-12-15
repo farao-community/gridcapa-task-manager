@@ -63,6 +63,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @Query("SELECT DISTINCT task.status FROM Task task " +
            "WHERE task.timestamp >= :startingTimestamp AND task.timestamp <= :endingTimestamp")
-    Set<TaskStatus> findTaskStatusByTimestampBetween(@Param("startingTimestamp") final OffsetDateTime startingTimestamp,
+    Set<TaskStatus> findTaskStatusesByTimestampBetween(@Param("startingTimestamp") final OffsetDateTime startingTimestamp,
                                                      @Param("endingTimestamp") final OffsetDateTime endingTimestamp);
 }

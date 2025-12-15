@@ -31,7 +31,7 @@ class TaskManagerConfigurationPropertiesTest {
     }
 
     @Test
-    void getISOnTheHourProcessDefaultsToFalseTest() {
+    void getIsOnTheHourProcessDefaultsToFalseTest() {
         Assertions.assertThat(properties.getProcess().isOnTheHourProcess())
                 .isFalse();
     }
