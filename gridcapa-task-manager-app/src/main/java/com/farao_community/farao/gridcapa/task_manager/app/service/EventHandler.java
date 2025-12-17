@@ -52,7 +52,10 @@ public class EventHandler {
             try {
                 handleTaskEventBatchUpdate(mapMessagesToListEvents(messages));
             } catch (Exception e) {
-                LOGGER.error(String.format("Unable to handle task events update properly %s", messages), e);
+                final List<String> stringMessages = messages.stream()
+                    .map(String::new)
+                    .toList();
+                LOGGER.error("Unable to handle task events update properly {}", stringMessages, e);
             }
         });
     }
