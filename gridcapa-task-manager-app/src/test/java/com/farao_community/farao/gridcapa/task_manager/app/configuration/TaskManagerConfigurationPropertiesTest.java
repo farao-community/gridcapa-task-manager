@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.configuration;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,5 +28,11 @@ class TaskManagerConfigurationPropertiesTest {
     void getProcessTimezoneTest() {
         ZoneId timezone = properties.getProcessTimezone();
         assertEquals(ZoneId.of("CET"), timezone);
+    }
+
+    @Test
+    void getIsOnTheHourProcessDefaultsToFalseTest() {
+        Assertions.assertThat(properties.getProcess().isOnTheHourProcess())
+                .isFalse();
     }
 }

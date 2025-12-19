@@ -314,9 +314,7 @@ class TaskManagerControllerTest {
     @Test
     void testAreAllTasksFromBusinessDateOverShouldReturnFalse() {
         LocalDate businessDate = LocalDate.parse("2021-01-01");
-        Task task = new Task();
-        task.setStatus(TaskStatus.CREATED);
-        Mockito.when(taskRepository.findAllByTimestampBetweenForBusinessDayView(Mockito.any(), Mockito.any())).thenReturn(Set.of(task));
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(Set.of(TaskStatus.CREATED));
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(false, response.getBody());
@@ -329,14 +327,12 @@ class TaskManagerControllerTest {
         LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
         ZoneOffset zoneOffSet = zone.getRules().getOffset(businessDateStartTime);
         OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSet);
-        Set<Task> tasks = new HashSet<>();
+        Set<TaskStatus> taskStatuses = new HashSet<>();
         while (startTimestamp.getDayOfMonth() == businessDate.getDayOfMonth()) {
-            Task task = new Task(startTimestamp.atZoneSameInstant(ZoneId.of("Z")).toOffsetDateTime());
-            task.setStatus(TaskStatus.ERROR);
-            tasks.add(task);
+            taskStatuses.add(TaskStatus.ERROR);
             startTimestamp = startTimestamp.plusHours(1).atZoneSameInstant(zone).toOffsetDateTime();
         }
-        Mockito.when(taskRepository.findAllByTimestampBetweenForBusinessDayView(Mockito.any(), Mockito.any())).thenReturn(tasks);
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(), Mockito.any())).thenReturn(taskStatuses);
         ResponseEntity<Boolean> response = taskManagerController.areAllTasksFromBusinessDateOver(businessDate.toString());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(true, response.getBody());

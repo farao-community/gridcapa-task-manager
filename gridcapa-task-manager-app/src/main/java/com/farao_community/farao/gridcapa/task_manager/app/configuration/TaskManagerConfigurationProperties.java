@@ -21,7 +21,7 @@ public class TaskManagerConfigurationProperties {
     private final List<String> whitelist;
     public static final Object TASK_MANAGER_LOCK = new Object();
 
-    public TaskManagerConfigurationProperties(ProcessProperties process, List<String> whitelist) {
+    public TaskManagerConfigurationProperties(final ProcessProperties process, final List<String> whitelist) {
         this.process = process;
         this.whitelist = whitelist;
     }
@@ -46,9 +46,18 @@ public class TaskManagerConfigurationProperties {
         private final List<String> availableInputs;
         private final List<String> outputs;
         private final boolean enableExportLogs;
+        private final boolean isOnTheHourProcess;
         private final String manualUploadBasePath;
 
-        public ProcessProperties(String tag, String timezone, List<String> inputs, List<String> optionalInputs, final List<String> availableInputs, List<String> outputs, boolean enableExportLogs, String manualUploadBasePath) {
+        public ProcessProperties(final String tag,
+                                 final String timezone,
+                                 final List<String> inputs,
+                                 final List<String> optionalInputs,
+                                 final List<String> availableInputs,
+                                 final List<String> outputs,
+                                 final boolean enableExportLogs,
+                                 final boolean isOnTheHourProcess,
+                                 final String manualUploadBasePath) {
             this.tag = tag;
             this.timezone = timezone;
             this.inputs = inputs;
@@ -56,6 +65,7 @@ public class TaskManagerConfigurationProperties {
             this.availableInputs = availableInputs;
             this.outputs = outputs;
             this.enableExportLogs = enableExportLogs;
+            this.isOnTheHourProcess = isOnTheHourProcess;
             this.manualUploadBasePath = manualUploadBasePath;
         }
 
@@ -85,6 +95,10 @@ public class TaskManagerConfigurationProperties {
 
         public String getManualUploadBasePath() {
             return manualUploadBasePath;
+        }
+
+        public boolean isOnTheHourProcess() {
+            return isOnTheHourProcess;
         }
 
         public List<String> getAvailableInputs() {
