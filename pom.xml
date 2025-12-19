@@ -47,7 +47,7 @@
     <properties>
         <argLine /> <!-- required for java agent declaration, do not remove -->
         <!-- Dependency versions -->
-        <apache.commons.verion>2.11.0</apache.commons.verion>
+        <apache.commons.verion>2.14.0</apache.commons.verion>
         <gridcapa.starter.minio.adapter.version>1.8.0</gridcapa.starter.minio.adapter.version>
         <postgres.jdbc.version>42.3.9</postgres.jdbc.version>
         <liquibase.version>4.28.0</liquibase.version>
