@@ -38,9 +38,7 @@ public class DatabasePurgeService {
     @Scheduled(cron = "${purge-task-events.cron}")
     @Transactional
     public void scheduledDatabaseTaskEventsPurge() {
-        OffsetDateTime dateTimeNow = OffsetDateTime.now();
-        OffsetDateTime dateTimeReference = dateTimeNow.minusDays(Long.valueOf(nbDays));
-        processEventRepository.deleteWhenOlderThan(dateTimeReference);
+        processEventRepository.deleteWhenOlderThan(OffsetDateTime.now().minusDays(Long.parseLong(nbDays)));
         LOGGER.debug("Task events that are more than {} days old have been deleted from database ", nbDays);
     }
 }

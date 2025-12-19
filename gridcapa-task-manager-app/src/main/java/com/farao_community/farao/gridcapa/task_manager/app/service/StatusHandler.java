@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static com.farao_community.farao.gridcapa.task_manager.api.TaskStatus.RUNNING;
 import static com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties.TASK_MANAGER_LOCK;
 
 /**
@@ -57,15 +58,14 @@ public class StatusHandler {
         });
     }
 
-    public void handleTaskStatusUpdate(TaskStatusUpdate taskStatusUpdate) {
+    public void handleTaskStatusUpdate(final TaskStatusUpdate taskStatusUpdate) {
         synchronized (TASK_MANAGER_LOCK) { // use same lock to avoid parallel handling between status update and minioHandler
-            Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(taskStatusUpdate.getId());
+            final Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(taskStatusUpdate.getId());
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatusUpdate.getTaskStatus());
                 LOGGER.info("Receiving task status update for task id {} with status {}", taskStatusUpdate.getId(), taskStatusUpdate.getTaskStatus());
                 if (taskStatusUpdate.getTaskStatus().isOver()) {
                     minioHandler.emptyWaitingList(optionalTask.get().getTimestamp());
-
                 }
             } else {
                 LOGGER.warn("Task {} does not exist. Impossible to update status", taskStatusUpdate.getId());
@@ -73,9 +73,9 @@ public class StatusHandler {
         }
     }
 
-    public Optional<Task> handleTaskStatusUpdate(OffsetDateTime timestamp, TaskStatus taskStatus) {
+    public Optional<Task> handleTaskStatusUpdate(final OffsetDateTime timestamp, final TaskStatus taskStatus) {
         synchronized (TASK_MANAGER_LOCK) {
-            Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
+            final Optional<Task> optionalTask = taskRepository.findByTimestamp(timestamp);
             if (optionalTask.isPresent()) {
                 updateTaskStatus(optionalTask.get(), taskStatus);
                 if (taskStatus.isOver()) {
@@ -95,7 +95,7 @@ public class StatusHandler {
         final Task savedTask = taskRepository.saveAndFlush(task);
         taskUpdateNotifier.notify(savedTask, true, false);
         LOGGER.info("Task status has been updated on {} to {}", task.getTimestamp(), savedTask.getStatus());
-        if (taskStatus.isOver() || TaskStatus.RUNNING.equals(task.getStatus())) {
+        if (taskStatus.isOver() || task.getStatus() == RUNNING) {
             MDC.put("gridcapa-task-id", task.getId().toString());
             businessLogger.info("Task status has been updated to {}.", task.getStatus());
         }

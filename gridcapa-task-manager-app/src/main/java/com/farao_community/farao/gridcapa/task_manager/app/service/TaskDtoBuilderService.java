@@ -12,12 +12,12 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskParameterDto;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessFile;
+import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -30,7 +30,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Joris Mancini {@literal <joris.mancini at rte-france.com>}
@@ -44,7 +46,9 @@ public class TaskDtoBuilderService {
     private final ZoneId localZone;
     private final ParameterService parameterService;
 
-    public TaskDtoBuilderService(TaskManagerConfigurationProperties properties, TaskRepository taskRepository, ParameterService parameterService) {
+    public TaskDtoBuilderService(final TaskManagerConfigurationProperties properties,
+                                 final TaskRepository taskRepository,
+                                 final ParameterService parameterService) {
         this.properties = properties;
         this.taskRepository = taskRepository;
         this.parameterService = parameterService;
@@ -53,10 +57,11 @@ public class TaskDtoBuilderService {
 
     /**
      * To use only if Process Events are required in the process. Otherwise, prefer the method getTaskDtoWithoutProcessEvents.
+     *
      * @param timestamp
      * @return
      */
-    public TaskDto getTaskDtoWithProcessEvents(OffsetDateTime timestamp) {
+    public TaskDto getTaskDtoWithProcessEvents(final OffsetDateTime timestamp) {
         return taskRepository.findByTimestampAndFetchProcessEvents(timestamp)
                 .map(this::createDtoFromEntity)
                 .orElse(getEmptyTask(timestamp));
@@ -64,30 +69,29 @@ public class TaskDtoBuilderService {
 
     /**
      * To use preferably, as it does not fetch process event hence reducing memory used.
+     *
      * @param timestamp
      * @return
      */
-    public TaskDto getTaskDtoWithoutProcessEvents(OffsetDateTime timestamp) {
+    public TaskDto getTaskDtoWithoutProcessEvents(final OffsetDateTime timestamp) {
         return taskRepository.findByTimestamp(timestamp)
                 .map(this::createDtoFromEntityWithoutProcessEvents)
                 .orElse(getEmptyTask(timestamp));
     }
 
-    public List<TaskDto> getListTasksDto(LocalDate businessDate) {
-        LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
-        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
-        ZoneOffset zoneOffSetStart = localZone.getRules().getOffset(businessDateStartTime);
-        ZoneOffset zoneOffSetEnd = localZone.getRules().getOffset(businessDateEndTime);
-        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSetStart);
-        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSetEnd);
+    public List<TaskDto> getTasksDtos(final LocalDate businessDate) {
+        final LocalDateTime startLdt = businessDate.atTime(0, 30);
+        final LocalDateTime endLdt = businessDate.atTime(23, 30);
+        final ZoneOffset startOffset = localZone.getRules().getOffset(startLdt);
+        final ZoneOffset endOffset = localZone.getRules().getOffset(endLdt);
+        final OffsetDateTime startTimestamp = startLdt.atOffset(startOffset);
+        final OffsetDateTime endTimestamp = endLdt.atOffset(endOffset);
 
-        Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
-        Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
-        for (OffsetDateTime loopTimestamp = startTimestamp;
-             !loopTimestamp.isAfter(endTimestamp);
-             loopTimestamp = loopTimestamp.plusHours(1).atZoneSameInstant(localZone).toOffsetDateTime()
-        ) {
-            OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(UTC_ZONE).toOffsetDateTime();
+        final Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
+        final Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
+
+        for (OffsetDateTime ts = startTimestamp; !ts.isAfter(endTimestamp); ts = incrementTimestamp(ts)) {
+            final OffsetDateTime taskTimeStamp = ts.atZoneSameInstant(UTC_ZONE).toOffsetDateTime();
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
 
@@ -98,70 +102,78 @@ public class TaskDtoBuilderService {
         return taskMap.values().stream().toList();
     }
 
+    private OffsetDateTime incrementTimestamp(final OffsetDateTime timestamp) {
+        return timestamp.plusHours(1).atZoneSameInstant(localZone).toOffsetDateTime();
+    }
+
     public List<TaskDto> getListRunningTasksDto() {
         return taskRepository.findAllRunningAndPending().stream()
                 .map(this::createDtoFromEntityWithoutProcessEvents)
                 .toList();
     }
 
-    public TaskDto getEmptyTask(OffsetDateTime timestamp) {
+    public TaskDto getEmptyTask(final OffsetDateTime timestamp) {
         return TaskDto.emptyTask(
                 timestamp,
                 properties.getProcess().getInputs(),
                 properties.getProcess().getOutputs());
     }
 
-    public TaskDto createDtoFromEntity(Task task) {
-        return createDtoFromEntityWithOrWithoutEvents(task, true);
+    public TaskDto createDtoFromEntity(final Task task) {
+        return createDtoFromEntityGivenEvents(task, true);
     }
 
-    public TaskDto createDtoFromEntityWithoutProcessEvents(Task task) {
-        return createDtoFromEntityWithOrWithoutEvents(task, false);
+    public TaskDto createDtoFromEntityWithoutProcessEvents(final Task task) {
+        return createDtoFromEntityGivenEvents(task, false);
     }
 
-    private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {
-        List<ProcessFileDto> inputs = properties.getProcess().getInputs().stream()
-                .map(input -> task.getInput(input)
-                        .map(this::createDtoFromEntity)
-                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
-                .collect(Collectors.toList());
+    private TaskDto createDtoFromEntityGivenEvents(final Task task,
+                                                   final boolean withEvents) {
 
-        List<ProcessFileDto> availableInputs = properties.getProcess().getInputs()
+        final Function<String, Stream<ProcessFileDto>> mapInputFile = str -> task.getInput(str)
                 .stream()
-                .flatMap(availableInput -> task.getAvailableInputs(availableInput)
-                        .stream()
-                        .map(this::createDtoFromEntity))
+                .map(this::createDtoFromEntity);
+
+        final Function<String, ProcessFileDto> mapInputFileOrElseEmpty = str -> task.getInput(str)
+                .map(this::createDtoFromEntity)
+                .orElseGet(() -> ProcessFileDto.emptyProcessFile(str));
+
+        final List<ProcessFileDto> inputs = properties.getProcess().getInputs().stream()
+                .map(mapInputFileOrElseEmpty)
                 .collect(Collectors.toList());
 
-        List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
-                .map(input -> task.getInput(input)
-                        .map(this::createDtoFromEntity)
-                        .orElseGet(() -> ProcessFileDto.emptyProcessFile(input)))
+        final List<ProcessFileDto> availableInputs = properties.getProcess().getInputs()
+                .stream()
+                .flatMap(str -> task.getAvailableInputs(str)
+                            .stream()
+                            .map(this::createDtoFromEntity))
+                .collect(Collectors.toList());
+
+        final List<ProcessFileDto> optionalInputs = properties.getProcess().getOptionalInputs().stream()
+                .map(mapInputFileOrElseEmpty)
                 .toList();
         inputs.addAll(optionalInputs);
 
-        List<ProcessFileDto> availableOptionalInputs = properties.getProcess().getOptionalInputs().stream()
-                .flatMap(input -> task.getInput(input)
-                        .stream()
-                        .map(this::createDtoFromEntity))
+        final List<ProcessFileDto> availableOptionalInputs = properties.getProcess().getOptionalInputs().stream()
+                .flatMap(mapInputFile)
                 .toList();
         availableInputs.addAll(availableOptionalInputs);
 
-        List<ProcessFileDto> outputs = properties.getProcess().getOutputs().stream()
+        final List<ProcessFileDto> outputs = properties.getProcess().getOutputs().stream()
                 .map(output -> task.getOutput(output)
                         .map(this::createDtoFromEntity)
                         .orElseGet(() -> ProcessFileDto.emptyProcessFile(output)))
                 .toList();
 
-        List<ProcessEventDto> processEvents = withEvents ?
+        final List<ProcessEventDto> processEvents = withEvents ?
                 task.getProcessEvents().stream().map(this::createDtoFromEntity).toList()
                 : Collections.emptyList();
 
-        List<ProcessRunDto> runHistory = task.getRunHistory().stream()
+        final List<ProcessRunDto> runHistory = task.getRunHistory().stream()
                 .map(this::createDtoFromEntity)
                 .toList();
 
-        List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream()
+        final List<TaskParameterDto> taskParameterDtos = parameterService.getParameters().stream()
                 .map(TaskParameterDto::new)
                 .toList();
 
@@ -177,7 +189,7 @@ public class TaskDtoBuilderService {
                 taskParameterDtos);
     }
 
-    ProcessFileDto createDtoFromEntity(ProcessFile processFile) {
+    ProcessFileDto createDtoFromEntity(final ProcessFile processFile) {
         return new ProcessFileDto(
                 processFile.getFileObjectKey(),
                 processFile.getFileType(),
@@ -187,15 +199,17 @@ public class TaskDtoBuilderService {
                 processFile.getLastModificationDate());
     }
 
-    ProcessEventDto createDtoFromEntity(ProcessEvent processEvent) {
+    ProcessEventDto createDtoFromEntity(final ProcessEvent processEvent) {
         return new ProcessEventDto(processEvent.getTimestamp(),
-                processEvent.getLevel(),
-                processEvent.getMessage(),
-                processEvent.getServiceName());
+                                   processEvent.getLevel(),
+                                   processEvent.getMessage(),
+                                   processEvent.getServiceName());
     }
 
-    ProcessRunDto createDtoFromEntity(ProcessRun processRun) {
-        List<ProcessFileDto> processFileDtos = processRun.getInputFiles().stream()
+    ProcessRunDto createDtoFromEntity(final ProcessRun processRun) {
+        final List<ProcessFileDto> processFileDtos = processRun
+                .getInputFiles()
+                .stream()
                 .map(this::createDtoFromEntity)
                 .toList();
         return new ProcessRunDto(processRun.getId(), processRun.getExecutionDate(), processFileDtos);

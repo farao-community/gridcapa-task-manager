@@ -60,11 +60,11 @@ public class TaskUpdateNotifier {
         }
     }
 
-    public void notify(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+    public void notify(final Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
         taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated(), true));
     }
 
-    public void notifyNewInput(Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
+    public void notifyNewInput(final Set<TaskWithStatusUpdate> taskWithStatusUpdateSet) {
         taskWithStatusUpdateSet.parallelStream().forEach(t -> notify(t.getTask(), t.isStatusUpdated(), true, true));
     }
 }

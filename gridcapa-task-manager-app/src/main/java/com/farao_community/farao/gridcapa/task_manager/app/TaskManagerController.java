@@ -171,13 +171,13 @@ public class TaskManagerController {
 
     @GetMapping(value = "/tasks/businessdate/{businessDate}")
     public ResponseEntity<List<TaskDto>> getListTasksFromBusinessDate(@PathVariable String businessDate) {
-        return ResponseEntity.ok().body(builder.getListTasksDto(LocalDate.parse(businessDate)));
+        return ResponseEntity.ok().body(builder.getTasksDtos(LocalDate.parse(businessDate)));
     }
 
     @GetMapping(value = "/tasks/businessdate/{businessDate}/allOver")
     public ResponseEntity<Boolean> areAllTasksFromBusinessDateOver(@PathVariable String businessDate) {
         return ResponseEntity.ok().body(
-                builder.getListTasksDto(LocalDate.parse(businessDate))
+                builder.getTasksDtos(LocalDate.parse(businessDate))
                         .stream().map(TaskDto::getStatus)
                         .allMatch(TaskStatus::isOver));
     }
@@ -249,7 +249,7 @@ public class TaskManagerController {
     @PatchMapping(value = "/parameters")
     public ResponseEntity<Object> setParameterValues(@RequestBody List<ParameterDto> parameterDtos) {
         try {
-            List<ParameterDto> updatedParameterDtos = parameterService.setParameterValues(parameterDtos);
+            List<ParameterDto> updatedParameterDtos = parameterService.persistAndUpdateParameterValues(parameterDtos);
             if (updatedParameterDtos.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }

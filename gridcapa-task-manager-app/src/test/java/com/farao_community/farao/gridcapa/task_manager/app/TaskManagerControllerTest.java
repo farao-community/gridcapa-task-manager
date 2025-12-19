@@ -392,7 +392,7 @@ class TaskManagerControllerTest {
         String id = "27L";
         String value = "new value";
         List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
-        Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
+        Mockito.when(parameterService.persistAndUpdateParameterValues(Mockito.anyList()))
             .thenReturn(parameterDtos);
 
         ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
@@ -413,7 +413,7 @@ class TaskManagerControllerTest {
         String id = "27L";
         String value = "new value";
         List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
-        Mockito.when(parameterService.setParameterValues(Mockito.anyList())).thenReturn(List.of());
+        Mockito.when(parameterService.persistAndUpdateParameterValues(Mockito.anyList())).thenReturn(List.of());
 
         ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
 
@@ -428,7 +428,7 @@ class TaskManagerControllerTest {
         String id = "27L";
         String value = "new value";
         List<ParameterDto> parameterDtos = List.of(new ParameterDto(id, "name", 1, "type", "section", 3, value, "test"));
-        Mockito.when(parameterService.setParameterValues(Mockito.anyList()))
+        Mockito.when(parameterService.persistAndUpdateParameterValues(Mockito.anyList()))
             .thenThrow(new TaskManagerException(exceptionMessage));
 
         ResponseEntity<Object> response = taskManagerController.setParameterValues(parameterDtos);
