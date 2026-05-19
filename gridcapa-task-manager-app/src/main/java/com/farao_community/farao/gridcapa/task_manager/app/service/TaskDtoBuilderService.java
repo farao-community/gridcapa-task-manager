@@ -12,6 +12,7 @@ import com.farao_community.farao.gridcapa.task_manager.api.ProcessFileStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.ProcessRunDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskDto;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskParameterDto;
+import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessRun;
 import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.configuration.TaskManagerConfigurationProperties;
@@ -73,14 +74,11 @@ public class TaskDtoBuilderService {
                 .orElse(getEmptyTask(timestamp));
     }
 
-    public List<TaskDto> getListTasksDto(LocalDate businessDate) {
-        LocalDateTime businessDateStartTime = businessDate.atTime(0, 30);
-        LocalDateTime businessDateEndTime = businessDate.atTime(23, 30);
-        ZoneOffset zoneOffSetStart = localZone.getRules().getOffset(businessDateStartTime);
-        ZoneOffset zoneOffSetEnd = localZone.getRules().getOffset(businessDateEndTime);
-        OffsetDateTime startTimestamp = businessDateStartTime.atOffset(zoneOffSetStart);
-        OffsetDateTime endTimestamp = businessDateEndTime.atOffset(zoneOffSetEnd);
-
+    public List<TaskDto> getListTasksDto(final LocalDate businessDate) {
+        final OffsetDateTime startTimestamp = properties.getProcess().isOnTheHourProcess()
+                ? getDateAtOffset(businessDate.atTime(0, 0))
+                : getDateAtOffset(businessDate.atTime(0, 30));
+        final OffsetDateTime endTimestamp = getDateAtOffset(businessDate.atTime(23, 59));
         Set<Task> tasks = taskRepository.findAllByTimestampBetweenForBusinessDayView(startTimestamp, endTimestamp);
         Map<OffsetDateTime, TaskDto> taskMap = new HashMap<>();
         for (OffsetDateTime loopTimestamp = startTimestamp;
@@ -90,12 +88,17 @@ public class TaskDtoBuilderService {
             OffsetDateTime taskTimeStamp = loopTimestamp.atZoneSameInstant(UTC_ZONE).toOffsetDateTime();
             taskMap.put(taskTimeStamp, getEmptyTask(taskTimeStamp));
         }
-
         tasks.stream()
                 .map(this::createDtoFromEntityWithoutProcessEvents)
                 .forEach(dto -> taskMap.put(dto.getTimestamp(), dto));
-
         return taskMap.values().stream().toList();
+    }
+
+    public boolean areAllTasksOverForBusinessDate(final LocalDate businessDate) {
+        final OffsetDateTime startTimestamp = getDateAtOffset(businessDate.atTime(0, 0));
+        final OffsetDateTime endTimestamp = getDateAtOffset(businessDate.atTime(23, 59));
+        final Set<TaskStatus> statuses = taskRepository.findTaskStatusesByTimestampBetween(startTimestamp, endTimestamp);
+        return statuses.stream().allMatch(TaskStatus::isOver);
     }
 
     public List<TaskDto> getListRunningTasksDto() {
@@ -117,6 +120,11 @@ public class TaskDtoBuilderService {
 
     public TaskDto createDtoFromEntityWithoutProcessEvents(Task task) {
         return createDtoFromEntityWithOrWithoutEvents(task, false);
+    }
+
+    private OffsetDateTime getDateAtOffset(final LocalDateTime localDateTime) {
+        final ZoneOffset zoneOffset = localZone.getRules().getOffset(localDateTime);
+        return localDateTime.atOffset(zoneOffset);
     }
 
     private TaskDto createDtoFromEntityWithOrWithoutEvents(Task task, boolean withEvents) {

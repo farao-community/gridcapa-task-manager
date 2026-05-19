@@ -36,6 +36,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -302,15 +303,66 @@ class TaskDtoBuilderServiceTest {
         assertEquals(25, customTaskDtoBuilderService.getListTasksDto(localDate).size());
     }
 
+    @Test
+    void testGetListTasksDto24TSOnTheHour() {
+        final TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
+        Mockito.when(processProperties.getTimezone()).thenReturn("CET");
+        Mockito.when(processProperties.isOnTheHourProcess()).thenReturn(true);
+        final TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
+        final TaskRepository customTaskRepository = new TaskRepositoryMock();
+        final ParameterService parameterService = Mockito.mock(ParameterService.class);
+        final TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
+        final LocalDate localDate = LocalDate.of(2025, 11, 26);
+        final List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
+        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted(Comparator.comparing(TaskDto::getTimestamp)).toList();
+        Assertions.assertThat(sortedTasksDto)
+                .isNotEmpty()
+                .hasSize(24)
+                .first()
+                .hasFieldOrPropertyWithValue("timestamp", OffsetDateTime.parse("2025-11-25T23:00Z"));
+    }
+
+    @Test
+    void testGetListTasksDto24TSOnTheHalfHour() {
+        final TaskManagerConfigurationProperties.ProcessProperties processProperties = Mockito.mock(TaskManagerConfigurationProperties.ProcessProperties.class);
+        Mockito.when(processProperties.getTimezone()).thenReturn("CET");
+        Mockito.when(processProperties.isOnTheHourProcess()).thenReturn(false);
+        final TaskManagerConfigurationProperties properties = new TaskManagerConfigurationProperties(processProperties, new ArrayList<>());
+        final TaskRepository customTaskRepository = new TaskRepositoryMock();
+        final ParameterService parameterService = Mockito.mock(ParameterService.class);
+        final TaskDtoBuilderService customTaskDtoBuilderService = new TaskDtoBuilderService(properties, customTaskRepository, parameterService);
+        final LocalDate localDate = LocalDate.of(2025, 11, 26);
+        final List<TaskDto> listTasksDto = customTaskDtoBuilderService.getListTasksDto(localDate);
+        final List<TaskDto> sortedTasksDto = listTasksDto.stream().sorted(Comparator.comparing(TaskDto::getTimestamp)).toList();
+        Assertions.assertThat(sortedTasksDto)
+                .isNotEmpty()
+                .hasSize(24)
+                .first()
+                .hasFieldOrPropertyWithValue("timestamp", OffsetDateTime.parse("2025-11-25T23:30Z"));
+    }
+
+    @Test
+    void testAreAllTasksOverForBusinessDate() {
+        final LocalDate localDate = LocalDate.of(2025, 11, 26);
+        final Set<TaskStatus> statusesKO = Set.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS, TaskStatus.CREATED);
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesKO);
+        Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(localDate))
+                .isFalse();
+        final Set<TaskStatus> statusesOK = Set.of(TaskStatus.ERROR, TaskStatus.INTERRUPTED, TaskStatus.SUCCESS);
+        Mockito.when(taskRepository.findTaskStatusesByTimestampBetween(Mockito.any(OffsetDateTime.class), Mockito.any(OffsetDateTime.class))).thenReturn(statusesOK);
+        Assertions.assertThat(taskDtoBuilderService.areAllTasksOverForBusinessDate(localDate))
+                .isTrue();
+    }
+
     private class TaskRepositoryMock implements TaskRepository {
 
         @Override
-        public Optional<Task> findByIdAndFetchProcessFiles(UUID id) {
+        public Optional<Task> findByIdAndFetchProcessFiles(final UUID id) {
             return Optional.empty();
         }
 
         @Override
-        public Optional<Task> findByTimestamp(OffsetDateTime timestamp) {
+        public Optional<Task> findByTimestamp(final OffsetDateTime timestamp) {
             return Optional.empty();
         }
 
@@ -341,7 +393,7 @@ class TaskDtoBuilderServiceTest {
         }
 
         @Override
-        public Set<Task> findAllByTimestampBetweenForBusinessDayView(OffsetDateTime startingTimestamp, OffsetDateTime endingTimestamp) {
+        public Set<Task> findAllByTimestampBetweenForBusinessDayView(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
             Set<Task> tasks = new HashSet<>();
             OffsetDateTime time = startingTimestamp;
             while (!time.isAfter(endingTimestamp)) {
@@ -351,6 +403,11 @@ class TaskDtoBuilderServiceTest {
                 time = time.plusHours(1);
             }
             return tasks;
+        }
+
+        @Override
+        public Set<TaskStatus> findTaskStatusesByTimestampBetween(final OffsetDateTime startingTimestamp, final OffsetDateTime endingTimestamp) {
+            return Set.of();
         }
 
         @Override
