@@ -55,8 +55,8 @@ public class EventHandler {
                 handleTaskEventBatchUpdate(mapMessagesToListEvents(messages));
             } catch (Exception e) {
                 final List<String> stringMessages = messages.stream()
-                    .map(String::new)
-                    .toList();
+                        .map(String::new)
+                        .toList();
                 LOGGER.error("Unable to handle task events update properly {}", stringMessages, e);
             }
         });
@@ -83,7 +83,7 @@ public class EventHandler {
         synchronized (TASK_MANAGER_LOCK) {
             Map<UUID, Task> storedTasks = new HashMap<>();
             for (TaskLogEventUpdate event : events) {
-            try {
+                try {
                     UUID taskUUID = UUID.fromString(event.getId());
                     Task task = storedTasks.get(taskUUID);
                     if (task == null) {
