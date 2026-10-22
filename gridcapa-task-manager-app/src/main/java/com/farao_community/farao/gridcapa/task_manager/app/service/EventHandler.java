@@ -40,7 +40,9 @@ public class EventHandler {
     private final TaskService taskService;
     private final TaskUpdateNotifier taskUpdateNotifier;
 
-    public EventHandler(TaskRepository taskRepository, TaskService taskService, TaskUpdateNotifier taskUpdateNotifier) {
+    public EventHandler(TaskRepository taskRepository,
+                        TaskService taskService,
+                        TaskUpdateNotifier taskUpdateNotifier) {
         this.taskRepository = taskRepository;
         this.taskService = taskService;
         this.taskUpdateNotifier = taskUpdateNotifier;
@@ -53,8 +55,8 @@ public class EventHandler {
                 handleTaskEventBatchUpdate(mapMessagesToListEvents(messages));
             } catch (Exception e) {
                 final List<String> stringMessages = messages.stream()
-                    .map(String::new)
-                    .toList();
+                        .map(String::new)
+                        .toList();
                 LOGGER.error("Unable to handle task events update properly {}", stringMessages, e);
             }
         });
@@ -62,10 +64,10 @@ public class EventHandler {
 
     List<TaskLogEventUpdate> mapMessagesToListEvents(List<byte[]> messages) {
         return messages.stream()
-            .map(String::new)
-            .map(this::mapMessageToEvent)
-            .filter(Objects::nonNull)
-            .toList();
+                .map(String::new)
+                .map(this::mapMessageToEvent)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     TaskLogEventUpdate mapMessageToEvent(String messages) {
@@ -81,19 +83,23 @@ public class EventHandler {
         synchronized (TASK_MANAGER_LOCK) {
             Map<UUID, Task> storedTasks = new HashMap<>();
             for (TaskLogEventUpdate event : events) {
-                UUID taskUUID = UUID.fromString(event.getId());
-                Task task = storedTasks.get(taskUUID);
-                if (task == null) {
-                    Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(UUID.fromString(event.getId()));
-                    if (optionalTask.isPresent()) {
-                        task = optionalTask.get();
-                        storedTasks.put(taskUUID, task);
-                        taskService.addProcessEventToTask(event, task);
+                try {
+                    UUID taskUUID = UUID.fromString(event.getId());
+                    Task task = storedTasks.get(taskUUID);
+                    if (task == null) {
+                        Optional<Task> optionalTask = taskRepository.findByIdAndFetchProcessFiles(UUID.fromString(event.getId()));
+                        if (optionalTask.isPresent()) {
+                            task = optionalTask.get();
+                            storedTasks.put(taskUUID, task);
+                            taskService.addProcessEventToTask(event, task);
+                        } else {
+                            LOGGER.warn("Task {} does not exist. Impossible to update task with log event", event.getId());
+                        }
                     } else {
-                        LOGGER.warn("Task {} does not exist. Impossible to update task with log event", event.getId());
+                        taskService.addProcessEventToTask(event, task);
                     }
-                } else {
-                    taskService.addProcessEventToTask(event, task);
+                } catch (Exception e) {
+                    LOGGER.error("Unable to handle task event {}", event, e);
                 }
             }
             Collection<Task> tasksToSave = storedTasks.values();
