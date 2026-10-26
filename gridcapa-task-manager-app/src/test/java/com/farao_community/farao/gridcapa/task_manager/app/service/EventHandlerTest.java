@@ -6,59 +6,55 @@
  */
 package com.farao_community.farao.gridcapa.task_manager.app.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskLogEventUpdate;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.ProcessEventRepository;
-import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import com.farao_community.farao.gridcapa.task_manager.app.TaskUpdateNotifier;
-import com.farao_community.farao.gridcapa.task_manager.app.entities.ProcessEvent;
 import com.farao_community.farao.gridcapa.task_manager.app.entities.Task;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
+import com.farao_community.farao.gridcapa.task_manager.app.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class EventHandlerTest {
 
-    @MockitoBean
-    private TaskUpdateNotifier taskUpdateNotifier;
-
-    @MockitoBean
-    private StreamBridge streamBridge; // Useful to avoid AMQP connection that would fail
-
-    @Autowired
+    @InjectMocks
     private EventHandler eventHandler;
 
-    @Autowired
+    @Mock
     private TaskRepository taskRepository;
 
-    @Autowired
-    private ProcessEventRepository processEventRepository;
+    @Mock
+    private TaskUpdateNotifier taskUpdateNotifier;
 
-    @AfterEach
-    void cleanDatabase() {
-        taskRepository.deleteAll();
-        processEventRepository.deleteAll();
-    }
+    @Mock
+    private TaskService taskService;
 
-    @Test
-    void consumeTaskEventUpdateTest() {
-        String logEvent = """
+    private static final String LOG_EVENT_1_JSON_STR = """
             {
               "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f2",
               "timestamp": "2023-06-07T13:14:50.106608Z",
@@ -66,101 +62,131 @@ class EventHandlerTest {
               "message": "Hello World!",
               "serviceName": "GRIDCAPA"
             }""";
-        Flux<List<byte[]>> logEventBytesFlux = Flux.fromStream(Stream.of(List.of(logEvent.getBytes())));
-        Consumer<Flux<List<byte[]>>> fluxConsumer = eventHandler.consumeTaskEventUpdate();
-        Assertions.assertDoesNotThrow(() -> fluxConsumer.accept(logEventBytesFlux));
+
+    private static final TaskLogEventUpdate LOG_EVENT_1 = new TaskLogEventUpdate(
+            "1fdda469-53e9-4d63-a533-b935cffdd2f2",
+            "2023-06-07T13:14:50.106608Z",
+            "INFO",
+            "Hello World!",
+            "GRIDCAPA"
+    );
+
+    @Test
+    void consumeTaskEventUpdateTest() {
+        final Flux<List<byte[]>> logEventBytesFlux = Flux.fromStream(Stream.of(List.of(LOG_EVENT_1_JSON_STR.getBytes())));
+        final Consumer<Flux<List<byte[]>>> fluxConsumer = eventHandler.consumeTaskEventUpdate();
+
+        assertThatNoException().isThrownBy(() -> fluxConsumer.accept(logEventBytesFlux));
+    }
+
+    @Test
+    void consumeTaskEventUpdateErrorTest() {
+        final Logger logger = (Logger) LoggerFactory.getLogger(EventHandler.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        // Forcing error on Method called in eventHandler.consumeTaskEventUpdate() to test Exception handling
+        when(taskRepository.saveAll(any())).thenThrow(new RuntimeException("Database error"));
+
+        final Flux<List<byte[]>> logEventBytesFlux = Flux.fromStream(Stream.of(List.of(LOG_EVENT_1_JSON_STR.getBytes())));
+        final Consumer<Flux<List<byte[]>>> fluxConsumer = eventHandler.consumeTaskEventUpdate();
+        fluxConsumer.accept(logEventBytesFlux);
+
+        final List<ILoggingEvent> logs = appender.list;
+        // A warn log is thrown as no Task is defined additionally to the error log
+        assertThat(logs).hasSize(2);
+        assertThat(logs.getFirst().getLevel()).isEqualTo(Level.WARN);
+        // Log Error from consumeTaskEventUpdate method
+        final ILoggingEvent log2 = logs.get(1);
+        assertThat(log2.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(log2.getFormattedMessage()).contains("Unable to handle task events update properly");
+    }
+
+    @Test
+    void mapMessageToEventListErrorTest() {
+        final Logger logger = (Logger) LoggerFactory.getLogger(EventHandler.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        eventHandler.mapMessagesToListEvents(List.of("test Exception".getBytes()));
+
+        final List<ILoggingEvent> logs = appender.list;
+        assertThat(logs).hasSize(1);
+        final ILoggingEvent firstLog = logs.getFirst();
+        assertThat(firstLog.getLevel()).isEqualTo(Level.WARN);
+        assertThat(firstLog.getFormattedMessage())
+                .contains("Couldn't parse log event, Impossible to match the event with concerned task");
     }
 
     @Test
     void handleTaskEventBatchUpdateTest() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
-        taskRepository.save(task);
-        String logEvent = """
-            {
-              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
-              "timestamp": "2021-12-30T17:31:33.030+01:00",
-              "level": "INFO",
-              "message": "Hello from backend",
-              "serviceName": "GRIDCAPA"
-            }""";
-        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
-        eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
-        final List<ProcessEvent> processEvents = processEventRepository.findAll();
-        assertEquals(1, processEvents.size());
-        ProcessEvent event = processEvents.get(0);
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
-        assertEquals("INFO", event.getLevel());
-        assertEquals("Hello from backend", event.getMessage());
-    }
+        final OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        final Task task = new Task(taskTimestamp);
+        final UUID taskId = UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f2");
+        task.setId(taskId);
+        when(taskRepository.findByIdAndFetchProcessFiles(taskId)).thenReturn(Optional.of(task));
 
-    @Test
-    void handleTaskEventBatchUpdateWithPrefixTest() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
-        taskRepository.save(task);
-        String logEvent = """
-            {
-              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
-              "timestamp": "2021-12-30T17:31:33.030+01:00",
-              "level": "INFO",
-              "message": "Hello from backend",
-              "serviceName": "GRIDCAPA" ,
-              "eventPrefix": "STEP-1"
-            }""";
-        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent.getBytes()));
-        eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
-        final List<ProcessEvent> processEvents = processEventRepository.findAll();
-        assertEquals(1, processEvents.size());
-        ProcessEvent event = processEvents.get(0);
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event.getTimestamp());
-        assertEquals("INFO", event.getLevel());
-        assertEquals("[STEP-1] : Hello from backend", event.getMessage());
+        eventHandler.handleTaskEventBatchUpdate(List.of(LOG_EVENT_1));
+
+        verify(taskService, times(1)).addProcessEventToTask(LOG_EVENT_1, task);
     }
 
     @Test
     void handleTaskEventBatchUpdateWithEventsList() {
-        OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
-        Task task = new Task(taskTimestamp);
-        task.setId(UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f6"));
-        taskRepository.save(task);
-        String logEvent1 = """
-            {
-              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
-              "timestamp": "2021-12-30T17:31:33.030+01:00",
-              "level": "INFO",
-              "message": "Hello from backend",
-              "serviceName": "GRIDCAPA",
-              "eventPrefix": "STEP-1"
-            }""";
-        String logEvent2 = """
-            {
-              "gridcapa-task-id": "1fdda469-53e9-4d63-a533-b935cffdd2f6",
-              "timestamp": "2021-12-30T17:31:34.030+01:00",
-              "level": "WARNING",
-              "message": "Hello from backend2",
-              "serviceName": "GRIDCAPA"
-            }""";
-        List<TaskLogEventUpdate> taskLogEventUpdates =  eventHandler.mapMessagesToListEvents(List.of(logEvent1.getBytes(), logEvent2.getBytes()));
-        eventHandler.handleTaskEventBatchUpdate(taskLogEventUpdates);
-        final List<ProcessEvent> processEvents = processEventRepository.findAll();
-        assertEquals(2, processEvents.size());
-        ProcessEvent event0 = processEvents.get(0);
-        ProcessEvent event1 = processEvents.get(1);
+        final OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        final Task task1 = new Task(taskTimestamp);
+        final UUID taskId1 = UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f2");
+        task1.setId(taskId1);
+        final Task task2 = new Task(taskTimestamp);
+        final UUID taskId2 = UUID.fromString("ab475df8-53e9-4d63-a533-b935cffdd2f6");
+        task2.setId(taskId2);
+        when(taskRepository.findByIdAndFetchProcessFiles(taskId1)).thenReturn(Optional.of(task1));
+        when(taskRepository.findByIdAndFetchProcessFiles(taskId2)).thenReturn(Optional.of(task2));
 
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:33.030Z"), event0.getTimestamp());
-        assertEquals("INFO", event0.getLevel());
-        assertEquals("[STEP-1] : Hello from backend", event0.getMessage());
+        final TaskLogEventUpdate logEvent2 = new TaskLogEventUpdate(
+                "ab475df8-53e9-4d63-a533-b935cffdd2f6",
+                "2023-06-07T13:14:50.106608Z",
+                "WARN",
+                "Test Event 2",
+                "GRIDCAPA"
+        );
+        eventHandler.handleTaskEventBatchUpdate(List.of(LOG_EVENT_1, logEvent2));
 
-        assertEquals(OffsetDateTime.parse("2021-12-30T16:31:34.030Z"), event1.getTimestamp());
-        assertEquals("WARNING", event1.getLevel());
-        assertEquals("Hello from backend2", event1.getMessage());
+        verify(taskService, times(1)).addProcessEventToTask(LOG_EVENT_1, task1);
+        verify(taskService, times(1)).addProcessEventToTask(logEvent2, task2);
     }
 
     @Test
-    void mapMessageToEventErrorTest() {
-        Assertions.assertNull(eventHandler.mapMessageToEvent("random"));
+    void handleTaskEventBatchUpdateErrorTest() {
+        final Logger logger = (Logger) LoggerFactory.getLogger(EventHandler.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        final OffsetDateTime taskTimestamp = OffsetDateTime.parse("2021-10-01T21:00Z");
+        final Task task = new Task(taskTimestamp);
+        final UUID taskId = UUID.fromString("1fdda469-53e9-4d63-a533-b935cffdd2f2");
+        task.setId(taskId);
+        when(taskRepository.findByIdAndFetchProcessFiles(taskId)).thenReturn(Optional.of(task));
+
+        final TaskLogEventUpdate logEventFail = new TaskLogEventUpdate(
+                "ab475df8-53e9-4d63-a533-",
+                "2023-06-07T13:14:50.106608Z",
+                "WARN",
+                "Test Event 2",
+                "GRIDCAPA"
+        );
+        eventHandler.handleTaskEventBatchUpdate(List.of(LOG_EVENT_1, logEventFail));
+
+        // Verify logEvent1 was processed
+        verify(taskService, times(1)).addProcessEventToTask(LOG_EVENT_1, task);
+        // Verify logEventFail logs an error with incorrect gridcapa-task-id
+        final List<ILoggingEvent> logs = appender.list;
+        assertThat(logs).hasSize(1);
+        final ILoggingEvent firstLog = logs.getFirst();
+        assertThat(firstLog.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(firstLog.getFormattedMessage()).contains("Unable to handle task event");
     }
 }
