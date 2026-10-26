@@ -100,8 +100,7 @@ class EventHandlerTest {
         // Log Error from consumeTaskEventUpdate method
         final ILoggingEvent log2 = logs.get(1);
         assertThat(log2.getLevel()).isEqualTo(Level.ERROR);
-        assertThat(log2.getFormattedMessage())
-                .contains("Unable to handle task events update properly");
+        assertThat(log2.getFormattedMessage()).contains("Unable to handle task events update properly");
     }
 
     @Test
@@ -115,9 +114,9 @@ class EventHandlerTest {
 
         final List<ILoggingEvent> logs = appender.list;
         assertThat(logs).hasSize(1);
-        final ILoggingEvent first = logs.getFirst();
-        assertThat(first.getLevel()).isEqualTo(Level.WARN);
-        assertThat(first.getFormattedMessage())
+        final ILoggingEvent firstLog = logs.getFirst();
+        assertThat(firstLog.getLevel()).isEqualTo(Level.WARN);
+        assertThat(firstLog.getFormattedMessage())
                 .contains("Couldn't parse log event, Impossible to match the event with concerned task");
     }
 
@@ -186,9 +185,8 @@ class EventHandlerTest {
         // Verify logEventFail logs an error with incorrect gridcapa-task-id
         final List<ILoggingEvent> logs = appender.list;
         assertThat(logs).hasSize(1);
-        final ILoggingEvent first = logs.getFirst();
-        assertThat(first.getLevel()).isEqualTo(Level.ERROR);
-        assertThat(first.getFormattedMessage())
-                .contains("Unable to handle task event");
+        final ILoggingEvent firstLog = logs.getFirst();
+        assertThat(firstLog.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(firstLog.getFormattedMessage()).contains("Unable to handle task event");
     }
 }
